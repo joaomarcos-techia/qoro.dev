@@ -10,9 +10,15 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
+        body: ["'PT Sans'", 'sans-serif'],
+        headline: ["'PT Sans'", 'sans-serif'],
         code: ['monospace'],
+      },
+      boxShadow: {
+        'neumorphism': '8px 8px 16px rgba(163, 177, 198, 0.6), -8px -8px 16px rgba(255, 255, 255, 0.8)',
+        'neumorphism-hover': '12px 12px 24px rgba(163, 177, 198, 0.8), -12px -12px 24px rgba(255, 255, 255, 0.9)',
+        'neumorphism-inset': 'inset 4px 4px 8px rgba(163, 177, 198, 0.6), inset -4px -4px 8px rgba(255, 255, 255, 0.8)',
+        'neumorphism-pressed': 'inset 8px 8px 16px rgba(163, 177, 198, 0.8), inset -8px -8px 16px rgba(255, 255, 255, 0.9)',
       },
       colors: {
         background: 'hsl(var(--background))',
