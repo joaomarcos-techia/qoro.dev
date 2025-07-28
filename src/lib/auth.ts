@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword,
   sendEmailVerification,
   User,
+  signOut as firebaseSignOut,
 } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { app } from './firebase';
@@ -51,5 +52,14 @@ export const signIn = async (email: string, password: string): Promise<User> => 
     } catch (error) {
       console.error("Error signing in:", error);
       throw error;
+    }
+};
+
+export const signOut = async (): Promise<void> => {
+    try {
+        await firebaseSignOut(auth);
+    } catch (error) {
+        console.error("Error signing out:", error);
+        throw error;
     }
 };
