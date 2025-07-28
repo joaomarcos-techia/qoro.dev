@@ -3,19 +3,19 @@ import { Zap, Shield, Gift, Star } from 'lucide-react';
 const features = [
   {
     icon: Zap,
-    title: 'Informação Unificada',
+    title: 'Informação unificada',
     description: 'Todos os seus dados em um só lugar. Chega de alternar entre sistemas e planilhas.',
     colorClass: 'bg-blue-500',
   },
   {
     icon: Shield,
-    title: 'Segurança de Nível Mundial',
+    title: 'Segurança de nível mundial',
     description: 'Confie na infraestrutura robusta do Google Firebase para proteger seus dados mais valiosos.',
     colorClass: 'bg-green-500',
   },
   {
     icon: Gift,
-    title: 'Comece Grátis, Cresça Sem Limites',
+    title: 'Comece grátis',
     description: 'Nosso plano gratuito é generoso e perfeito para você começar a organizar sua empresa hoje mesmo.',
     colorClass: 'bg-yellow-500',
   },
