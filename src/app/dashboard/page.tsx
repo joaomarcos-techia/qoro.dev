@@ -8,10 +8,8 @@ export default function DashboardPage() {
         <p className="text-gray-600 mb-8">
           Sua conta foi criada e seu e-mail verificado. Explore a plataforma!
         </p>
-        <Link href="/">
-          <a className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover font-semibold">
-            Voltar para a Home
-          </a>
+        <Link href="/" className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover font-semibold">
+          Voltar para a Home
         </Link>
       </div>
     </div>
