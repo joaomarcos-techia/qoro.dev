@@ -28,7 +28,7 @@ export function AboutSection() {
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div>
             <h2 className="text-3xl md:text-5xl font-bold text-black mb-6">
-              Por que a Qoro é diferente?
+              Sobre nós
             </h2>
             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
               Nós não somos apenas um software, somos o fim da sua dor de cabeça. A Qoro foi criada para trazer clareza e controle, permitindo que você se concentre em estratégias, não em procurar informações.

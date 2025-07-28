@@ -18,7 +18,7 @@ export function Header() {
   const navLinks = [
     { href: '#home', label: 'Início' },
     { href: '#produtos', label: 'Soluções' },
-    { href: '#sobre', label: 'Por que a Qoro?' },
+    { href: '#sobre', label: 'Sobre nós' },
     { href: '#precos', label: 'Planos' },
     { href: '#contato', label: 'Contato' },
   ];
