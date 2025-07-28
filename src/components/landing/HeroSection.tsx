@@ -6,7 +6,7 @@ export function HeroSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-black mb-6 leading-tight">
-            Diga adeus às planilhas.
+            Diga adeus ao caos.
             <span className="block bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Centralize tudo com a Qoro.</span>
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed">
