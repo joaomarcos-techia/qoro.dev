@@ -7,6 +7,7 @@ import {
   sendEmailVerification,
   User,
   signOut as firebaseSignOut,
+  updatePassword,
 } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { app } from './firebase';
@@ -60,6 +61,19 @@ export const signOut = async (): Promise<void> => {
         await firebaseSignOut(auth);
     } catch (error) {
         console.error("Error signing out:", error);
+        throw error;
+    }
+};
+
+export const changePassword = async (newPassword: string): Promise<void> => {
+    const user = auth.currentUser;
+    if (!user) {
+        throw new Error("Nenhum usuário autenticado encontrado.");
+    }
+    try {
+        await updatePassword(user, newPassword);
+    } catch (error) {
+        console.error("Error changing password:", error);
         throw error;
     }
 };

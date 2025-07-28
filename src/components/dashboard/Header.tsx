@@ -11,6 +11,7 @@ import Link from 'next/link';
 interface UserProfile {
   name: string;
   organization: string;
+  email: string;
 }
 
 export function Header() {
@@ -25,15 +26,21 @@ export function Header() {
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
-          setUserProfile(userDoc.data() as UserProfile);
+          const userData = userDoc.data();
+          setUserProfile({
+              name: userData.name,
+              organization: userData.organization,
+              email: user.email || ''
+          });
         }
       } else {
         setUserProfile(null);
+        router.push('/'); // Redirect to landing if not authenticated
       }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   const toggleMenu = (menu: string) => {
     setMenuOpen((prev) => (prev === menu ? null : menu));
@@ -127,9 +134,9 @@ export function Header() {
                       <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
                         <User className="w-6 h-6 text-gray-600" />
                       </div>
-                      <div className="ml-3">
+                      <div className="ml-3 overflow-hidden">
                         <p className="font-medium text-gray-900 truncate">
-                          {userProfile?.name || 'Usuário'}
+                          {userProfile?.name || 'Carregando...'}
                         </p>
                         <p className="text-sm text-gray-600 truncate">
                           {userProfile?.organization || 'Organização'}
