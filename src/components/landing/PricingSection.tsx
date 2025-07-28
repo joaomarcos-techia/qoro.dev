@@ -117,10 +117,10 @@ const PricingCard = ({ plan }: { plan: Plan }) => (
     <button className={`w-full py-4 rounded-2xl font-medium transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center ${plan.buttonClass}`}>
       {plan.buttonText}
     </button>
-    {plan.name === 'Plano Starter' && (
-      <p className="text-center text-xs text-gray-500 mt-4">
-        Sem compromisso • Sem cartão de crédito
-      </p>
+    {(plan.name === 'Plano Starter' || plan.name === 'Plano Profissional' || plan.name === 'Plano Enterprise') && (
+        <p className="text-center text-xs text-gray-500 mt-4">
+            {plan.priceDetails}
+        </p>
     )}
   </div>
 );
@@ -137,7 +137,7 @@ export function PricingSection() {
             Comece agora. Cancele quando quiser.
           </p>
         </div>
-        <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-center">
+        <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-start">
           {plans.map(plan => (
             <PricingCard key={plan.name} plan={plan} />
           ))}

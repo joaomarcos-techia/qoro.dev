@@ -22,6 +22,21 @@ export function Header() {
     { href: '#precos', label: 'Preços' },
     { href: '#contato', label: 'Contato' },
   ];
+  
+  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    e.preventDefault();
+    const targetId = e.currentTarget.getAttribute('href');
+    if(targetId) {
+      const targetElement = document.querySelector(targetId);
+      if (targetElement) {
+        window.scrollTo({
+          top: targetElement.offsetTop - 80, // Adjust for header height
+          behavior: 'smooth'
+        });
+      }
+    }
+    setIsMenuOpen(false);
+  };
 
   return (
     <header className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/95 backdrop-blur-md shadow-neumorphism' : ''}`}>
@@ -29,14 +44,14 @@ export function Header() {
         <div className="flex items-center justify-between h-16 lg:h-20">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <a href="#home" className="text-2xl lg:text-3xl font-bold text-black">Qoro</a>
+              <a href="#home" onClick={handleLinkClick} className="text-2xl lg:text-3xl font-bold text-black">CoreFlow</a>
             </div>
           </div>
           
           <nav className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
               {navLinks.map(link => (
-                <a key={link.href} href={link.href} className="text-gray-700 hover:text-black px-3 py-2 text-sm font-medium transition-colors">
+                <a key={link.href} href={link.href} onClick={handleLinkClick} className="text-gray-700 hover:text-black px-3 py-2 text-sm font-medium transition-colors">
                   {link.label}
                 </a>
               ))}
@@ -68,7 +83,7 @@ export function Header() {
               <a 
                 key={link.href} 
                 href={link.href} 
-                onClick={() => setIsMenuOpen(false)}
+                onClick={handleLinkClick}
                 className="text-gray-700 hover:text-black block px-3 py-2 text-base font-medium rounded-xl hover:shadow-neumorphism-inset transition-all duration-300"
               >
                 {link.label}

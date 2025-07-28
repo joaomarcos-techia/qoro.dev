@@ -60,7 +60,7 @@ export function Footer() {
         </div>
         
         <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-          <p>&copy; {new Date().getFullYear()} Qoro. Todos os direitos reservados.</p>
+          <p>&copy; 2025 Qoro. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>
