@@ -24,6 +24,7 @@ export function Header() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        setIsLoading(true);
         try {
           const userDocRef = doc(db, 'users', user.uid);
           const userDoc = await getDoc(userDocRef);
@@ -34,27 +35,25 @@ export function Header() {
                 organization: userData.organization || 'Organização',
                 email: user.email || ''
             });
+          } else {
+             setUserProfile(null);
           }
         } catch (error) {
             console.error("Failed to fetch user profile:", error);
-            // Handle error, maybe show a default profile
-             setUserProfile({
-                name: 'Usuário',
-                organization: 'Organização',
-                email: user.email || ''
-            });
+            setUserProfile(null);
         } finally {
             setIsLoading(false);
         }
       } else {
         setIsLoading(false);
         setUserProfile(null);
-        router.push('/'); // Redirect to landing if not authenticated
+        // Do not redirect here, let protected routes handle it
+        // router.push('/'); 
       }
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, []);
 
   const toggleMenu = (menu: string) => {
     setMenuOpen((prev) => (prev === menu ? null : menu));
@@ -143,30 +142,47 @@ export function Header() {
 
               {menuOpen === 'user' && (
                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-neumorphism border border-gray-200 z-50">
-                  <div className="p-4 border-b border-gray-200">
-                    <div className="flex items-center">
-                      <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
-                        <User className="w-6 h-6 text-gray-600" />
-                      </div>
-                      <div className="ml-3 overflow-hidden">
-                        <p className="font-medium text-gray-900 truncate">
-                          {isLoading ? 'Carregando...' : userProfile?.name}
-                        </p>
-                        <p className="text-sm text-gray-600 truncate">
-                          {isLoading ? '...' : userProfile?.organization}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="py-2">
-                    <button
-                      onClick={handleSignOut}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
-                    >
-                      <LogOut className="w-4 h-4 mr-3" />
-                      Sair da Conta
-                    </button>
-                  </div>
+                    {isLoading ? (
+                        <div className="p-4 text-center text-sm text-gray-500">Carregando...</div>
+                    ) : userProfile ? (
+                        <>
+                            <div className="p-4 border-b border-gray-200">
+                                <div className="flex items-center">
+                                <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
+                                    <User className="w-6 h-6 text-gray-600" />
+                                </div>
+                                <div className="ml-3 overflow-hidden">
+                                    <p className="font-medium text-gray-900 truncate">
+                                    {userProfile.name}
+                                    </p>
+                                    <p className="text-sm text-gray-600 truncate">
+                                    {userProfile.organization}
+                                    </p>
+                                </div>
+                                </div>
+                            </div>
+                            <div className="py-2">
+                                <button
+                                onClick={handleSignOut}
+                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+                                >
+                                <LogOut className="w-4 h-4 mr-3" />
+                                Sair da Conta
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                         <div className="p-4 text-center">
+                            <p className="text-sm text-gray-700 mb-2">Não foi possível carregar o perfil.</p>
+                            <button
+                                onClick={handleSignOut}
+                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+                                >
+                                <LogOut className="w-4 h-4 mr-3" />
+                                Sair e tentar novamente
+                            </button>
+                         </div>
+                    )}
                 </div>
               )}
             </div>
