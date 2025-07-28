@@ -15,6 +15,7 @@ type Plan = {
   popular: boolean;
   popularText?: string;
   isScaled?: boolean;
+  footerText?: string;
 };
 
 const plans: Plan[] = [
@@ -34,6 +35,7 @@ const plans: Plan[] = [
     buttonText: 'Começar Grátis',
     popular: false,
     buttonClass: 'bg-gray-900 text-white hover:bg-gray-800',
+    footerText: 'Sem compromisso • Sem cartão de crédito',
   },
   {
     name: 'Plano Profissional',
@@ -55,6 +57,7 @@ const plans: Plan[] = [
     popularText: 'Mais Popular',
     buttonClass: 'bg-gradient-to-r from-purple-500 to-purple-600 text-white',
     isScaled: true,
+    footerText: 'Cartão necessário • Cancele quando quiser',
   },
   {
     name: 'Plano Enterprise',
@@ -75,6 +78,7 @@ const plans: Plan[] = [
     buttonText: 'Começar',
     popular: false,
     buttonClass: 'bg-gray-900 text-white hover:bg-gray-800',
+    footerText: 'Cartão necessário • Cancele quando quiser',
   },
 ];
 
@@ -117,9 +121,9 @@ const PricingCard = ({ plan }: { plan: Plan }) => (
     <button className={`w-full py-4 rounded-2xl font-medium transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center ${plan.buttonClass}`}>
       {plan.buttonText}
     </button>
-    {(plan.name === 'Plano Starter' || plan.name === 'Plano Profissional' || plan.name === 'Plano Enterprise') && (
+    {plan.footerText && (
         <p className="text-center text-xs text-gray-500 mt-4">
-            {plan.priceDetails}
+            {plan.footerText}
         </p>
     )}
   </div>
