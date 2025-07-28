@@ -50,13 +50,6 @@ export function Header() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <h1 className="text-2xl font-bold text-black">Qoro</h1>
-            <span className="ml-4 px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full shadow-neumorphism-inset hidden md:inline">
-              Dashboard Central
-            </span>
-            <span className="ml-2 px-3 py-1 bg-gradient-to-r from-green-400 to-green-600 text-white text-sm rounded-full shadow-neumorphism flex items-center hidden md:inline-flex">
-              <Gift className="w-4 h-4 mr-1" />
-              Acesso VIP
-            </span>
           </div>
 
           <div ref={menuRef} className="flex items-center space-x-4">
