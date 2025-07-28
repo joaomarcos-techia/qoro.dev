@@ -18,22 +18,36 @@ export function Header() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUserProfile({
-              name: userData.name,
-              organization: userData.organization,
-              email: user.email || ''
-          });
+        try {
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUserProfile({
+                name: userData.name || 'Usuário',
+                organization: userData.organization || 'Organização',
+                email: user.email || ''
+            });
+          }
+        } catch (error) {
+            console.error("Failed to fetch user profile:", error);
+            // Handle error, maybe show a default profile
+             setUserProfile({
+                name: 'Usuário',
+                organization: 'Organização',
+                email: user.email || ''
+            });
+        } finally {
+            setIsLoading(false);
         }
       } else {
+        setIsLoading(false);
         setUserProfile(null);
         router.push('/'); // Redirect to landing if not authenticated
       }
@@ -136,10 +150,10 @@ export function Header() {
                       </div>
                       <div className="ml-3 overflow-hidden">
                         <p className="font-medium text-gray-900 truncate">
-                          {userProfile?.name || 'Carregando...'}
+                          {isLoading ? 'Carregando...' : userProfile?.name}
                         </p>
                         <p className="text-sm text-gray-600 truncate">
-                          {userProfile?.organization || 'Organização'}
+                          {isLoading ? '...' : userProfile?.organization}
                         </p>
                       </div>
                     </div>
