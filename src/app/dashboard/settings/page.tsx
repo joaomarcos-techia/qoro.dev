@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { Mail, Send, KeyRound, UserPlus, Building, AlertCircle, CheckCircle } from 'lucide-react';
+import Link from 'next/link';
+import { Mail, Send, KeyRound, UserPlus, Building, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react';
 import { inviteUser } from '@/ai/flows/user-management';
 
 export default function SettingsPage() {
@@ -26,10 +27,18 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-black mb-2">Configurações</h2>
-        <p className="text-gray-600">Gerencie sua conta, organização e convide novos membros.</p>
-      </div>
+       <div className="flex items-center justify-between mb-8">
+            <div>
+                <h2 className="text-3xl font-bold text-black mb-2">Configurações</h2>
+                <p className="text-gray-600">Gerencie sua conta, organização e convide novos membros.</p>
+            </div>
+             <Link href="/dashboard">
+                <div className="bg-white text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold">
+                    <ArrowLeft className="mr-2 w-5 h-5" />
+                    Voltar ao Dashboard
+                </div>
+            </Link>
+        </div>
 
       <div className="space-y-12">
         {/* Invite User Section */}
