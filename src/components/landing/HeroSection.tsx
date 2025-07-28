@@ -14,7 +14,7 @@ export function HeroSection() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <button className="bg-primary text-primary-foreground px-8 py-4 rounded-2xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center text-lg font-semibold">
-              Organize sua empresa grátis
+              Começar grátis
               <ArrowRight className="ml-2 w-5 h-5" />
             </button>
           </div>
