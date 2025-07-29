@@ -1,10 +1,12 @@
 
 'use server';
 /**
- * @fileOverview User management flows for inviting and managing users.
+ * @fileOverview User and organization management flows.
  * - inviteUser - Invites a user to an organization via email.
  * - listUsers - Lists all users within the caller's organization.
  * - updateUserPermissions - Updates the application permissions for a specific user.
+ * - getOrganizationDetails - Fetches details for the user's organization.
+ * - updateOrganizationDetails - Updates details for the user's organization.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
@@ -29,11 +31,18 @@ const getAdminAndOrg = async (actorUid: string | undefined) => {
     if (!adminDoc.exists) {
         throw new Error('Admin user not found in Firestore.');
     }
-    const organization = adminDoc.data()?.organization;
-    if (!organization) {
+    const organizationId = adminDoc.data()?.organizationId;
+    if (!organizationId) {
         throw new Error('Admin user does not have an organization.');
     }
-    return { adminDoc, organization };
+    
+    // Check role
+    const role = adminDoc.data()?.role;
+    if (role !== 'admin') {
+        throw new Error('User does not have admin privileges.');
+    }
+
+    return { adminDoc, organizationId };
 }
 
 // Schemas
@@ -52,7 +61,7 @@ export const UserProfileSchema = z.object({
     uid: z.string(),
     email: z.string(),
     name: z.string().optional().nullable(),
-    organization: z.string(),
+    organizationId: z.string(),
     role: z.string().optional(),
     permissions: AppPermissionsSchema,
 });
@@ -68,17 +77,42 @@ export const UpdateUserPermissionsSchema = z.object({
     }),
 });
 
+export const OrganizationProfileSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    cnpj: z.string().optional().nullable(),
+    contactEmail: z.string().email().optional().nullable(),
+    contactPhone: z.string().optional().nullable(),
+});
+export type OrganizationProfile = z.infer<typeof OrganizationProfileSchema>;
+
+export const UpdateOrganizationDetailsSchema = z.object({
+    name: z.string(),
+    cnpj: z.string().optional(),
+    contactEmail: z.string().email().optional(),
+    contactPhone: z.string().optional(),
+});
+
+
 // Exported functions (client-callable wrappers)
 export async function inviteUser(input: z.infer<typeof InviteUserSchema>) {
     return inviteUserFlow(input);
 }
 
-export async function listUsers(input: {}) {
-    return listUsersFlow(input);
+export async function listUsers() {
+    return listUsersFlow();
 }
 
 export async function updateUserPermissions(input: z.infer<typeof UpdateUserPermissionsSchema>) {
     return updateUserPermissionsFlow(input);
+}
+
+export async function getOrganizationDetails() {
+    return getOrganizationDetailsFlow();
+}
+
+export async function updateOrganizationDetails(input: z.infer<typeof UpdateOrganizationDetailsSchema>) {
+    return updateOrganizationDetailsFlow(input);
 }
 
 
@@ -90,11 +124,11 @@ export const inviteUserFlow = ai.defineFlow(
     outputSchema: z.object({
       uid: z.string(),
       email: z.string(),
-      organization: z.string(),
+      organizationId: z.string(),
     }),
   },
   async ({ email }, context) => {
-    const { organization } = await getAdminAndOrg(context?.auth?.uid);
+    const { organizationId } = await getAdminAndOrg(context?.auth?.uid);
     
     // Create user in Firebase Auth
     const userRecord = await auth.createUser({
@@ -105,10 +139,10 @@ export const inviteUserFlow = ai.defineFlow(
     // Save user info to Firestore
     await db.collection('users').doc(userRecord.uid).set({
       email,
-      organization,
+      organizationId,
       invitedBy: context?.auth?.uid,
       createdAt: FieldValue.serverTimestamp(),
-      // Set default permissions for a new user
+      role: 'member', // Default role for invited users
       permissions: {
         qoroCrm: true,
         qoroPulse: true,
@@ -124,7 +158,7 @@ export const inviteUserFlow = ai.defineFlow(
     return {
       uid: userRecord.uid,
       email: userRecord.email!,
-      organization,
+      organizationId,
     };
   }
 );
@@ -133,13 +167,13 @@ export const inviteUserFlow = ai.defineFlow(
 export const listUsersFlow = ai.defineFlow(
     {
         name: 'listUsersFlow',
-        inputSchema: z.object({}),
+        inputSchema: z.undefined(),
         outputSchema: z.array(UserProfileSchema),
     },
     async (_, context) => {
-        const { organization } = await getAdminAndOrg(context?.auth?.uid);
+        const { organizationId } = await getAdminAndOrg(context?.auth?.uid);
 
-        const usersSnapshot = await db.collection('users').where('organization', '==', organization).get();
+        const usersSnapshot = await db.collection('users').where('organizationId', '==', organizationId).get();
         
         const users: UserProfile[] = [];
         usersSnapshot.forEach(doc => {
@@ -148,7 +182,8 @@ export const listUsersFlow = ai.defineFlow(
                 uid: doc.id,
                 email: data.email,
                 name: data.name,
-                organization: data.organization,
+                organizationId: data.organizationId,
+                role: data.role,
                 permissions: data.permissions,
             });
         });
@@ -165,12 +200,12 @@ export const updateUserPermissionsFlow = ai.defineFlow(
         outputSchema: z.object({ success: z.boolean() }),
     },
     async ({ userId, permissions }, context) => {
-        const { organization, adminDoc } = await getAdminAndOrg(context?.auth?.uid);
+        const { organizationId, adminDoc } = await getAdminAndOrg(context?.auth?.uid);
         
         const targetUserRef = db.collection('users').doc(userId);
         const targetUserDoc = await targetUserRef.get();
 
-        if (!targetUserDoc.exists || targetUserDoc.data()?.organization !== organization) {
+        if (!targetUserDoc.exists || targetUserDoc.data()?.organizationId !== organizationId) {
             throw new Error("Target user not found in this organization.");
         }
 
@@ -185,4 +220,46 @@ export const updateUserPermissionsFlow = ai.defineFlow(
     }
 );
 
-    
+export const getOrganizationDetailsFlow = ai.defineFlow(
+    {
+        name: 'getOrganizationDetailsFlow',
+        inputSchema: z.undefined(),
+        outputSchema: OrganizationProfileSchema,
+    },
+    async (_, context) => {
+        const { organizationId } = await getAdminAndOrg(context?.auth?.uid);
+        const orgDoc = await db.collection('organizations').doc(organizationId).get();
+
+        if (!orgDoc.exists) {
+            throw new Error('Organization not found.');
+        }
+        const orgData = orgDoc.data()!;
+        return {
+            id: orgDoc.id,
+            name: orgData.name,
+            cnpj: orgData.cnpj,
+            contactEmail: orgData.contactEmail,
+            contactPhone: orgData.contactPhone,
+        };
+    }
+);
+
+export const updateOrganizationDetailsFlow = ai.defineFlow(
+    {
+        name: 'updateOrganizationDetailsFlow',
+        inputSchema: UpdateOrganizationDetailsSchema,
+        outputSchema: z.object({ success: z.boolean() }),
+    },
+    async (details, context) => {
+        const { organizationId } = await getAdminAndOrg(context?.auth?.uid);
+        
+        await db.collection('organizations').doc(organizationId).update({
+            name: details.name,
+            cnpj: details.cnpj || null,
+            contactEmail: details.contactEmail || null,
+            contactPhone: details.contactPhone || null,
+        });
+
+        return { success: true };
+    }
+);

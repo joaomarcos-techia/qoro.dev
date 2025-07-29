@@ -1,13 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Mail, Send, KeyRound, UserPlus, Building, AlertCircle, CheckCircle, ArrowLeft, User, Shield, Users, Loader2, Trash2 } from 'lucide-react';
-import { inviteUser, listUsers, updateUserPermissions, UserProfile } from '@/ai/flows/user-management';
+import { Mail, Send, KeyRound, UserPlus, Building, AlertCircle, CheckCircle, ArrowLeft, User, Shield, Users, Loader2, Trash2, Phone, FileText } from 'lucide-react';
+import { inviteUser, listUsers, updateUserPermissions, UserProfile, getOrganizationDetails, updateOrganizationDetails, OrganizationProfile } from '@/ai/flows/user-management';
 import { changePassword } from '@/lib/auth';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { auth, db }from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
-
+import { auth } from '@/lib/firebase';
 
 type AppPermission = 'qoroCrm' | 'qoroPulse' | 'qoroTask' | 'qoroFinance';
 
@@ -23,33 +21,21 @@ export default function SettingsPage() {
     const [inviteEmail, setInviteEmail] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-    const [userOrganization, setUserOrganization] = useState<string>('');
-    const [isLoading, setIsLoading] = useState({ invite: false, password: false, users: true, permissions: '' });
+    const [isLoading, setIsLoading] = useState({ invite: false, password: false, users: true, permissions: '', org: true, orgSave: false });
     const [feedback, setFeedback] = useState<{ type: 'error' | 'success', message: string, context: string } | null>(null);
     const [users, setUsers] = useState<UserProfile[]>([]);
+    const [organization, setOrganization] = useState<Partial<OrganizationProfile>>({});
 
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setCurrentUser(user);
-            if (user) {
-                fetchUsers();
-                const fetchOrg = async () => {
-                    const userDocRef = doc(db, 'users', user.uid);
-                    const userDoc = await getDoc(userDocRef);
-                    if(userDoc.exists()) {
-                        setUserOrganization(userDoc.data().organization || 'Organização');
-                    }
-                }
-                fetchOrg();
-            }
-        });
-        return () => unsubscribe();
-    }, []);
-
-    const fetchUsers = async () => {
+    const clearFeedback = (context: string) => {
+        if (feedback?.context === context) {
+            setFeedback(null);
+        }
+    };
+    
+    const fetchUsers = useCallback(async () => {
         setIsLoading(prev => ({ ...prev, users: true }));
         try {
-            const userList = await listUsers({});
+            const userList = await listUsers();
             setUsers(userList);
         } catch (error) {
             console.error("Failed to fetch users:", error);
@@ -57,6 +43,39 @@ export default function SettingsPage() {
         } finally {
             setIsLoading(prev => ({ ...prev, users: false }));
         }
+    }, []);
+    
+    const fetchOrganization = useCallback(async () => {
+        setIsLoading(prev => ({ ...prev, org: true }));
+        try {
+            const orgDetails = await getOrganizationDetails();
+            setOrganization(orgDetails);
+        } catch (error) {
+            console.error("Failed to fetch organization:", error);
+            setFeedback({ type: 'error', message: 'Não foi possível carregar os dados da organização.', context: 'org' });
+        } finally {
+            setIsLoading(prev => ({ ...prev, org: false }));
+        }
+    }, []);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setCurrentUser(user);
+            if (user) {
+                // Fetch initial data based on tab
+                if (activeTab === 'users') {
+                    fetchUsers();
+                } else if (activeTab === 'organization') {
+                    fetchOrganization();
+                }
+            }
+        });
+        return () => unsubscribe();
+    }, [activeTab, fetchUsers, fetchOrganization]);
+    
+    const handleTabChange = (tab: string) => {
+        setActiveTab(tab);
+        setFeedback(null); // Clear feedback when changing tabs
     };
 
     const handleInviteUser = async (e: React.FormEvent) => {
@@ -90,11 +109,7 @@ export default function SettingsPage() {
             setNewPassword('');
         } catch (error: any) {
             console.error(error);
-            if (error.code === 'auth/requires-recent-login') {
-                setFeedback({ type: 'error', message: 'Esta operação é sensível e requer autenticação recente. Faça login novamente antes de tentar alterar sua senha.', context: 'password' });
-            } else {
-                setFeedback({ type: 'error', message: 'Falha ao alterar a senha. Tente novamente mais tarde.', context: 'password' });
-            }
+            setFeedback({ type: 'error', message: 'Falha ao alterar a senha. Tente novamente mais tarde.', context: 'password' });
         } finally {
             setIsLoading(prev => ({ ...prev, password: false }));
         }
@@ -102,36 +117,52 @@ export default function SettingsPage() {
 
     const handlePermissionChange = async (userId: string, permission: AppPermission, isEnabled: boolean) => {
         setIsLoading(prev => ({ ...prev, permissions: userId }));
-    
-        // Find the current user and their permissions
         const targetUser = users.find(u => u.uid === userId);
         if (!targetUser) return;
-    
-        const currentPermissions = targetUser.permissions || { qoroCrm: false, qoroPulse: false, qoroTask: false, qoroFinance: false };
-        
+
         const updatedPermissions = {
-            ...currentPermissions,
+            ...targetUser.permissions,
             [permission]: isEnabled
         };
-    
+
         try {
-            await updateUserPermissions({ userId, permissions: updatedPermissions });
-            // On success, update the local state to reflect the change
-            const updatedUsers = users.map(u => 
-                u.uid === userId 
-                    ? { ...u, permissions: updatedPermissions } 
-                    : u
-            );
-            setUsers(updatedUsers);
+            await updateUserPermissions({ userId, permissions: updatedPermissions as any });
+            setUsers(users.map(u => u.uid === userId ? { ...u, permissions: updatedPermissions } : u));
         } catch (error) {
             console.error("Failed to update permissions:", error);
-            // On error, show feedback to the user. The local state remains unchanged.
-            setFeedback({ type: 'error', message: 'Falha ao atualizar permissões. Tente novamente.', context: `permissions-${userId}` });
+            setFeedback({ type: 'error', message: 'Falha ao atualizar permissões.', context: `permissions-${userId}` });
         } finally {
-             // Stop the loading indicator
-             setIsLoading(prev => ({ ...prev, permissions: '' }));
+            setIsLoading(prev => ({ ...prev, permissions: '' }));
         }
     };
+
+    const handleOrgDetailsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setOrganization({
+            ...organization,
+            [e.target.name]: e.target.value
+        });
+    };
+
+    const handleSaveOrgDetails = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(prev => ({...prev, orgSave: true}));
+        setFeedback(null);
+        try {
+            await updateOrganizationDetails({
+                name: organization.name || '',
+                cnpj: organization.cnpj || '',
+                contactEmail: organization.contactEmail || '',
+                contactPhone: organization.contactPhone || '',
+            });
+            setFeedback({ type: 'success', message: 'Dados da organização salvos com sucesso!', context: 'org' });
+        } catch (error) {
+            console.error(error);
+            setFeedback({ type: 'error', message: 'Não foi possível salvar os dados. Tente novamente.', context: 'org' });
+        } finally {
+            setIsLoading(prev => ({...prev, orgSave: false}));
+        }
+    }
+
 
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -149,13 +180,13 @@ export default function SettingsPage() {
             </div>
 
             <div className="flex border-b border-gray-200 mb-8">
-                <button onClick={() => setActiveTab('account')} className={`px-4 py-3 font-semibold flex items-center transition-all duration-300 ${activeTab === 'account' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-black'}`}>
+                <button onClick={() => handleTabChange('account')} className={`px-4 py-3 font-semibold flex items-center transition-all duration-300 ${activeTab === 'account' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-black'}`}>
                     <User className="mr-2 w-5 h-5"/> Minha Conta
                 </button>
-                 <button onClick={() => setActiveTab('users')} className={`px-4 py-3 font-semibold flex items-center transition-all duration-300 ${activeTab === 'users' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-black'}`}>
+                 <button onClick={() => handleTabChange('users')} className={`px-4 py-3 font-semibold flex items-center transition-all duration-300 ${activeTab === 'users' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-black'}`}>
                     <Users className="mr-2 w-5 h-5"/> Gerenciar Usuários
                 </button>
-                <button onClick={() => setActiveTab('organization')} className={`px-4 py-3 font-semibold flex items-center transition-all duration-300 ${activeTab === 'organization' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-black'}`}>
+                <button onClick={() => handleTabChange('organization')} className={`px-4 py-3 font-semibold flex items-center transition-all duration-300 ${activeTab === 'organization' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-black'}`}>
                     <Building className="mr-2 w-5 h-5"/> Organização
                 </button>
             </div>
@@ -182,7 +213,7 @@ export default function SettingsPage() {
                                             type="password" 
                                             placeholder="Nova Senha (mínimo 6 caracteres)"
                                             value={newPassword}
-                                            onChange={(e) => setNewPassword(e.target.value)}
+                                            onChange={(e) => {setNewPassword(e.target.value); clearFeedback('password');}}
                                             required 
                                             className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
                                     </div>
@@ -223,7 +254,7 @@ export default function SettingsPage() {
                                                 type="email"
                                                 placeholder="E-mail do convidado"
                                                 value={inviteEmail}
-                                                onChange={(e) => setInviteEmail(e.target.value)}
+                                                onChange={(e) => {setInviteEmail(e.target.value); clearFeedback('invite');}}
                                                 required
                                                 className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"
                                             />
@@ -262,18 +293,20 @@ export default function SettingsPage() {
                                             <div>
                                                 <p className="font-bold text-black">{user.name || user.email}</p>
                                                 <p className="text-sm text-gray-500">{user.email}</p>
+                                                <p className="text-xs text-gray-400 uppercase font-semibold mt-1">{user.role}</p>
                                             </div>
                                             <div className="flex items-center gap-4 mt-4 md:mt-0 relative">
                                                 {Object.keys(appPermissionsMap).map(key => {
                                                     const perm = key as AppPermission;
+                                                    const isOwner = user.uid === currentUser?.uid;
                                                     return (
-                                                        <label key={perm} className="flex items-center space-x-2 cursor-pointer text-sm">
+                                                        <label key={perm} className={`flex items-center space-x-2 text-sm ${isOwner ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                                                             <input
                                                                 type="checkbox"
                                                                 className="form-checkbox h-5 w-5 rounded text-primary focus:ring-primary border-gray-300"
                                                                 checked={!!user.permissions?.[perm]}
                                                                 onChange={(e) => handlePermissionChange(user.uid, perm, e.target.checked)}
-                                                                disabled={isLoading.permissions === user.uid || user.uid === currentUser?.uid}
+                                                                disabled={isLoading.permissions === user.uid || isOwner}
                                                             />
                                                             <span>{appPermissionsMap[perm]}</span>
                                                         </label>
@@ -290,51 +323,89 @@ export default function SettingsPage() {
                 )}
                  {activeTab === 'organization' && (
                     <div className="space-y-8">
-                        {/* Organization Profile */}
-                        <div className="bg-white p-8 rounded-2xl shadow-neumorphism border border-gray-200">
-                            <div className="flex items-start">
-                                <div className="p-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white mr-6 shadow-neumorphism">
-                                    <Building className="w-6 h-6" />
-                                </div>
-                                <div className="flex-grow">
-                                    <h3 className="text-xl font-bold text-black mb-1">Perfil da Organização</h3>
-                                    <p className="text-gray-600 mb-6">Veja e gerencie as informações da sua organização.</p>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="text-sm font-medium text-gray-700">Nome da Organização</label>
-                                            <input type="text" value={userOrganization} disabled className="mt-1 w-full p-3 bg-gray-100 rounded-xl shadow-neumorphism-inset cursor-not-allowed"/>
-                                        </div>
-                                        {/* Futuramente, botão para editar */}
+                         {isLoading.org ? (
+                             <div className="flex justify-center items-center py-8">
+                                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                <p className="ml-4 text-gray-600">Carregando dados da organização...</p>
+                            </div>
+                         ) : (
+                            <>
+                            {/* Organization Profile */}
+                            <div className="bg-white p-8 rounded-2xl shadow-neumorphism border border-gray-200">
+                                <div className="flex items-start">
+                                    <div className="p-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white mr-6 shadow-neumorphism">
+                                        <Building className="w-6 h-6" />
                                     </div>
+                                    <form onSubmit={handleSaveOrgDetails} className="flex-grow">
+                                        <h3 className="text-xl font-bold text-black mb-1">Perfil da Organização</h3>
+                                        <p className="text-gray-600 mb-6">Veja e gerencie as informações da sua organização.</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {/* Nome da Organização */}
+                                            <div className="relative">
+                                                <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                                <input type="text" name="name" placeholder="Nome da Organização" value={organization.name || ''} onChange={handleOrgDetailsChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
+                                            </div>
+                                            {/* CNPJ */}
+                                            <div className="relative">
+                                                <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                                <input type="text" name="cnpj" placeholder="CNPJ" value={organization.cnpj || ''} onChange={handleOrgDetailsChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
+                                            </div>
+                                            {/* Email de Contato */}
+                                            <div className="relative">
+                                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                                <input type="email" name="contactEmail" placeholder="Email de Contato" value={organization.contactEmail || ''} onChange={handleOrgDetailsChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
+                                            </div>
+                                            {/* Telefone de Contato */}
+                                            <div className="relative">
+                                                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                                <input type="tel" name="contactPhone" placeholder="Telefone de Contato" value={organization.contactPhone || ''} onChange={handleOrgDetailsChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-end mt-6">
+                                            <button 
+                                                type="submit"
+                                                disabled={isLoading.orgSave}
+                                                className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
+                                                {isLoading.orgSave ? 'Salvando...' : 'Salvar Alterações'}
+                                            </button>
+                                        </div>
+                                        {feedback && feedback.context === 'org' && (
+                                            <div className={`mt-4 p-4 rounded-lg flex items-center text-sm ${feedback.type === 'success' ? 'bg-green-100 border-l-4 border-green-500 text-green-800' : 'bg-red-100 border-l-4 border-red-500 text-red-700'}`}>
+                                                {feedback.type === 'success' ? <CheckCircle className="w-5 h-5 mr-3" /> : <AlertCircle className="w-5 h-5 mr-3" />}
+                                                <span>{feedback.message}</span>
+                                            </div>
+                                        )}
+                                    </form>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Danger Zone */}
-                        <div className="bg-white p-8 rounded-2xl shadow-neumorphism border border-red-300">
-                             <div className="flex items-start">
-                                <div className="p-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white mr-6 shadow-neumorphism">
-                                    <AlertCircle className="w-6 h-6" />
-                                </div>
-                                <div className="flex-grow">
-                                    <h3 className="text-xl font-bold text-red-700 mb-1">Zona de Perigo</h3>
-                                    <p className="text-gray-600 mb-6">Ações nesta área são perigosas e irreversíveis. Tenha certeza do que está fazendo.</p>
-                                    <div className="flex justify-between items-center p-4 border border-red-200 rounded-xl bg-red-50/50">
-                                        <div>
-                                            <p className="font-bold text-black">Excluir esta organização</p>
-                                            <p className="text-sm text-gray-600">Todo o conteúdo, usuários e configurações serão permanentemente deletados.</p>
+                            {/* Danger Zone */}
+                            <div className="bg-white p-8 rounded-2xl shadow-neumorphism border border-red-300">
+                                <div className="flex items-start">
+                                    <div className="p-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white mr-6 shadow-neumorphism">
+                                        <AlertCircle className="w-6 h-6" />
+                                    </div>
+                                    <div className="flex-grow">
+                                        <h3 className="text-xl font-bold text-red-700 mb-1">Zona de Perigo</h3>
+                                        <p className="text-gray-600 mb-6">Ações nesta área são perigosas e irreversíveis. Tenha certeza do que está fazendo.</p>
+                                        <div className="flex justify-between items-center p-4 border border-red-200 rounded-xl bg-red-50/50">
+                                            <div>
+                                                <p className="font-bold text-black">Excluir esta organização</p>
+                                                <p className="text-sm text-gray-600">Todo o conteúdo, usuários e configurações serão permanentemente deletados.</p>
+                                            </div>
+                                            <button 
+                                                disabled // Feature desabilitada por segurança
+                                                className="bg-red-600 text-white px-6 py-3 rounded-xl hover:bg-red-700 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400"
+                                            >
+                                                <Trash2 className="mr-2 w-5 h-5"/>
+                                                Excluir Organização
+                                            </button>
                                         </div>
-                                        <button 
-                                            disabled // Feature desabilitada por segurança
-                                            className="bg-red-600 text-white px-6 py-3 rounded-xl hover:bg-red-700 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400"
-                                        >
-                                            <Trash2 className="mr-2 w-5 h-5"/>
-                                            Excluir Organização
-                                        </button>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                            </>
+                         )}
                     </div>
                 )}
             </div>

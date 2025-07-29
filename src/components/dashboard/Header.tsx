@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Bell, ChevronDown, LogOut, RefreshCw, Settings, User, X } from 'lucide-react';
 import { signOut } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
@@ -10,7 +10,7 @@ import Link from 'next/link';
 
 interface UserProfile {
   name: string;
-  organization: string;
+  organizationName: string;
   email: string;
 }
 
@@ -19,41 +19,58 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [menuRef, setMenuRef] = useState<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const fetchUserProfile = useCallback(async (user: FirebaseUser) => {
+    setIsLoading(true);
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const orgId = userData.organizationId;
+        
+        if (orgId) {
+            const orgDocRef = doc(db, 'organizations', orgId);
+            const orgDoc = await getDoc(orgDocRef);
+            
+            if(orgDoc.exists()){
+                 setUserProfile({
+                    name: userData.name || 'Usuário',
+                    organizationName: orgDoc.data().name || 'Organização',
+                    email: user.email || '',
+                });
+            } else {
+                 throw new Error("Organization document not found");
+            }
+        } else {
+            throw new Error("User has no organization ID");
+        }
+      } else {
+        throw new Error("User document not found");
+      }
+    } catch (error) {
+      console.error("Failed to fetch user profile:", error);
+      setUserProfile(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        setIsLoading(true);
-        try {
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setUserProfile({
-                name: userData.name || 'Usuário',
-                organization: userData.organization || 'Organização',
-                email: user.email || ''
-            });
-          } else {
-             console.log("No such document!");
-             setUserProfile(null);
-          }
-        } catch (error) {
-            console.error("Failed to fetch user profile:", error);
-            setUserProfile(null);
-        } finally {
-            setIsLoading(false);
-        }
+        fetchUserProfile(user);
       } else {
         setIsLoading(false);
         setUserProfile(null);
-        router.push('/'); 
+        router.push('/');
       }
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, [router, fetchUserProfile]);
 
   const toggleMenu = (menu: string) => {
     setMenuOpen((prev) => (prev === menu ? null : menu));
@@ -66,7 +83,7 @@ export function Header() {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef && !menuRef.contains(event.target as Node)) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setMenuOpen(null);
       }
     };
@@ -74,7 +91,7 @@ export function Header() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [menuRef]);
+  }, []);
 
   return (
     <header className="bg-white shadow-neumorphism border-b border-gray-200 sticky top-0 z-40">
@@ -84,7 +101,7 @@ export function Header() {
             <h1 className="text-2xl font-bold text-black">Qoro</h1>
           </div>
 
-          <div ref={setMenuRef} className="flex items-center space-x-4">
+          <div ref={menuRef} className="flex items-center space-x-4">
             <button
               className="text-gray-500 hover:text-gray-700 p-2 rounded-xl hover:shadow-neumorphism-inset transition-all duration-300"
               title="Recarregar página"
@@ -156,7 +173,7 @@ export function Header() {
                                     {userProfile.name}
                                     </p>
                                     <p className="text-sm text-gray-600 truncate">
-                                    {userProfile.organization}
+                                    {userProfile.organizationName}
                                     </p>
                                 </div>
                                 </div>

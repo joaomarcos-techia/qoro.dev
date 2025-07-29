@@ -8,7 +8,7 @@ import { signUp } from '@/lib/auth';
 
 export default function SignUpPage() {
   const [name, setName] = useState('');
-  const [organization, setOrganization] = useState('');
+  const [organizationName, setOrganizationName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +29,7 @@ export default function SignUpPage() {
     }
 
     try {
-      await signUp(name, organization, email, password);
+      await signUp(name, organizationName, email, password);
       setSuccess('Conta criada! Enviamos um e-mail de verificação para você. Por favor, verifique sua caixa de entrada.');
       // Optionally redirect after a delay
       // setTimeout(() => router.push('/login'), 5000);
@@ -81,8 +81,8 @@ export default function SignUpPage() {
               <input
                 type="text"
                 placeholder="Nome da organização"
-                value={organization}
-                onChange={(e) => setOrganization(e.target.value)}
+                value={organizationName}
+                onChange={(e) => setOrganizationName(e.target.value)}
                 required
                 className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"
               />

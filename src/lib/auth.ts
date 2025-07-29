@@ -9,27 +9,47 @@ import {
   signOut as firebaseSignOut,
   updatePassword,
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, addDoc, collection } from 'firebase/firestore';
 import { app } from './firebase';
 
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-export const signUp = async (name: string, organization: string, email: string, password: string): Promise<User> => {
+export const signUp = async (name: string, organizationName: string, email: string, password: string): Promise<User> => {
   try {
+    // 1. Create the user in Firebase Auth
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Send email verification
-    await sendEmailVerification(user);
+    // 2. Create the organization document in Firestore
+    const orgRef = await addDoc(collection(db, 'organizations'), {
+        name: organizationName,
+        owner: user.uid,
+        createdAt: new Date(),
+        // Initialize empty fields
+        cnpj: '',
+        contactEmail: '',
+        contactPhone: '',
+    });
 
-    // Save user info to Firestore AFTER user is created
+    // 3. Create the user document in Firestore and link to the organization
     await setDoc(doc(db, 'users', user.uid), {
       name,
-      organization,
       email,
+      organizationId: orgRef.id, // Link to the new organization
       createdAt: new Date(),
+      // The creator of the org is an admin by default
+      role: 'admin',
+      permissions: {
+        qoroCrm: true,
+        qoroPulse: true,
+        qoroTask: true,
+        qoroFinance: true,
+      }
     });
+
+    // 4. Send email verification
+    await sendEmailVerification(user);
 
     return user;
   } catch (error) {
