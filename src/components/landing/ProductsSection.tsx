@@ -20,7 +20,7 @@ const products: Product[] = [
       'Histórico completo de interações',
       'Follow-ups automáticos para não perder negócios',
     ],
-    colorClass: 'bg-gradient-to-r from-blue-500 to-blue-400',
+    colorClass: 'bg-blue-500 text-white',
     bulletColorClass: 'bg-blue-500',
   },
   {
@@ -32,8 +32,8 @@ const products: Product[] = [
       'Identificação de gargalos e oportunidades',
       'Sugestões inteligentes para otimização',
     ],
-    colorClass: 'bg-gradient-to-r from-green-500 to-green-400',
-    bulletColorClass: 'bg-green-500',
+    colorClass: 'bg-purple-500 text-white',
+    bulletColorClass: 'bg-purple-500',
   },
   {
     icon: CheckSquare,
@@ -44,8 +44,8 @@ const products: Product[] = [
       'Tarefas com prazos, responsáveis e subtarefas',
       'Notificações para manter todos alinhados',
     ],
-    colorClass: 'bg-gradient-to-r from-yellow-500 to-yellow-400',
-    bulletColorClass: 'bg-yellow-500',
+    colorClass: 'bg-green-500 text-white',
+    bulletColorClass: 'bg-green-500',
   },
   {
     icon: DollarSign,
@@ -56,14 +56,14 @@ const products: Product[] = [
       'Controle de contas a pagar e receber',
       'Registro rápido de transações',
     ],
-    colorClass: 'bg-gradient-to-r from-red-500 to-red-400',
-    bulletColorClass: 'bg-red-500',
+    colorClass: 'bg-orange-500 text-white',
+    bulletColorClass: 'bg-orange-500',
   },
 ];
 
 const ProductCard = ({ product }: { product: Product }) => (
   <div className="group bg-white p-8 rounded-3xl shadow-neumorphism hover:shadow-neumorphism-hover transition-all duration-300 hover:-translate-y-2">
-    <div className={`text-white w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-neumorphism ${product.colorClass}`}>
+    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-neumorphism ${product.colorClass}`}>
       <product.icon className="w-7 h-7" />
     </div>
     <h3 className="text-2xl font-bold text-black mb-3">{product.title}</h3>
@@ -100,3 +100,5 @@ export function ProductsSection() {
     </section>
   );
 }
+
+    

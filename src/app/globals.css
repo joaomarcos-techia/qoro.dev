@@ -105,10 +105,10 @@ body {
 @layer base {
   * {
     @apply border-border;
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
   }
   body {
     @apply bg-background text-foreground;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
   }
 
   button:focus,
@@ -123,3 +123,5 @@ body {
     --tw-ring-offset-width: 2px;
   }
 }
+
+    

@@ -22,7 +22,7 @@ export default function LoginPage() {
       await signIn(email, password);
       router.push('/dashboard');
     } catch (err: any) {
-      if (err.message.includes('verifique seu e-mail')) {
+      if (err.message) {
         setError(err.message);
       } else {
         setError('E-mail ou senha inválidos. Por favor, tente novamente.');
@@ -98,3 +98,5 @@ export default function LoginPage() {
     </main>
   );
 }
+
+    

@@ -139,7 +139,7 @@ export default function SettingsPage() {
             );
         } catch (error) {
             console.error("Failed to update permissions:", error);
-            const friendlyMessage = error instanceof Error && error.message.includes("cannot change their own permissions")
+            const friendlyMessage = error instanceof Error && error.message.includes("Administradores não podem alterar as próprias permissões.")
                 ? "Você não pode alterar suas próprias permissões."
                 : 'Falha ao atualizar permissões.';
             setFeedback({ type: 'error', message: friendlyMessage, context: `permissions-${userId}` });
@@ -424,3 +424,5 @@ export default function SettingsPage() {
         </div>
     );
 }
+
+    
