@@ -118,19 +118,25 @@ export default function SettingsPage() {
     };
 
     const handlePermissionChange = async (userId: string, permission: AppPermission, isEnabled: boolean) => {
+        const targetUser = users.find(u => u.uid === userId);
+        if (!targetUser || !targetUser.permissions) return;
+    
         setIsLoading(prev => ({ ...prev, permissions: userId }));
         clearFeedback(`permissions-${userId}`);
-        const targetUser = users.find(u => u.uid === userId);
-        if (!targetUser) return;
-
+    
         const updatedPermissions = {
             ...targetUser.permissions,
-            [permission]: isEnabled
+            [permission]: isEnabled,
         };
-
+    
         try {
-            await updateUserPermissions({ userId, permissions: updatedPermissions as any });
-            setUsers(users.map(u => u.uid === userId ? { ...u, permissions: updatedPermissions } : u));
+            await updateUserPermissions({ userId, permissions: updatedPermissions });
+            // Update state only on success
+            setUsers(prevUsers => 
+                prevUsers.map(u => 
+                    u.uid === userId ? { ...u, permissions: updatedPermissions } : u
+                )
+            );
         } catch (error) {
             console.error("Failed to update permissions:", error);
             const friendlyMessage = error instanceof Error && error.message.includes("cannot change their own permissions")
@@ -156,9 +162,9 @@ export default function SettingsPage() {
         try {
             await updateOrganizationDetails({
                 name: organization.name || '',
-                cnpj: organization.cnpj || '',
-                contactEmail: organization.contactEmail || '',
-                contactPhone: organization.contactPhone || '',
+                cnpj: organization.cnpj || undefined,
+                contactEmail: organization.contactEmail || undefined,
+                contactPhone: organization.contactPhone || undefined,
             });
             setFeedback({ type: 'success', message: 'Dados da organização salvos com sucesso!', context: 'org' });
         } catch (error) {

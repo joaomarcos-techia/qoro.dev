@@ -9,7 +9,7 @@ import {
   signOut as firebaseSignOut,
   updatePassword,
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc, addDoc, collection } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { app } from './firebase';
 
 const auth = getAuth(app);
@@ -25,10 +25,10 @@ export const signUp = async (name: string, organizationName: string, email: stri
     const orgRef = await addDoc(collection(db, 'organizations'), {
         name: organizationName,
         owner: user.uid,
-        createdAt: new Date(),
-        cnpj: cnpj || '',
-        contactEmail: contactEmail || '',
-        contactPhone: contactPhone || '',
+        createdAt: serverTimestamp(),
+        cnpj: cnpj || null,
+        contactEmail: contactEmail || null,
+        contactPhone: contactPhone || null,
     });
 
     // 3. Create the user document in Firestore and link to the organization
@@ -36,7 +36,7 @@ export const signUp = async (name: string, organizationName: string, email: stri
       name,
       email,
       organizationId: orgRef.id, // Link to the new organization
-      createdAt: new Date(),
+      createdAt: serverTimestamp(),
       // The creator of the org is an admin by default
       role: 'admin',
       permissions: {

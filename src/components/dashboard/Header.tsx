@@ -11,12 +11,11 @@ import Link from 'next/link';
 interface UserProfile {
   name: string;
   organizationName: string;
-  email: string;
 }
 
 export function Header() {
   const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -24,38 +23,37 @@ export function Header() {
   const fetchUserProfile = useCallback(async (user: FirebaseUser) => {
     setIsLoading(true);
     try {
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
 
-      if (userDoc.exists()) {
+        if (!userDoc.exists()) {
+            throw new Error("Documento do usuário não encontrado no Firestore.");
+        }
+        
         const userData = userDoc.data();
         const orgId = userData.organizationId;
-        
-        if (orgId) {
-            const orgDocRef = doc(db, 'organizations', orgId);
-            const orgDoc = await getDoc(orgDocRef);
-            
-            if(orgDoc.exists()){
-                 setUserProfile({
-                    name: userData.name || 'Usuário',
-                    organizationName: orgDoc.data().name || 'Organização',
-                    email: user.email || '',
-                });
-            } else {
-                 throw new Error("Organization document not found");
-            }
-        } else {
-            throw new Error("User has no organization ID");
+
+        if (!orgId) {
+            throw new Error("Usuário não tem um ID de organização.");
         }
-      } else {
-        throw new Error("User document not found");
-      }
+
+        const orgDocRef = doc(db, 'organizations', orgId);
+        const orgDoc = await getDoc(orgDocRef);
+        
+        if (!orgDoc.exists()) {
+            throw new Error("Documento da organização não encontrado.");
+        }
+        
+        setUserProfile({
+            name: userData.name || 'Usuário',
+            organizationName: orgDoc.data()?.name || 'Organização',
+        });
+
     } catch (error) {
-      console.error("Failed to fetch user profile:", error);
-      // Don't sign out here, just clear the profile
-      setUserProfile(null); 
+        console.error("Falha ao buscar perfil do usuário:", error);
+        setUserProfile(null); 
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   }, []);
 
@@ -73,8 +71,8 @@ export function Header() {
     return () => unsubscribe();
   }, [router, fetchUserProfile]);
 
-  const toggleMenu = (menu: string) => {
-    setMenuOpen((prev) => (prev === menu ? null : menu));
+  const toggleMenu = () => {
+    setMenuOpen((prev) => !prev);
   };
 
   const handleSignOut = async () => {
@@ -85,7 +83,7 @@ export function Header() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(null);
+        setMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -104,7 +102,7 @@ export function Header() {
              </Link>
           </div>
 
-          <div ref={menuRef} className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4">
             <button
               className="text-gray-500 hover:text-gray-700 p-2 rounded-xl hover:shadow-neumorphism-inset transition-all duration-300"
               title="Recarregar página"
@@ -112,46 +110,14 @@ export function Header() {
             >
               <RefreshCw className="w-5 h-5" />
             </button>
-
-            <div className="relative">
-              <button
-                onClick={() => toggleMenu('notifications')}
-                className="relative text-gray-500 hover:text-gray-700 p-2 rounded-xl hover:shadow-neumorphism-inset transition-all duration-300"
-                title="Notificações"
-              >
-                <Bell className="w-5 h-5" />
-                 {/* Can add a notification dot here later */}
-              </button>
-
-              {menuOpen === 'notifications' && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-neumorphism border border-gray-200 z-50">
-                  <div className="p-4 border-b border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Notificações
-                      </h3>
-                      <button
-                        onClick={() => setMenuOpen(null)}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="max-h-96 overflow-y-auto p-4 text-center text-gray-500">
-                    Nenhuma notificação nova.
-                  </div>
-                </div>
-              )}
-            </div>
-
+            
             <Link href="/dashboard/settings" className="text-gray-500 hover:text-gray-700 p-2 rounded-xl hover:shadow-neumorphism-inset transition-all duration-300" title="Configurações">
                 <Settings className="w-5 h-5" />
             </Link>
 
-            <div className="relative">
+            <div className="relative" ref={menuRef}>
               <button
-                onClick={() => toggleMenu('user')}
+                onClick={toggleMenu}
                 className="flex items-center text-gray-500 hover:text-gray-700 p-2 rounded-xl hover:shadow-neumorphism-inset transition-all duration-300"
                 title="Menu do usuário"
               >
@@ -161,7 +127,7 @@ export function Header() {
                 <ChevronDown className="w-4 h-4 ml-1" />
               </button>
 
-              {menuOpen === 'user' && (
+              {menuOpen && (
                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-neumorphism border border-gray-200 z-50">
                     {isLoading ? (
                         <div className="p-4 text-center text-sm text-gray-500">Carregando...</div>

@@ -24,22 +24,23 @@ const db = getFirestore(app);
 
 const getAdminAndOrg = async (actorUid: string | undefined) => {
     if (!actorUid) {
-        throw new Error('User must be authenticated.');
+        throw new Error('Usuário precisa estar autenticado.');
     }
     const adminDocRef = db.collection('users').doc(actorUid);
     const adminDoc = await adminDocRef.get();
     if (!adminDoc.exists) {
-        throw new Error('Admin user not found in Firestore.');
+        throw new Error('Usuário administrador não encontrado no Firestore.');
     }
-    const organizationId = adminDoc.data()?.organizationId;
+    const adminData = adminDoc.data()!;
+    const organizationId = adminData.organizationId;
     if (!organizationId) {
-        throw new Error('Admin user does not have an organization.');
+        throw new Error('Usuário administrador não pertence a uma organização.');
     }
     
     // Check role
-    const role = adminDoc.data()?.role;
+    const role = adminData.role;
     if (role !== 'admin') {
-        throw new Error('User does not have admin privileges.');
+        throw new Error('Usuário não tem privilégios de administrador.');
     }
 
     return { adminDoc, organizationId };
@@ -206,12 +207,12 @@ export const updateUserPermissionsFlow = ai.defineFlow(
         const targetUserDoc = await targetUserRef.get();
 
         if (!targetUserDoc.exists || targetUserDoc.data()?.organizationId !== organizationId) {
-            throw new Error("Target user not found in this organization.");
+            throw new Error("Usuário alvo não encontrado nesta organização.");
         }
 
         // Prevent admin from changing their own permissions to avoid lockout
         if (adminDoc.id === userId) {
-            throw new Error("Administrators cannot change their own permissions.");
+            throw new Error("Administradores não podem alterar as próprias permissões.");
         }
 
         await targetUserRef.update({ permissions });
@@ -231,7 +232,7 @@ export const getOrganizationDetailsFlow = ai.defineFlow(
         const orgDoc = await db.collection('organizations').doc(organizationId).get();
 
         if (!orgDoc.exists) {
-            throw new Error('Organization not found.');
+            throw new Error('Organização não encontrada.');
         }
         const orgData = orgDoc.data()!;
         return {
@@ -253,12 +254,14 @@ export const updateOrganizationDetailsFlow = ai.defineFlow(
     async (details, context) => {
         const { organizationId } = await getAdminAndOrg(context?.auth?.uid);
         
-        await db.collection('organizations').doc(organizationId).update({
+        const updateData = {
             name: details.name,
             cnpj: details.cnpj || null,
             contactEmail: details.contactEmail || null,
             contactPhone: details.contactPhone || null,
-        });
+        };
+
+        await db.collection('organizations').doc(organizationId).update(updateData);
 
         return { success: true };
     }
