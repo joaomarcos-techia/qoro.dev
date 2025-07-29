@@ -23,7 +23,7 @@ export const signUp = async (name: string, organization: string, email: string, 
     // Send email verification
     await sendEmailVerification(user);
 
-    // Save user info to Firestore
+    // Save user info to Firestore AFTER user is created
     await setDoc(doc(db, 'users', user.uid), {
       name,
       organization,

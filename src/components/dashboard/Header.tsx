@@ -1,9 +1,9 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Bell, ChevronDown, LogOut, RefreshCw, Settings, User, X } from 'lucide-react';
 import { signOut } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import Link from 'next/link';
@@ -19,7 +19,7 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuRef, setMenuRef] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -36,6 +36,7 @@ export function Header() {
                 email: user.email || ''
             });
           } else {
+             console.log("No such document!");
              setUserProfile(null);
           }
         } catch (error) {
@@ -47,13 +48,12 @@ export function Header() {
       } else {
         setIsLoading(false);
         setUserProfile(null);
-        // Do not redirect here, let protected routes handle it
-        // router.push('/'); 
+        router.push('/'); 
       }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   const toggleMenu = (menu: string) => {
     setMenuOpen((prev) => (prev === menu ? null : menu));
@@ -66,7 +66,7 @@ export function Header() {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      if (menuRef && !menuRef.contains(event.target as Node)) {
         setMenuOpen(null);
       }
     };
@@ -84,7 +84,7 @@ export function Header() {
             <h1 className="text-2xl font-bold text-black">Qoro</h1>
           </div>
 
-          <div ref={menuRef} className="flex items-center space-x-4">
+          <div ref={setMenuRef} className="flex items-center space-x-4">
             <button
               className="text-gray-500 hover:text-gray-700 p-2 rounded-xl hover:shadow-neumorphism-inset transition-all duration-300"
               title="Recarregar página"
