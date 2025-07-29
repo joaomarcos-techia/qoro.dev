@@ -19,6 +19,27 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
+  const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const digitsOnly = value.replace(/\D/g, '');
+
+    let formatted = digitsOnly;
+    if (digitsOnly.length > 2) {
+      formatted = `${digitsOnly.slice(0, 2)}.${digitsOnly.slice(2)}`;
+    }
+    if (digitsOnly.length > 5) {
+      formatted = `${digitsOnly.slice(0, 2)}.${digitsOnly.slice(2, 5)}.${digitsOnly.slice(5)}`;
+    }
+    if (digitsOnly.length > 8) {
+      formatted = `${digitsOnly.slice(0, 2)}.${digitsOnly.slice(2, 5)}.${digitsOnly.slice(5, 8)}/${digitsOnly.slice(8)}`;
+    }
+    if (digitsOnly.length > 12) {
+      formatted = `${digitsOnly.slice(0, 2)}.${digitsOnly.slice(2, 5)}.${digitsOnly.slice(5, 8)}/${digitsOnly.slice(8, 12)}-${digitsOnly.slice(12, 14)}`;
+    }
+
+    setCnpj(formatted);
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -32,7 +53,9 @@ export default function SignUpPage() {
     }
 
     try {
-      await signUp(name, organizationName, email, password, cnpj, contactEmail, contactPhone);
+      // Remove formatting before sending to backend
+      const unformattedCnpj = cnpj.replace(/\D/g, '');
+      await signUp(name, organizationName, email, password, unformattedCnpj, contactEmail, contactPhone);
       setSuccess('Conta criada! Enviamos um e-mail de verificação para você. Por favor, verifique sua caixa de entrada.');
       // Optionally redirect after a delay
       // setTimeout(() => router.push('/login'), 5000);
@@ -92,7 +115,15 @@ export default function SignUpPage() {
             </div>
              <div className="relative">
                 <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input type="text" name="cnpj" placeholder="CNPJ" value={cnpj} onChange={(e) => setCnpj(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
+                <input 
+                  type="text" 
+                  name="cnpj" 
+                  placeholder="CNPJ (XX.XXX.XXX/XXXX-XX)" 
+                  value={cnpj} 
+                  onChange={handleCnpjChange}
+                  maxLength={18}
+                  className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"
+                />
             </div>
              <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
