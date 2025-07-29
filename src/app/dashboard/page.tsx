@@ -42,7 +42,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <p className="text-sm text-gray-600 mb-6 flex-grow">
-                CRM ultra-simples com foco em WhatsApp e Email + automação para um relacionamento impecável com o cliente.
+                CRM com foco em gestão de funil de vendas e conversão para maximizar seus lucros.
               </p>
               <button className="group/button w-full bg-black text-white py-2.5 px-4 rounded-full hover:bg-gray-800 transition-colors flex items-center justify-center text-sm font-medium">
                 <span>Acessar</span>

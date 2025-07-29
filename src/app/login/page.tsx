@@ -21,6 +21,9 @@ export default function LoginPage() {
     try {
       await signIn(email, password);
       router.push('/dashboard');
+      // On successful login, we don't set isLoading to false.
+      // The component will unmount on navigation, so the state is discarded.
+      // This prevents the button from becoming active again before the page transition is complete.
     } catch (err: any) {
       if (err.message) {
         setError(err.message);
@@ -28,8 +31,7 @@ export default function LoginPage() {
         setError('E-mail ou senha inválidos. Por favor, tente novamente.');
       }
       console.error(err);
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Only set loading to false on error
     }
   };
 
@@ -98,5 +100,3 @@ export default function LoginPage() {
     </main>
   );
 }
-
-    
