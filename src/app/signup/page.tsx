@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { User, Briefcase, Mail, Lock, AlertCircle, CheckCircle, FileText, Phone } from 'lucide-react';
-import { signUp } from '@/lib/auth';
+import { signUp } from '@/ai/flows/user-management';
 
 export default function SignUpPage() {
   const [name, setName] = useState('');
@@ -55,12 +55,20 @@ export default function SignUpPage() {
     try {
       // Remove formatting before sending to backend
       const unformattedCnpj = cnpj.replace(/\D/g, '');
-      await signUp(name, organizationName, email, password, unformattedCnpj, contactEmail, contactPhone);
+      await signUp({
+        name,
+        organizationName,
+        email,
+        password,
+        cnpj: unformattedCnpj,
+        contactEmail,
+        contactPhone,
+      });
       setSuccess('Conta criada! Enviamos um e-mail de verificação para você. Por favor, verifique sua caixa de entrada.');
       // Optionally redirect after a delay
       // setTimeout(() => router.push('/login'), 5000);
     } catch (err: any) {
-      if (err.code === 'auth/email-already-in-use') {
+      if (err.message && err.message.includes('auth/email-already-in-use')) {
         setError('Este e-mail já está em uso. Tente fazer login.');
       } else {
         setError('Ocorreu um erro ao criar a conta. Tente novamente.');

@@ -2,6 +2,7 @@
 'use server';
 /**
  * @fileOverview User and organization management flows.
+ * - signUp - Creates a new user and organization.
  * - inviteUser - Invites a user to an organization via email.
  * - listUsers - Lists all users within the caller's organization.
  * - updateUserPermissions - Updates the application permissions for a specific user.
@@ -47,6 +48,16 @@ const getAdminAndOrg = async (actorUid: string | undefined) => {
 }
 
 // Schemas
+export const SignUpSchema = z.object({
+    name: z.string(),
+    organizationName: z.string(),
+    email: z.string().email(),
+    password: z.string().min(6),
+    cnpj: z.string().optional(),
+    contactEmail: z.string().email().optional(),
+    contactPhone: z.string().optional(),
+});
+
 export const InviteUserSchema = z.object({
   email: z.string().email(),
 });
@@ -96,6 +107,10 @@ export const UpdateOrganizationDetailsSchema = z.object({
 
 
 // Exported functions (client-callable wrappers)
+export async function signUp(input: z.infer<typeof SignUpSchema>) {
+    return signUpFlow(input);
+}
+
 export async function inviteUser(input: z.infer<typeof InviteUserSchema>) {
     return inviteUserFlow(input);
 }
@@ -118,6 +133,55 @@ export async function updateOrganizationDetails(input: z.infer<typeof UpdateOrga
 
 
 // Genkit Flows
+export const signUpFlow = ai.defineFlow(
+    {
+        name: 'signUpFlow',
+        inputSchema: SignUpSchema,
+        outputSchema: z.object({ uid: z.string() }),
+    },
+    async ({ name, organizationName, email, password, cnpj, contactEmail, contactPhone }) => {
+        // 1. Create user in Firebase Auth
+        const userRecord = await auth.createUser({
+            email,
+            password,
+            emailVerified: false, // Start as unverified
+        });
+
+        // 2. Create organization in Firestore
+        const orgRef = await db.collection('organizations').add({
+            name: organizationName,
+            owner: userRecord.uid,
+            createdAt: FieldValue.serverTimestamp(),
+            cnpj: cnpj || null,
+            contactEmail: contactEmail || null,
+            contactPhone: contactPhone || null,
+        });
+
+        // 3. Create user profile in Firestore
+        await db.collection('users').doc(userRecord.uid).set({
+            name,
+            email,
+            organizationId: orgRef.id,
+            role: 'admin',
+            createdAt: FieldValue.serverTimestamp(),
+            permissions: {
+                qoroCrm: true,
+                qoroPulse: true,
+                qoroTask: true,
+                qoroFinance: true,
+            },
+        });
+
+        // 4. Send verification email
+        const verificationLink = await auth.generateEmailVerificationLink(email);
+        // Here you would typically use a service to email the link to the user.
+        // For this example, we'll just log it.
+        console.log(`Verification link for ${email}: ${verificationLink}`);
+
+        return { uid: userRecord.uid };
+    }
+);
+
 export const inviteUserFlow = ai.defineFlow(
   {
     name: 'inviteUserFlow',
@@ -154,6 +218,7 @@ export const inviteUserFlow = ai.defineFlow(
 
     // Send a password reset email to act as a "set your password" link
     const link = await auth.generatePasswordResetLink(email);
+    // In a real app, you would email this link. For now, log it.
     console.log(`Password setup link for ${email}: ${link}`);
 
     return {
