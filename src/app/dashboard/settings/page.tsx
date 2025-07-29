@@ -2,7 +2,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Mail, Send, KeyRound, UserPlus, Building, AlertCircle, CheckCircle, ArrowLeft, User, Shield, Users, Loader2, Trash2, Phone, FileText } from 'lucide-react';
-import { inviteUser, listUsers, updateUserPermissions, UserProfile, getOrganizationDetails, updateOrganizationDetails, OrganizationProfile } from '@/ai/flows/user-management';
+import { inviteUser, listUsers, updateUserPermissions, getOrganizationDetails, updateOrganizationDetails } from '@/ai/flows/user-management';
+import { UserProfile, OrganizationProfile } from '@/ai/schemas';
 import { changePassword } from '@/lib/auth';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -424,5 +425,3 @@ export default function SettingsPage() {
         </div>
     );
 }
-
-    

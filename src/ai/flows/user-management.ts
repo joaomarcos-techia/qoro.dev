@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { SignUpSchema, InviteUserSchema, UpdateUserPermissionsSchema, UpdateOrganizationDetailsSchema, UserProfileSchema, UserProfile, OrganizationProfileSchema } from '@/ai/schemas';
 
 // Initialize Firebase Admin SDK
 const app = getApps().length
@@ -47,65 +48,6 @@ const getAdminAndOrg = async (actorUid: string | undefined) => {
     return { adminDoc, organizationId };
 }
 
-// Schemas
-export const SignUpSchema = z.object({
-    name: z.string(),
-    organizationName: z.string(),
-    email: z.string().email(),
-    password: z.string().min(6),
-    cnpj: z.string().optional(),
-    contactEmail: z.string().email().optional(),
-    contactPhone: z.string().optional(),
-});
-
-export const InviteUserSchema = z.object({
-  email: z.string().email(),
-});
-
-const AppPermissionsSchema = z.object({
-    qoroCrm: z.boolean().default(true),
-    qoroPulse: z.boolean().default(true),
-    qoroTask: z.boolean().default(true),
-    qoroFinance: z.boolean().default(true),
-}).optional();
-
-export const UserProfileSchema = z.object({
-    uid: z.string(),
-    email: z.string(),
-    name: z.string().optional().nullable(),
-    organizationId: z.string(),
-    role: z.string().optional(),
-    permissions: AppPermissionsSchema,
-});
-export type UserProfile = z.infer<typeof UserProfileSchema>;
-
-export const UpdateUserPermissionsSchema = z.object({
-    userId: z.string(),
-    permissions: z.object({
-        qoroCrm: z.boolean(),
-        qoroPulse: z.boolean(),
-        qoroTask: z.boolean(),
-        qoroFinance: z.boolean(),
-    }),
-});
-
-export const OrganizationProfileSchema = z.object({
-    id: z.string(),
-    name: z.string(),
-    cnpj: z.string().optional().nullable(),
-    contactEmail: z.string().email().optional().nullable(),
-    contactPhone: z.string().optional().nullable(),
-});
-export type OrganizationProfile = z.infer<typeof OrganizationProfileSchema>;
-
-export const UpdateOrganizationDetailsSchema = z.object({
-    name: z.string(),
-    cnpj: z.string().optional(),
-    contactEmail: z.string().email().optional(),
-    contactPhone: z.string().optional(),
-});
-
-
 // Exported functions (client-callable wrappers)
 export async function signUp(input: z.infer<typeof SignUpSchema>) {
     return signUpFlow(input);
@@ -115,7 +57,7 @@ export async function inviteUser(input: z.infer<typeof InviteUserSchema>) {
     return inviteUserFlow(input);
 }
 
-export async function listUsers() {
+export async function listUsers(): Promise<UserProfile[]> {
     return listUsersFlow();
 }
 
@@ -123,7 +65,7 @@ export async function updateUserPermissions(input: z.infer<typeof UpdateUserPerm
     return updateUserPermissionsFlow(input);
 }
 
-export async function getOrganizationDetails() {
+export async function getOrganizationDetails(): Promise<z.infer<typeof OrganizationProfileSchema>> {
     return getOrganizationDetailsFlow();
 }
 
@@ -133,7 +75,7 @@ export async function updateOrganizationDetails(input: z.infer<typeof UpdateOrga
 
 
 // Genkit Flows
-export const signUpFlow = ai.defineFlow(
+const signUpFlow = ai.defineFlow(
     {
         name: 'signUpFlow',
         inputSchema: SignUpSchema,
@@ -182,7 +124,7 @@ export const signUpFlow = ai.defineFlow(
     }
 );
 
-export const inviteUserFlow = ai.defineFlow(
+const inviteUserFlow = ai.defineFlow(
   {
     name: 'inviteUserFlow',
     inputSchema: InviteUserSchema,
@@ -230,7 +172,7 @@ export const inviteUserFlow = ai.defineFlow(
 );
 
 
-export const listUsersFlow = ai.defineFlow(
+const listUsersFlow = ai.defineFlow(
     {
         name: 'listUsersFlow',
         inputSchema: z.undefined(),
@@ -259,7 +201,7 @@ export const listUsersFlow = ai.defineFlow(
 );
 
 
-export const updateUserPermissionsFlow = ai.defineFlow(
+const updateUserPermissionsFlow = ai.defineFlow(
     {
         name: 'updateUserPermissionsFlow',
         inputSchema: UpdateUserPermissionsSchema,
@@ -286,7 +228,7 @@ export const updateUserPermissionsFlow = ai.defineFlow(
     }
 );
 
-export const getOrganizationDetailsFlow = ai.defineFlow(
+const getOrganizationDetailsFlow = ai.defineFlow(
     {
         name: 'getOrganizationDetailsFlow',
         inputSchema: z.undefined(),
@@ -310,7 +252,7 @@ export const getOrganizationDetailsFlow = ai.defineFlow(
     }
 );
 
-export const updateOrganizationDetailsFlow = ai.defineFlow(
+const updateOrganizationDetailsFlow = ai.defineFlow(
     {
         name: 'updateOrganizationDetailsFlow',
         inputSchema: UpdateOrganizationDetailsSchema,
