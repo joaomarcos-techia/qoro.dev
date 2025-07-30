@@ -25,13 +25,13 @@ import * as orgService from '@/services/organizationService';
 
 // Exported functions (client-callable wrappers)
 export async function signUp(input: z.infer<typeof SignUpSchema>) {
-    return orgService.signUp(input);
+    // This flow is public and doesn't require an authenticated user.
+    return ai.run('signUpFlow', () => orgService.signUp(input));
 }
 
 export async function inviteUser(input: z.infer<typeof InviteUserSchema>) {
-    // Note: We need to get the actor's UID to pass to the service.
-    // This is a placeholder for how context would be accessed in a real flow.
-    // For now, let's assume the service layer handles context.
+    // This flow requires an authenticated admin user, which is handled
+    // by the getAdminAndOrg helper in the service layer.
     return ai.run('inviteUserFlow', () => orgService.inviteUser(input));
 }
 
@@ -52,6 +52,7 @@ export async function updateOrganizationDetails(input: z.infer<typeof UpdateOrga
 }
 
 // Genkit Flows (wrappers around service calls, for tracing and context)
+// Note: These are not exported directly to comply with 'use server' constraints.
 ai.defineFlow(
     { name: 'signUpFlow', inputSchema: SignUpSchema, outputSchema: z.object({ uid: z.string() }) },
     (input) => orgService.signUp(input)

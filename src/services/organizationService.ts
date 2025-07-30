@@ -9,7 +9,7 @@ import {
     UpdateUserPermissionsSchema, 
     UpdateOrganizationDetailsSchema, 
     UserProfile,
-    OrganizationProfileSchema
+    OrganizationProfileSchema 
 } from '@/ai/schemas';
 import { runInContext, getAction, getFlow, getActor } from 'genkit';
 
@@ -107,6 +107,7 @@ export const signUp = async (input: z.infer<typeof SignUpSchema>): Promise<{ uid
 
     // 4. Send verification email
     const verificationLink = await auth.generateEmailVerificationLink(email);
+    // In a real app, you'd email this link. For now, we log it.
     console.log(`Verification link for ${email}: ${verificationLink}`);
 
     return { uid: userRecord.uid };
@@ -135,6 +136,7 @@ export const inviteUser = async (input: z.infer<typeof InviteUserSchema>): Promi
       }
     });
     
+    // In a real app, you'd email this link. For now, we log it.
     const link = await auth.generatePasswordResetLink(email);
     console.log(`Password setup link for ${email}: ${link}`);
 
@@ -178,7 +180,8 @@ export const updateUserPermissions = async (input: z.infer<typeof UpdateUserPerm
     }
 
     if (adminUid === userId) {
-        throw new Error("Admins cannot change their own permissions.");
+        // Updated error message to be more specific
+        throw new Error("Administradores não podem alterar as próprias permissões.");
     }
 
     await targetUserRef.update({ permissions });
