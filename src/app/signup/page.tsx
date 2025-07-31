@@ -3,16 +3,27 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mail, Lock, AlertCircle, CheckCircle, User, Building, FileText, Phone } from 'lucide-react';
 import { signUp } from '@/ai/flows/user-management';
 
 export default function SignUpPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    name: '',
+    organizationName: '',
+    cnpj: '',
+    contactEmail: '',
+    contactPhone: '',
+  });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,27 +31,32 @@ export default function SignUpPage() {
     setSuccess(null);
     setIsLoading(true);
 
-    if (password.length < 6) {
+    if (formData.password.length < 6) {
       setError('A senha deve ter pelo menos 6 caracteres.');
+      setIsLoading(false);
+      return;
+    }
+     if (!formData.name || !formData.organizationName) {
+      setError('Nome pessoal e nome da empresa são obrigatórios.');
       setIsLoading(false);
       return;
     }
 
     try {
       await signUp({
-        email,
-        password,
+        ...formData,
+        contactEmail: formData.contactEmail || undefined,
+        cnpj: formData.cnpj || undefined,
+        contactPhone: formData.contactPhone || undefined,
       });
       setSuccess('Conta criada! Enviamos um e-mail de verificação para você. Por favor, verifique sua caixa de entrada.');
-      // Optionally redirect after a delay
-      // setTimeout(() => router.push('/login'), 5000);
     } catch (err: any) {
       if (err.message && err.message.includes('auth/email-already-in-use')) {
         setError('Este e-mail já está em uso. Tente fazer login.');
       } else {
         setError('Ocorreu um erro ao criar a conta. Tente novamente.');
+        console.error(err);
       }
-      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -48,12 +64,12 @@ export default function SignUpPage() {
 
   return (
     <main className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-      <div className="w-full max-w-md mx-auto bg-white rounded-3xl shadow-neumorphism p-8 md:p-12">
+      <div className="w-full max-w-lg mx-auto bg-white rounded-3xl shadow-neumorphism p-8 md:p-12">
         <div className="text-center mb-8">
            <Link href="/">
               <div className="text-3xl font-bold text-gray-900 cursor-pointer mb-2">Qoro</div>
           </Link>
-          <p className="text-gray-600">Crie sua conta para começar.</p>
+          <p className="text-gray-600">Crie sua conta para começar a organizar sua empresa.</p>
         </div>
 
         {success ? (
@@ -65,28 +81,39 @@ export default function SignUpPage() {
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleSignUp} className="space-y-6">
-            <div className="relative">
+          <form onSubmit={handleSignUp} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input name="name" type="text" placeholder="Seu Nome" value={formData.name} onChange={handleInputChange} required className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
+              </div>
+              <div className="relative">
+                <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input name="organizationName" type="text" placeholder="Nome da Empresa" value={formData.organizationName} onChange={handleInputChange} required className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
+              </div>
+            </div>
+             <div className="relative">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="email"
-                placeholder="Seu E-mail de login"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"
-              />
+              <input name="email" type="email" placeholder="Seu E-mail de login" value={formData.email} onChange={handleInputChange} required className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
             </div>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="password"
-                placeholder="Sua Senha (mínimo 6 caracteres)"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"
-              />
+              <input name="password" type="password" placeholder="Sua Senha (mínimo 6 caracteres)" value={formData.password} onChange={handleInputChange} required className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative">
+                    <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input name="cnpj" type="text" placeholder="CNPJ (Opcional)" value={formData.cnpj} onChange={handleInputChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
+                </div>
+                <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input name="contactEmail" type="email" placeholder="E-mail de Contato (Opcional)" value={formData.contactEmail} onChange={handleInputChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
+                </div>
+            </div>
+             <div className="relative">
+                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input name="contactPhone" type="tel" placeholder="Telefone de Contato (Opcional)" value={formData.contactPhone} onChange={handleInputChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
             </div>
 
             {error && (
@@ -120,5 +147,3 @@ export default function SignUpPage() {
     </main>
   );
 }
-
-    

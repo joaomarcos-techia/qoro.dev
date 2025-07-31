@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 // Schemas
 export const SignUpSchema = z.object({
-    name: z.string().optional(),
-    organizationName: z.string().optional(),
+    name: z.string().min(1, 'O nome é obrigatório.'),
+    organizationName: z.string().min(1, 'O nome da organização é obrigatório.'),
     email: z.string().email(),
     password: z.string().min(6),
     cnpj: z.string().optional(),
@@ -57,5 +57,3 @@ export const UpdateOrganizationDetailsSchema = z.object({
     contactEmail: z.string().email().optional(),
     contactPhone: z.string().optional(),
 });
-
-    
