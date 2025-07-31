@@ -45,10 +45,7 @@ export default function SignUpPage() {
 
     try {
       await signUp({
-        ...formData,
-        contactEmail: formData.contactEmail || undefined,
-        cnpj: formData.cnpj || undefined,
-        contactPhone: formData.contactPhone || undefined,
+        ...formData
       });
       setSuccess('Conta criada! Enviamos um e-mail de verificação para você. Por favor, verifique sua caixa de entrada.');
     } catch (err: any) {
@@ -93,15 +90,15 @@ export default function SignUpPage() {
                     </div>
                     <div className="relative">
                         <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input name="cnpj" type="text" placeholder="CNPJ" value={formData.cnpj} onChange={handleInputChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
+                        <input name="cnpj" type="text" placeholder="CNPJ *" value={formData.cnpj} onChange={handleInputChange} required className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
                     </div>
                     <div className="relative">
                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input name="contactEmail" type="email" placeholder="E-mail de Contato" value={formData.contactEmail} onChange={handleInputChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
+                        <input name="contactEmail" type="email" placeholder="E-mail de Contato *" value={formData.contactEmail} onChange={handleInputChange} required className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
                     </div>
                     <div className="relative">
                         <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input name="contactPhone" type="tel" placeholder="Telefone de Contato" value={formData.contactPhone} onChange={handleInputChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
+                        <input name="contactPhone" type="tel" placeholder="Telefone de Contato *" value={formData.contactPhone} onChange={handleInputChange} required className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
                     </div>
                 </div>
             </div>
@@ -110,11 +107,10 @@ export default function SignUpPage() {
              <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center"><User className="w-5 h-5 mr-3 text-primary"/>Informações Pessoais e de Acesso</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                    <div className="relative">
+                    <div className="relative md:col-span-2">
                         <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input name="name" type="text" placeholder="Seu Nome *" value={formData.name} onChange={handleInputChange} required className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
                     </div>
-                    <div></div> {/* Espaçador para manter o layout */}
                     <div className="relative">
                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input name="email" type="email" placeholder="Seu E-mail de login *" value={formData.email} onChange={handleInputChange} required className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
