@@ -22,7 +22,7 @@ const appPermissionsMap: Record<AppPermission, string> = {
 export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('account');
     const [inviteEmail, setInviteEmail] = useState('');
-    const [newPassword, setNewPassword] = useState('');
+    const [passwords, setPasswords] = useState({ current: '', new: '' });
     const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
     const [userName, setUserName] = useState('');
     const [isLoading, setIsLoading] = useState({ invite: false, password: false, users: true, permissions: '', org: true, orgSave: false, accountSave: false });
@@ -116,24 +116,31 @@ export default function SettingsPage() {
         e.preventDefault();
         setIsLoading(prev => ({ ...prev, accountSave: true }));
         clearFeedback('account');
+    
+        if (passwords.new && !passwords.current) {
+            setFeedback({ type: 'error', message: 'Por favor, insira sua senha atual para definir uma nova.', context: 'account' });
+            setIsLoading(prev => ({ ...prev, accountSave: false }));
+            return;
+        }
+    
         try {
             if(currentUser) {
                 const userDocRef = doc(db, "users", currentUser.uid);
                 await setDoc(userDocRef, { name: userName }, { merge: true });
             }
-            if (newPassword) {
-                 if (newPassword.length < 6) {
+            if (passwords.new) {
+                if (passwords.new.length < 6) {
                     setFeedback({ type: 'error', message: 'A nova senha deve ter pelo menos 6 caracteres.', context: 'account' });
                     setIsLoading(prev => ({ ...prev, accountSave: false }));
                     return;
                 }
-                await changePassword(newPassword);
-                setNewPassword('');
+                await changePassword(passwords.current, passwords.new);
+                setPasswords({ current: '', new: '' });
             }
             setFeedback({ type: 'success', message: 'Dados da conta salvos com sucesso!', context: 'account' });
         } catch (error) {
             console.error(error);
-            setFeedback({ type: 'error', message: 'Falha ao salvar dados. Tente novamente.', context: 'account' });
+            setFeedback({ type: 'error', message: `Falha ao salvar dados: ${error instanceof Error ? error.message : 'Tente novamente.'}`, context: 'account' });
         } finally {
             setIsLoading(prev => ({ ...prev, accountSave: false }));
         }
@@ -251,13 +258,22 @@ export default function SettingsPage() {
                                             required 
                                             className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
                                     </div>
+                                    <div className="relative">
+                                        <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <input 
+                                            type="password" 
+                                            placeholder="Senha Atual (obrigatório para trocar a senha)"
+                                            value={passwords.current}
+                                            onChange={(e) => {setPasswords(p => ({...p, current: e.target.value})); clearFeedback('account');}}
+                                            className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
+                                    </div>
                                      <div className="relative">
                                         <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                         <input 
                                             type="password" 
                                             placeholder="Nova Senha (deixe em branco para não alterar)"
-                                            value={newPassword}
-                                            onChange={(e) => {setNewPassword(e.target.value); clearFeedback('account');}}
+                                            value={passwords.new}
+                                            onChange={(e) => {setPasswords(p => ({...p, new: e.target.value})); clearFeedback('account');}}
                                             className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
                                     </div>
                                     <div className="flex justify-end">
@@ -289,7 +305,7 @@ export default function SettingsPage() {
                                 </div>
                                 <div className="flex-grow">
                                     <h3 className="text-xl font-bold text-black mb-1">Convidar novo usuário</h3>
-                                    <p className="text-gray-600 mb-6">O membro convidado terá acesso à organização com as permissões que você definir.</p>
+                                    <p className="text-gray-600 mb-6">O membro convidado receberá um e-mail para definir sua senha e acessar a organização.</p>
                                     <form onSubmit={handleInviteUser} className="flex items-center gap-4">
                                         <div className="relative flex-grow">
                                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />

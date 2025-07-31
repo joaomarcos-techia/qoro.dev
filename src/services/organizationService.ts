@@ -157,6 +157,7 @@ export const inviteUser = async (input: z.infer<typeof InviteUserSchema>): Promi
         console.log(`Setup/password reset link sent to ${email}. This link can be customized in Firebase Console to be a welcome email.`);
     } catch(error){
         console.error("Falha ao gerar o link de definição de senha:", error);
+        // Don't block the invite if email fails, but log it.
     }
 
 
