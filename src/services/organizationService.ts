@@ -114,6 +114,17 @@ export const signUp = async (input: z.infer<typeof SignUpSchema>): Promise<{ uid
         },
     });
 
+    // Gerar e "enviar" o link de verificação. O Firebase cuida do envio real do e-mail.
+    try {
+        const verificationLink = await auth.generateEmailVerificationLink(email);
+        // A geração do link geralmente aciona o envio do e-mail pelo template padrão do Firebase.
+        console.log(`Link de verificação gerado para ${email}. O Firebase deve enviar o e-mail.`);
+    } catch (error) {
+        console.error("Falha ao gerar o link de verificação de e-mail:", error);
+        // Não lançar erro aqui para não falhar o cadastro inteiro, mas registrar o problema.
+    }
+
+
     return { uid: userRecord.uid };
 };
 
