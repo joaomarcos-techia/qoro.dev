@@ -37,7 +37,7 @@ export default function SignUpPage() {
       setIsLoading(false);
       return;
     }
-     if (!formData.name || !formData.organizationName || !formData.email || !formData.password) {
+     if (!formData.name || !formData.organizationName || !formData.email || !formData.password || !formData.cnpj) {
       setError('Todos os campos marcados com * são obrigatórios.');
       setIsLoading(false);
       return;
@@ -47,9 +47,9 @@ export default function SignUpPage() {
       await signUp({
         ...formData
       });
-      setSuccess('Conta criada! Enviamos um e-mail de verificação para você. Por favor, verifique sua caixa de entrada.');
+      setSuccess('Conta criada! Verifique seu e-mail para confirmar sua conta.');
     } catch (err: any) {
-      if (err.message && err.message.includes('auth/email-already-in-use')) {
+      if (err.message && err.message.includes('already in use')) {
         setError('Este e-mail já está em uso. Tente fazer login.');
       } else {
         setError('Ocorreu um erro ao criar a conta. Tente novamente.');
