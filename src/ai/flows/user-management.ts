@@ -24,32 +24,32 @@ import type { UserProfile } from '@/ai/schemas';
 
 // Define flows
 const signUpFlow = ai.defineFlow(
-    { name: 'signUpFlow', inputSchema: SignUpSchema },
+    { name: 'signUpFlow', inputSchema: SignUpSchema, outputSchema: z.object({ uid: z.string() }) },
     async (input) => orgService.signUp(input)
 );
 
 const inviteUserFlow = ai.defineFlow(
-    { name: 'inviteUserFlow', inputSchema: InviteUserSchema },
+    { name: 'inviteUserFlow', inputSchema: InviteUserSchema, outputSchema: z.object({ uid: z.string(), email: z.string(), organizationId: z.string() }) },
     async (input) => orgService.inviteUser(input)
 );
 
 const listUsersFlow = ai.defineFlow(
-    { name: 'listUsersFlow' },
+    { name: 'listUsersFlow', outputSchema: z.array(UserProfileSchema) },
     async () => orgService.listUsers()
 );
 
 const updateUserPermissionsFlow = ai.defineFlow(
-    { name: 'updateUserPermissionsFlow', inputSchema: UpdateUserPermissionsSchema },
+    { name: 'updateUserPermissionsFlow', inputSchema: UpdateUserPermissionsSchema, outputSchema: z.object({ success: z.boolean() }) },
     async (input) => orgService.updateUserPermissions(input)
 );
 
 const getOrganizationDetailsFlow = ai.defineFlow(
-    { name: 'getOrganizationDetailsFlow' },
+    { name: 'getOrganizationDetailsFlow', outputSchema: OrganizationProfileSchema },
     async () => orgService.getOrganizationDetails()
 );
 
 const updateOrganizationDetailsFlow = ai.defineFlow(
-    { name: 'updateOrganizationDetailsFlow', inputSchema: UpdateOrganizationDetailsSchema },
+    { name: 'updateOrganizationDetailsFlow', inputSchema: UpdateOrganizationDetailsSchema, outputSchema: z.object({ success: z.boolean() }) },
     async (input) => orgService.updateOrganizationDetails(input)
 );
 

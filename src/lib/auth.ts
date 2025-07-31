@@ -51,6 +51,7 @@ export const signOut = async (): Promise<void> => {
 };
 
 export const changePassword = async (newPassword: string): Promise<void> => {
+    const auth = getAuth(app);
     const user = auth.currentUser;
     if (!user) {
         throw new Error("Nenhum usuário autenticado encontrado.");
@@ -59,6 +60,6 @@ export const changePassword = async (newPassword: string): Promise<void> => {
         await updatePassword(user, newPassword);
     } catch (error) {
         console.error("Error changing password:", error);
-        throw error;
+        throw new Error("Falha ao alterar a senha. Faça o login novamente por segurança e tente de novo.");
     }
 };
