@@ -92,6 +92,16 @@ export const signUp = async (input: z.infer<typeof SignUpSchema>): Promise<{ uid
             emailVerified: false, 
         });
 
+        // The crucial step: Generate and send the verification email.
+        try {
+            await auth.generateEmailVerificationLink(email);
+            console.log(`Verification email sent to ${email} via Firebase Admin SDK.`);
+        } catch(linkError) {
+            console.error("Failed to send verification email:", linkError);
+            // We don't want to fail the whole signup if the email fails to send,
+            // but we must log it. The user can request another one on login.
+        }
+
         const orgRef = await db.collection('organizations').add({
             name: organizationName,
             owner: userRecord.uid,
@@ -115,8 +125,6 @@ export const signUp = async (input: z.infer<typeof SignUpSchema>): Promise<{ uid
             },
         });
 
-        console.log(`User ${email} created with emailVerified: false. Firebase will send verification email if template is enabled.`);
-
         return { uid: userRecord.uid };
     } catch (error) {
         const firebaseError = error as FirebaseAuthError;
@@ -124,7 +132,6 @@ export const signUp = async (input: z.infer<typeof SignUpSchema>): Promise<{ uid
             throw new Error('Este e-mail já está em uso.');
         }
         console.error("Error during sign up in organizationService:", firebaseError);
-        // Lança outros erros para serem tratados
         throw new Error("Ocorreu um erro inesperado durante o cadastro.");
     }
 };
