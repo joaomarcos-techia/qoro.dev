@@ -45,9 +45,10 @@ export default function SettingsPage() {
     }, []);
     
     const fetchUsers = useCallback(async () => {
+        if (!currentUser) return;
         setIsLoading(prev => ({ ...prev, users: true }));
         try {
-            const userList = await listUsers();
+            const userList = await listUsers({ actor: currentUser.uid });
             setUsers(userList);
         } catch (error) {
             console.error("Failed to fetch users:", error);
@@ -55,12 +56,13 @@ export default function SettingsPage() {
         } finally {
             setIsLoading(prev => ({ ...prev, users: false }));
         }
-    }, []);
+    }, [currentUser]);
     
     const fetchOrganization = useCallback(async () => {
+        if (!currentUser) return;
         setIsLoading(prev => ({ ...prev, org: true }));
         try {
-            const orgDetails = await getOrganizationDetails();
+            const orgDetails = await getOrganizationDetails({ actor: currentUser.uid });
             setOrganization(orgDetails);
         } catch (error) {
             console.error("Failed to fetch organization:", error);
@@ -68,7 +70,7 @@ export default function SettingsPage() {
         } finally {
             setIsLoading(prev => ({ ...prev, org: false }));
         }
-    }, []);
+    }, [currentUser]);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -97,10 +99,11 @@ export default function SettingsPage() {
 
     const handleInviteUser = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!currentUser) return;
         setIsLoading(prev => ({ ...prev, invite: true }));
         clearFeedback('invite');
         try {
-            await inviteUser({ email: inviteEmail });
+            await inviteUser({ email: inviteEmail, actor: currentUser.uid });
             setFeedback({ type: 'success', message: `Convite enviado com sucesso para ${inviteEmail}!`, context: 'invite' });
             setInviteEmail('');
             fetchUsers(); // Refresh user list
@@ -148,7 +151,7 @@ export default function SettingsPage() {
 
     const handlePermissionChange = async (userId: string, permission: AppPermission, isEnabled: boolean) => {
         const targetUser = users.find(u => u.uid === userId);
-        if (!targetUser || !targetUser.permissions) return;
+        if (!targetUser || !targetUser.permissions || !currentUser) return;
     
         setIsLoading(prev => ({ ...prev, permissions: userId }));
         clearFeedback(`permissions-${userId}`);
@@ -159,7 +162,7 @@ export default function SettingsPage() {
         };
     
         try {
-            await updateUserPermissions({ userId, permissions: updatedPermissions });
+            await updateUserPermissions({ userId, permissions: updatedPermissions, actor: currentUser.uid });
             // Update state only on success
             setUsers(prevUsers => 
                 prevUsers.map(u => 
@@ -186,6 +189,7 @@ export default function SettingsPage() {
 
     const handleSaveOrgDetails = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!currentUser) return;
         setIsLoading(prev => ({...prev, orgSave: true}));
         clearFeedback('org');
         try {
@@ -194,6 +198,7 @@ export default function SettingsPage() {
                 cnpj: organization.cnpj || undefined,
                 contactEmail: organization.contactEmail || undefined,
                 contactPhone: organization.contactPhone || undefined,
+                actor: currentUser.uid,
             });
             setFeedback({ type: 'success', message: 'Dados da organização salvos com sucesso!', context: 'org' });
         } catch (error) {

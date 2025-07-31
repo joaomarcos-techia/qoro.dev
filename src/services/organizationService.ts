@@ -11,7 +11,6 @@ import {
     UserProfile,
     OrganizationProfileSchema 
 } from '@/ai/schemas';
-import { getActor } from 'genkit';
 import { config } from 'dotenv';
 
 config({ path: `.env` });
@@ -51,10 +50,7 @@ if (!getApps().length) {
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const getAdminAndOrg = async () => {
-    const actor = getActor();
-    const actorUid = actor?.uid;
-
+const getAdminAndOrg = async (actorUid: string) => {
     if (!actorUid) {
         throw new Error('User must be authenticated to perform this action.');
     }
@@ -127,9 +123,8 @@ export const signUp = async (input: z.infer<typeof SignUpSchema>): Promise<UserR
     }
 };
 
-export const inviteUser = async (input: z.infer<typeof InviteUserSchema>): Promise<{ uid: string; email: string; organizationId: string; }> => {
-    const { organizationId, adminUid } = await getAdminAndOrg();
-    const { email } = input;
+export const inviteUser = async (email: string, actor: string): Promise<{ uid: string; email: string; organizationId: string; }> => {
+    const { organizationId, adminUid } = await getAdminAndOrg(actor);
     
     const userRecord = await auth.createUser({
       email,
@@ -168,8 +163,8 @@ export const inviteUser = async (input: z.infer<typeof InviteUserSchema>): Promi
     };
 };
 
-export const listUsers = async (): Promise<UserProfile[]> => {
-    const { organizationId } = await getAdminAndOrg();
+export const listUsers = async (actor: string): Promise<UserProfile[]> => {
+    const { organizationId } = await getAdminAndOrg(actor);
     
     const usersSnapshot = await db.collection('users').where('organizationId', '==', organizationId).get();
     
@@ -189,8 +184,8 @@ export const listUsers = async (): Promise<UserProfile[]> => {
     return users;
 };
 
-export const updateUserPermissions = async (input: z.infer<typeof UpdateUserPermissionsSchema>): Promise<{ success: boolean }> => {
-    const { organizationId, adminUid } = await getAdminAndOrg();
+export const updateUserPermissions = async (input: z.infer<typeof UpdateUserPermissionsSchema>, actor: string): Promise<{ success: boolean }> => {
+    const { organizationId, adminUid } = await getAdminAndOrg(actor);
     const { userId, permissions } = input;
     
     const targetUserRef = db.collection('users').doc(userId);
@@ -209,8 +204,8 @@ export const updateUserPermissions = async (input: z.infer<typeof UpdateUserPerm
     return { success: true };
 };
 
-export const getOrganizationDetails = async (): Promise<z.infer<typeof OrganizationProfileSchema>> => {
-    const { organizationId } = await getAdminAndOrg();
+export const getOrganizationDetails = async (actor: string): Promise<z.infer<typeof OrganizationProfileSchema>> => {
+    const { organizationId } = await getAdminAndOrg(actor);
     const orgDoc = await db.collection('organizations').doc(organizationId).get();
 
     if (!orgDoc.exists) {
@@ -226,8 +221,8 @@ export const getOrganizationDetails = async (): Promise<z.infer<typeof Organizat
     };
 };
 
-export const updateOrganizationDetails = async (details: z.infer<typeof UpdateOrganizationDetailsSchema>): Promise<{ success: boolean }> => {
-    const { organizationId } = await getAdminAndOrg();
+export const updateOrganizationDetails = async (details: z.infer<typeof UpdateOrganizationDetailsSchema>, actor: string): Promise<{ success: boolean }> => {
+    const { organizationId } = await getAdminAndOrg(actor);
     
     const updateData = {
         name: details.name,

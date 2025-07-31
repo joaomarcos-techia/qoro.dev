@@ -23,6 +23,8 @@ import * as orgService from '@/services/organizationService';
 import type { UserProfile } from '@/ai/schemas';
 import { UserRecord } from 'firebase-admin/auth';
 
+const ActorSchema = z.object({ actor: z.string() });
+
 // Define flows
 const signUpFlow = ai.defineFlow(
     { name: 'signUpFlow', inputSchema: SignUpSchema, outputSchema: z.any() },
@@ -30,28 +32,28 @@ const signUpFlow = ai.defineFlow(
 );
 
 const inviteUserFlow = ai.defineFlow(
-    { name: 'inviteUserFlow', inputSchema: InviteUserSchema, outputSchema: z.object({ uid: z.string(), email: z.string(), organizationId: z.string() }) },
-    async (input) => orgService.inviteUser(input)
+    { name: 'inviteUserFlow', inputSchema: InviteUserSchema.extend(ActorSchema.shape), outputSchema: z.object({ uid: z.string(), email: z.string(), organizationId: z.string() }) },
+    async (input) => orgService.inviteUser(input.email, input.actor)
 );
 
 const listUsersFlow = ai.defineFlow(
-    { name: 'listUsersFlow', inputSchema: z.undefined(), outputSchema: z.array(UserProfileSchema) },
-    async () => orgService.listUsers()
+    { name: 'listUsersFlow', inputSchema: ActorSchema, outputSchema: z.array(UserProfileSchema) },
+    async ({ actor }) => orgService.listUsers(actor)
 );
 
 const updateUserPermissionsFlow = ai.defineFlow(
-    { name: 'updateUserPermissionsFlow', inputSchema: UpdateUserPermissionsSchema, outputSchema: z.object({ success: z.boolean() }) },
-    async (input) => orgService.updateUserPermissions(input)
+    { name: 'updateUserPermissionsFlow', inputSchema: UpdateUserPermissionsSchema.extend(ActorSchema.shape), outputSchema: z.object({ success: z.boolean() }) },
+    async (input) => orgService.updateUserPermissions(input, input.actor)
 );
 
 const getOrganizationDetailsFlow = ai.defineFlow(
-    { name: 'getOrganizationDetailsFlow', inputSchema: z.undefined(), outputSchema: OrganizationProfileSchema },
-    async () => orgService.getOrganizationDetails()
+    { name: 'getOrganizationDetailsFlow', inputSchema: ActorSchema, outputSchema: OrganizationProfileSchema },
+    async ({ actor }) => orgService.getOrganizationDetails(actor)
 );
 
 const updateOrganizationDetailsFlow = ai.defineFlow(
-    { name: 'updateOrganizationDetailsFlow', inputSchema: UpdateOrganizationDetailsSchema, outputSchema: z.object({ success: z.boolean() }) },
-    async (input) => orgService.updateOrganizationDetails(input)
+    { name: 'updateOrganizationDetailsFlow', inputSchema: UpdateOrganizationDetailsSchema.extend(ActorSchema.shape), outputSchema: z.object({ success: z.boolean() }) },
+    async (input) => orgService.updateOrganizationDetails(input, input.actor)
 );
 
 
@@ -60,22 +62,22 @@ export async function signUp(input: z.infer<typeof SignUpSchema>): Promise<UserR
     return signUpFlow(input);
 }
 
-export async function inviteUser(input: z.infer<typeof InviteUserSchema>): Promise<{ uid: string; email: string; organizationId: string; }> {
+export async function inviteUser(input: z.infer<typeof InviteUserSchema> & z.infer<typeof ActorSchema>): Promise<{ uid: string; email: string; organizationId: string; }> {
     return inviteUserFlow(input);
 }
 
-export async function listUsers(): Promise<UserProfile[]> {
-    return listUsersFlow();
+export async function listUsers(input: z.infer<typeof ActorSchema>): Promise<UserProfile[]> {
+    return listUsersFlow(input);
 }
 
-export async function updateUserPermissions(input: z.infer<typeof UpdateUserPermissionsSchema>): Promise<{ success: boolean }> {
+export async function updateUserPermissions(input: z.infer<typeof UpdateUserPermissionsSchema> & z.infer<typeof ActorSchema>): Promise<{ success: boolean }> {
     return updateUserPermissionsFlow(input);
 }
 
-export async function getOrganizationDetails(): Promise<z.infer<typeof OrganizationProfileSchema>> {
-    return getOrganizationDetailsFlow();
+export async function getOrganizationDetails(input: z.infer<typeof ActorSchema>): Promise<z.infer<typeof OrganizationProfileSchema>> {
+    return getOrganizationDetailsFlow(input);
 }
 
-export async function updateOrganizationDetails(input: z.infer<typeof UpdateOrganizationDetailsSchema>): Promise<{ success: boolean }> {
+export async function updateOrganizationDetails(input: z.infer<typeof UpdateOrganizationDetailsSchema> & z.infer<typeof ActorSchema>): Promise<{ success: boolean }> {
     return updateOrganizationDetailsFlow(input);
 }
