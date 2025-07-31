@@ -22,28 +22,59 @@ import {
 import * as orgService from '@/services/organizationService';
 import type { UserProfile } from '@/ai/schemas';
 
+// Define flows
+const signUpFlow = ai.defineFlow(
+    { name: 'signUpFlow', inputSchema: SignUpSchema },
+    async (input) => orgService.signUp(input)
+);
+
+const inviteUserFlow = ai.defineFlow(
+    { name: 'inviteUserFlow', inputSchema: InviteUserSchema },
+    async (input) => orgService.inviteUser(input)
+);
+
+const listUsersFlow = ai.defineFlow(
+    { name: 'listUsersFlow' },
+    async () => orgService.listUsers()
+);
+
+const updateUserPermissionsFlow = ai.defineFlow(
+    { name: 'updateUserPermissionsFlow', inputSchema: UpdateUserPermissionsSchema },
+    async (input) => orgService.updateUserPermissions(input)
+);
+
+const getOrganizationDetailsFlow = ai.defineFlow(
+    { name: 'getOrganizationDetailsFlow' },
+    async () => orgService.getOrganizationDetails()
+);
+
+const updateOrganizationDetailsFlow = ai.defineFlow(
+    { name: 'updateOrganizationDetailsFlow', inputSchema: UpdateOrganizationDetailsSchema },
+    async (input) => orgService.updateOrganizationDetails(input)
+);
+
 
 // Exported functions (client-callable wrappers)
 export async function signUp(input: z.infer<typeof SignUpSchema>): Promise<{ uid: string }> {
-    return ai.run('signUpFlow', async () => orgService.signUp(input));
+    return signUpFlow(input);
 }
 
 export async function inviteUser(input: z.infer<typeof InviteUserSchema>): Promise<{ uid: string; email: string; organizationId: string; }> {
-    return ai.run('inviteUserFlow', async () => orgService.inviteUser(input));
+    return inviteUserFlow(input);
 }
 
 export async function listUsers(): Promise<UserProfile[]> {
-    return ai.run('listUsersFlow', async () => orgService.listUsers());
+    return listUsersFlow();
 }
 
 export async function updateUserPermissions(input: z.infer<typeof UpdateUserPermissionsSchema>): Promise<{ success: boolean }> {
-    return ai.run('updateUserPermissionsFlow', async () => orgService.updateUserPermissions(input));
+    return updateUserPermissionsFlow(input);
 }
 
 export async function getOrganizationDetails(): Promise<z.infer<typeof OrganizationProfileSchema>> {
-    return ai.run('getOrganizationDetailsFlow', async () => orgService.getOrganizationDetails());
+    return getOrganizationDetailsFlow();
 }
 
 export async function updateOrganizationDetails(input: z.infer<typeof UpdateOrganizationDetailsSchema>): Promise<{ success: boolean }> {
-    return ai.run('updateOrganizationDetailsFlow', async () => orgService.updateOrganizationDetails(input));
+    return updateOrganizationDetailsFlow(input);
 }
