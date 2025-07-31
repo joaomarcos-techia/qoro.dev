@@ -35,8 +35,9 @@ export default function SettingsPage() {
             setFeedback(null);
         }
     };
-
+    
     const fetchCurrentUserData = useCallback(async (user: FirebaseUser) => {
+        if (!user) return;
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {

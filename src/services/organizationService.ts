@@ -5,7 +5,6 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { 
     SignUpSchema, 
-    InviteUserSchema, 
     UpdateUserPermissionsSchema, 
     UpdateOrganizationDetailsSchema, 
     UserProfile,
@@ -14,13 +13,6 @@ import {
 import { config } from 'dotenv';
 
 config({ path: `.env` });
-
-// Adicionando logs para debugging, como sugerido.
-console.log('Firebase Config Check:', {
-  projectId: process.env.FIREBASE_PROJECT_ID ? 'SET' : 'MISSING',
-  clientEmail: process.env.FIREBASE_CLIENT_EMAIL ? 'SET' : 'MISSING',
-  privateKey: process.env.FIREBASE_PRIVATE_KEY ? 'SET' : 'MISSING',
-});
 
 let app: App;
 
@@ -146,13 +138,10 @@ export const inviteUser = async (email: string, actor: string): Promise<{ uid: s
     });
     
     try {
-        // This will trigger the password reset email, which for a new user,
-        // acts as an account setup and verification email.
         const link = await auth.generatePasswordResetLink(email);
         console.log(`Setup/password reset link sent to ${email}. This link can be customized in Firebase Console to be a welcome email.`);
     } catch(error){
         console.error("Falha ao gerar o link de definição de senha:", error);
-        // Don't block the invite if email fails, but log it.
     }
 
 
