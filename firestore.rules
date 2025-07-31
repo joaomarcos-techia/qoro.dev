@@ -1,23 +1,19 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Regras para a coleção de usuários
+
+    // Users can read and update their own user document.
     match /users/{userId} {
-      // Qualquer usuário autenticado pode criar seu próprio documento de usuário
-      allow create: if request.auth != null;
+      allow read, update: if request.auth.uid == userId;
+    }
 
-      // Um usuário só pode ler ou atualizar seu próprio documento
-      allow read, update: if request.auth != null && request.auth.uid == userId;
-
-      // Ninguém pode deletar um usuário (geralmente feito por administradores via backend)
-      allow delete: if false;
-
-      // Um administrador pode criar um novo documento de usuário (para convites)
-      // Esta regra é permissiva. Idealmente, você verificaria se o autor da solicitação (request.auth.uid)
-      // é um administrador da organização.
-      allow create: if request.auth != null;
+    // Allow users to read their own organization's document.
+    match /organizations/{orgId} {
+      allow read: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.organizationId == orgId;
+      allow update: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.organizationId == orgId 
+                      && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
   }
 }
