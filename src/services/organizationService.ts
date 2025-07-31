@@ -12,12 +12,27 @@ import {
     OrganizationProfileSchema 
 } from '@/ai/schemas';
 import { getActor } from 'genkit';
+import { config } from 'dotenv';
+
+config({ path: `.env` });
 
 
 let app: App;
 if (!getApps().length) {
     try {
-        app = initializeApp();
+        const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+        if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !privateKey) {
+            throw new Error("As variáveis de ambiente do Firebase Admin não estão configuradas corretamente.");
+        }
+
+        app = initializeApp({
+            credential: cert({
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: privateKey,
+            }),
+        });
     } catch (e) {
         console.error("Firebase Admin SDK initialization failed.", e);
         throw new Error("Could not initialize Firebase Admin SDK. Ensure environment is configured correctly.");
@@ -65,14 +80,15 @@ export const signUp = async (input: z.infer<typeof SignUpSchema>): Promise<{ uid
     const userRecord = await auth.createUser({
         email,
         password,
-        emailVerified: false,
+        displayName: name || '',
+        emailVerified: false, 
     });
 
     const orgRef = await db.collection('organizations').add({
-        name: organizationName || `Minha Organização`,
+        name: organizationName,
         owner: userRecord.uid,
         createdAt: FieldValue.serverTimestamp(),
-        cnpj: cnpj || null,
+        cnpj: cnpj,
         contactEmail: contactEmail || null,
         contactPhone: contactPhone || null,
     });
@@ -90,9 +106,6 @@ export const signUp = async (input: z.infer<typeof SignUpSchema>): Promise<{ uid
             qoroFinance: true,
         },
     });
-
-    const verificationLink = await auth.generateEmailVerificationLink(email);
-    console.log(`Verification link for ${email}: ${verificationLink}`);
 
     return { uid: userRecord.uid };
 };
@@ -120,8 +133,13 @@ export const inviteUser = async (input: z.infer<typeof InviteUserSchema>): Promi
       }
     });
     
-    const link = await auth.generatePasswordResetLink(email);
-    console.log(`Password setup link for ${email}: ${link}`);
+    try {
+        const link = await auth.generatePasswordResetLink(email);
+        console.log(`Link para definir senha enviado para ${email}: ${link}`);
+    } catch(error){
+        console.error("Falha ao gerar o link de definição de senha:", error);
+    }
+
 
     return {
       uid: userRecord.uid,
