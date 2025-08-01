@@ -1,3 +1,8 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'QoroCRM | Serviços',
+};
 
 export default function ServicosPage() {
     return (
