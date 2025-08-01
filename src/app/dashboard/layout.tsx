@@ -47,10 +47,10 @@ const navConfig: Record<string, NavGroup> = {
             { href: '/dashboard/crm/dashboard', label: 'Dashboard', icon: BarChart3 },
             { href: '/dashboard/crm/clientes', label: 'Clientes', icon: Users },
             { href: '/dashboard/crm/funil', label: 'Funil', icon: LayoutGrid },
-            { href: '/dashboard/crm/relatorios', label: 'Relatórios', icon: BarChart3 },
-            { href: '/dashboard/crm/servicos', label: 'Serviços', icon: Wrench },
             { href: '/dashboard/crm/produtos', label: 'Produtos', icon: ShoppingCart },
+            { href: '/dashboard/crm/servicos', label: 'Serviços', icon: Wrench },
             { href: '/dashboard/crm/orcamentos', label: 'Orçamentos', icon: FileText },
+            { href: '/dashboard/crm/relatorios', label: 'Relatórios', icon: BarChart3 },
         ]
     },
     task: {
