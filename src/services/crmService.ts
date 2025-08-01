@@ -35,12 +35,13 @@ export const listCustomers = async (actorUid: string): Promise<z.infer<typeof Cu
     
     const customers: z.infer<typeof CustomerProfileSchema>[] = customersSnapshot.docs.map(doc => {
         const data = doc.data();
-        return CustomerProfileSchema.parse({
+        const parsedData = {
             id: doc.id,
             ...data,
             createdAt: data.createdAt.toDate().toISOString(),
-            updatedAt: data.updatedAt.toDate().toISOString(),
-        });
+        };
+        // Safely parse, providing default for missing fields
+        return CustomerProfileSchema.parse(parsedData);
     });
     
     return customers;

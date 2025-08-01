@@ -79,3 +79,20 @@ export const CustomerProfileSchema = CustomerSchema.extend({
     createdAt: z.string(), // Using string for simplicity on the client
 });
 export type CustomerProfile = z.infer<typeof CustomerProfileSchema>;
+
+// Schemas for Task Management
+export const TaskSchema = z.object({
+  title: z.string().min(1, 'O título é obrigatório.'),
+  description: z.string().optional(),
+  status: z.enum(['todo', 'in_progress', 'review', 'done']).default('todo'),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
+  dueDate: z.date().optional().nullable(),
+});
+
+export const TaskProfileSchema = TaskSchema.extend({
+    id: z.string(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+    userId: z.string(),
+});
+export type TaskProfile = z.infer<typeof TaskProfileSchema>;
