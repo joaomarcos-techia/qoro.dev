@@ -84,12 +84,24 @@ export default function DashboardPage() {
         setIsLoading(prev => ({...prev, metrics: true}));
 
         try {
+            // Fetch CRM metrics only if the user has permission
+            const crmPromise = permissions?.qoroCrm 
+                ? getCrmMetrics({ actor: currentUser.uid }) 
+                : Promise.resolve({ totalCustomers: 0, totalLeads: 0 });
+
+            // Fetch Task metrics only if the user has permission
+            const taskPromise = permissions?.qoroTask 
+                ? getTaskMetrics({ actor: currentUser.uid }) 
+                : Promise.resolve({ totalTasks: 0, completedTasks: 0, inProgressTasks: 0, pendingTasks: 0 });
+            
             const [crmData, taskData] = await Promise.all([
-                getCrmMetrics({ actor: currentUser.uid }),
-                getTaskMetrics({ actor: currentUser.uid })
+                crmPromise,
+                taskPromise
             ]);
+
             setCrmMetrics(crmData);
-            setTaskMetrics(taskData);
+            setTaskMetrics({ pendingTasks: taskData.pendingTasks });
+
         } catch (error) {
             console.error("Failed to fetch dashboard metrics:", error);
             // Optionally, set an error state to show in the UI
@@ -97,9 +109,12 @@ export default function DashboardPage() {
             setIsLoading(prev => ({...prev, metrics: false}));
         }
     }
-
-    fetchMetrics();
-  }, [currentUser]);
+    
+    // We fetch metrics only when permissions are loaded and resolved.
+    if (currentUser && permissions) {
+        fetchMetrics();
+    }
+  }, [currentUser, permissions]);
 
   if (isLoading.permissions) {
     return (

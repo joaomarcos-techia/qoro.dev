@@ -52,16 +52,27 @@ export const listTasks = async (actorUid: string): Promise<z.infer<typeof TaskPr
     return tasks;
 };
 
-export const getDashboardMetrics = async (actorUid: string): Promise<{ pendingTasks: number }> => {
+export const getDashboardMetrics = async (actorUid: string): Promise<{ totalTasks: number; completedTasks: number; inProgressTasks: number; pendingTasks: number; }> => {
     const { organizationId } = await getAdminAndOrg(actorUid);
 
-    const tasksSnapshot = await db.collection('tasks')
-                                    .where('companyId', '==', organizationId)
-                                    .where('status', 'in', ['todo', 'in_progress'])
-                                    .count()
-                                    .get();
+    const tasksRef = db.collection('tasks').where('companyId', '==', organizationId);
+
+    const totalPromise = tasksRef.count().get();
+    const completedPromise = tasksRef.where('status', '==', 'done').count().get();
+    const inProgressPromise = tasksRef.where('status', '==', 'in_progress').count().get();
+    const pendingPromise = tasksRef.where('status', '==', 'todo').count().get();
+    
+    const [
+        totalSnapshot,
+        completedSnapshot,
+        inProgressSnapshot,
+        pendingSnapshot,
+    ] = await Promise.all([totalPromise, completedPromise, inProgressPromise, pendingPromise]);
 
     return {
-        pendingTasks: tasksSnapshot.data().count,
+        totalTasks: totalSnapshot.data().count,
+        completedTasks: completedSnapshot.data().count,
+        inProgressTasks: inProgressSnapshot.data().count,
+        pendingTasks: pendingSnapshot.data().count,
     };
 };

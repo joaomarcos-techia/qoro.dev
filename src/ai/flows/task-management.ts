@@ -14,6 +14,9 @@ import * as taskService from '@/services/taskService';
 const ActorSchema = z.object({ actor: z.string() });
 
 const DashboardMetricsOutputSchema = z.object({
+    totalTasks: z.number(),
+    completedTasks: z.number(),
+    inProgressTasks: z.number(),
     pendingTasks: z.number(),
 });
 
