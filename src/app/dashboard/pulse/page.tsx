@@ -37,21 +37,20 @@ export default function PulsePage() {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isLoading]);
   
   const handleSendMessage = async (e: FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading || !currentUser) return;
   
     const userMessage: PulseMessage = { role: 'user', content: input };
-    const newMessages: PulseMessage[] = [...messages, userMessage];
-    setMessages(newMessages);
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
   
     try {
         const response = await askPulse({
-            messages: newMessages,
+            messages: [...messages, userMessage],
             actor: currentUser.uid,
         });
 
@@ -92,7 +91,7 @@ export default function PulsePage() {
         ref={scrollAreaRef}
         className="flex-1 overflow-y-auto p-6 space-y-6 bg-white rounded-t-2xl shadow-neumorphism border border-gray-200"
       >
-        {messages.length === 0 ? (
+        {messages.length === 0 && !isLoading ? (
             <div className="text-center text-gray-500">
                 <p className="mb-8">Como posso ajudar você a otimizar sua empresa hoje?</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -128,7 +127,7 @@ export default function PulsePage() {
                 <p className="whitespace-pre-wrap">{message.content}</p>
                 </div>
                  {message.role === 'user' && (
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center shadow-md">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center shadow-md font-semibold">
                         {currentUser?.email?.[0].toUpperCase() ?? 'U'}
                     </div>
                 )}
