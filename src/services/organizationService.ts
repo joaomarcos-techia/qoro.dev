@@ -197,5 +197,3 @@ export const updateOrganizationDetails = async (details: z.infer<typeof UpdateOr
 
     return { success: true };
 };
-
-    

@@ -12,12 +12,6 @@ import Link from 'next/link';
 interface UserProfile {
   name: string;
   organizationName: string;
-  permissions: {
-    qoroCrm: boolean;
-    qoroPulse: boolean;
-    qoroTask: boolean;
-    qoroFinance: boolean;
-  };
 }
 
 export function Header() {
@@ -59,7 +53,6 @@ export function Header() {
         setUserProfile({
             name: userData.name || 'Usuário',
             organizationName: orgDoc.data()?.name || 'Organização',
-            permissions: userData.permissions || { qoroCrm: false, qoroPulse: false, qoroTask: false, qoroFinance: false }
         });
 
     } catch (error) {
@@ -192,5 +185,3 @@ export function Header() {
     </header>
   );
 }
-
-    
