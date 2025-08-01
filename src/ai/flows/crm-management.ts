@@ -17,6 +17,8 @@ const ActorSchema = z.object({ actor: z.string() });
 const DashboardMetricsOutputSchema = z.object({
     totalCustomers: z.number(),
     totalLeads: z.number(),
+    conversionRate: z.number(),
+    totalRevenueWon: z.number(),
 });
 
 // Define flows

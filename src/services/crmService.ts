@@ -103,7 +103,7 @@ export const listSaleLeads = async (actorUid: string): Promise<SaleLeadProfile[]
 };
 
 
-export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCustomers: number, totalLeads: number }> => {
+export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCustomers: number, totalLeads: number, conversionRate: number, totalRevenueWon: number }> => {
     const { organizationId } = await getAdminAndOrg(actorUid);
 
     const customersPromise = db.collection('customers')
@@ -116,11 +116,34 @@ export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCust
                              .where('stage', 'not-in', ['closed_won', 'closed_lost'])
                              .count()
                              .get();
+
+    const leadsDataPromise = db.collection('sales_pipeline')
+                               .where('companyId', '==', organizationId)
+                               .get();
     
-    const [customersSnapshot, leadsSnapshot] = await Promise.all([customersPromise, leadsPromise]);
+    const [customersSnapshot, leadsSnapshot, leadsDataSnapshot] = await Promise.all([customersPromise, leadsPromise, leadsDataPromise]);
+
+    let totalRevenueWon = 0;
+    let closedWonCount = 0;
+    let closedLostCount = 0;
+
+    leadsDataSnapshot.forEach(doc => {
+        const lead = doc.data();
+        if(lead.stage === 'closed_won') {
+            totalRevenueWon += lead.value || 0;
+            closedWonCount++;
+        } else if (lead.stage === 'closed_lost') {
+            closedLostCount++;
+        }
+    });
+
+    const totalClosedDeals = closedWonCount + closedLostCount;
+    const conversionRate = totalClosedDeals > 0 ? (closedWonCount / totalClosedDeals) * 100 : 0;
 
     return {
         totalCustomers: customersSnapshot.data().count,
         totalLeads: leadsSnapshot.data().count,
+        conversionRate: parseFloat(conversionRate.toFixed(1)),
+        totalRevenueWon,
     };
 };

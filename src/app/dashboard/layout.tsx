@@ -44,6 +44,7 @@ const navConfig: Record<string, NavGroup> = {
         icon: Users,
         color: 'bg-blue-500',
         items: [
+            { href: '/dashboard/crm/dashboard', label: 'Dashboard', icon: BarChart3 },
             { href: '/dashboard/crm/clientes', label: 'Clientes', icon: Users },
             { href: '/dashboard/crm/funil', label: 'Funil', icon: LayoutGrid },
             { href: '/dashboard/crm/relatorios', label: 'Relatórios', icon: BarChart3 },
