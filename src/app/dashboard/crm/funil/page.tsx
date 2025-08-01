@@ -16,9 +16,11 @@ export default function FunilPage() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      if (!user) {
+      if (user) {
+        setCurrentUser(user);
+      } else {
         // If the user signs out, stop loading and clear data.
+        setCurrentUser(null);
         setIsLoading(false);
         setLeads([]);
         setError(null);
@@ -30,6 +32,7 @@ export default function FunilPage() {
   useEffect(() => {
     if (currentUser) {
       setIsLoading(true);
+      setError(null); // Reset error on new fetch
       listSaleLeads({ actor: currentUser.uid })
         .then(setLeads)
         .catch((err) => {
@@ -37,6 +40,9 @@ export default function FunilPage() {
           setError('Não foi possível carregar os leads do funil.');
         })
         .finally(() => setIsLoading(false));
+    } else if (!auth.currentUser) {
+      // Explicitly stop loading if there's no user to fetch for.
+      setIsLoading(false);
     }
   }, [currentUser]);
 

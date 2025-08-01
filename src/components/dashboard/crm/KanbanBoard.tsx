@@ -20,7 +20,7 @@ export function KanbanBoard({ columns }: KanbanBoardProps) {
 
   if (totalLeads === 0) {
     return (
-        <div className="flex flex-col items-center justify-center text-center min-h-[400px] bg-gray-50/50 rounded-2xl p-8">
+        <div className="flex flex-col items-center justify-center text-center min-h-[400px] bg-gray-50/50 rounded-2xl p-8 border border-gray-200 shadow-neumorphism-inset">
             <LayoutGrid className="w-16 h-16 text-gray-300 mb-4" />
             <h3 className="text-xl font-bold text-black">Nenhuma oportunidade no funil</h3>
             <p className="text-gray-500 mt-2">Comece criando um cliente e uma oportunidade de venda para vê-la aqui.</p>
