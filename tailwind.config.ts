@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -20,6 +21,7 @@ export default {
         'neumorphism-hover': '12px 12px 24px rgba(163, 177, 198, 0.8), -12px -12px 24px rgba(255, 255, 255, 0.9)',
         'neumorphism-inset': 'inset 4px 4px 8px rgba(163, 177, 198, 0.6), inset -4px -4px 8px rgba(255, 255, 255, 0.8)',
         'neumorphism-pressed': 'inset 8px 8px 16px rgba(163, 177, 198, 0.8), inset -8px -8px 16px rgba(255, 255, 255, 0.9)',
+        'neumorphism-right': '8px 0 16px rgba(163, 177, 198, 0.6)',
       },
       colors: {
         background: 'hsl(var(--background))',
