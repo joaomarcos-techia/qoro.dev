@@ -8,8 +8,9 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Loader2, ServerCrash } from 'lucide-react';
 
-// This is a client component, but we can't export metadata from it.
-// We'll manage the title dynamically if needed, or set it in a parent layout.
+export const metadata: Metadata = {
+  title: 'QoroCRM | Funil de Vendas',
+};
 
 export default function FunilPage() {
   const [leads, setLeads] = useState<SaleLeadProfile[]>([]);
@@ -34,6 +35,9 @@ export default function FunilPage() {
           setError('Não foi possível carregar os leads do funil.');
         })
         .finally(() => setIsLoading(false));
+    } else {
+        // If there's no user, stop loading.
+        setIsLoading(false);
     }
   }, [currentUser]);
 
@@ -77,7 +81,7 @@ export default function FunilPage() {
 
     if (error) {
       return (
-        <div className="flex flex-col items-center justify-center h-96 bg-red-50 rounded-lg">
+        <div className="flex flex-col items-center justify-center h-96 bg-red-50 rounded-lg p-8 text-center">
           <ServerCrash className="w-16 h-16 text-red-500 mb-4" />
           <h3 className="text-xl font-bold text-red-700">Ocorreu um erro</h3>
           <p className="text-gray-600 mt-2">{error}</p>

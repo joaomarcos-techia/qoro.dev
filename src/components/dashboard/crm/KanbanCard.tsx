@@ -10,7 +10,7 @@ interface KanbanCardProps {
   lead: SaleLeadProfile;
 }
 
-const priorityMap = {
+const priorityMap: Record<SaleLeadProfile['priority'], { text: string; color: string }> = {
     low: { text: 'Baixa', color: 'bg-green-100 text-green-800 border-green-200' },
     medium: { text: 'Média', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
     high: { text: 'Alta', color: 'bg-orange-100 text-orange-800 border-orange-200' },
@@ -30,17 +30,17 @@ export function KanbanCard({ lead }: KanbanCardProps) {
       
       <div className="space-y-2 text-sm text-gray-700">
         <div className="flex items-center">
-            <User className="w-4 h-4 mr-2 text-gray-400" />
-            <span>{lead.customerName || 'Cliente não informado'}</span>
+            <User className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
+            <span className="truncate">{lead.customerName || 'Cliente não informado'}</span>
         </div>
         <div className="flex items-center font-semibold text-green-600">
-            <DollarSign className="w-4 h-4 mr-2 text-green-400" />
+            <DollarSign className="w-4 h-4 mr-2 text-green-400 flex-shrink-0" />
             <span>{formattedValue}</span>
         </div>
         <div className="flex items-center">
-            <Calendar className="w-4 h-4 mr-2 text-gray-400" />
+            <Calendar className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
             <span className="text-xs">
-                {format(lead.expectedCloseDate, "dd 'de' MMM, yyyy", { locale: ptBR })}
+                {format(new Date(lead.expectedCloseDate), "dd 'de' MMM, yyyy", { locale: ptBR })}
             </span>
         </div>
       </div>
@@ -50,7 +50,7 @@ export function KanbanCard({ lead }: KanbanCardProps) {
           <Flag className="w-3 h-3 mr-1.5" />
           {priorityInfo.text}
         </div>
-        <Button variant="ghost" size="sm" className="text-primary h-auto p-1 text-xs">
+        <Button variant="ghost" size="sm" className="text-primary h-auto p-1 text-xs hover:bg-primary/10">
             Detalhes
         </Button>
       </div>

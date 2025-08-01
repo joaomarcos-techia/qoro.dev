@@ -1,6 +1,6 @@
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { CustomerSchema, CustomerProfileSchema, SaleLeadProfileSchema } from '@/ai/schemas';
+import { CustomerSchema, CustomerProfileSchema, SaleLeadProfileSchema, SaleLeadSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import type { SaleLeadProfile } from '@/ai/schemas';
 
@@ -38,7 +38,8 @@ export const listCustomers = async (actorUid: string): Promise<z.infer<typeof Cu
         const parsedData = {
             id: doc.id,
             ...data,
-            createdAt: data.createdAt.toDate().toISOString(),
+            // Ensure createdAt is an ISO string for client-side date parsing
+            createdAt: data.createdAt.toDate().toISOString(), 
         };
         // Safely parse, providing default for missing fields
         return CustomerProfileSchema.parse(parsedData);
@@ -56,7 +57,6 @@ export const listSaleLeads = async (actorUid: string): Promise<SaleLeadProfile[]
         .get();
 
     if (leadsSnapshot.empty) {
-        // You can create some dummy data here for testing if you want
         return [];
     }
 
@@ -64,6 +64,8 @@ export const listSaleLeads = async (actorUid: string): Promise<SaleLeadProfile[]
     const customers: Record<string, { name?: string, email?: string }> = {};
 
     if (customerIds.length > 0) {
+        // Firestore 'in' queries are limited to 30 items. For larger sets, chunk the array.
+        // For this app's scale, we'll assume it's under 30 for now.
         const customersSnapshot = await db.collection('customers').where('__name__', 'in', customerIds).get();
         customersSnapshot.forEach(doc => {
             customers[doc.id] = {
@@ -76,12 +78,14 @@ export const listSaleLeads = async (actorUid: string): Promise<SaleLeadProfile[]
     const leads: SaleLeadProfile[] = leadsSnapshot.docs.map(doc => {
         const data = doc.data();
         const customerInfo = customers[data.customerId] || {};
+        // Firestore timestamps need to be converted to Date objects for Zod schema
         const expectedCloseDate = data.expectedCloseDate ? data.expectedCloseDate.toDate() : new Date();
 
         return SaleLeadProfileSchema.parse({
             id: doc.id,
             ...data,
-            expectedCloseDate,
+            expectedCloseDate, // This is now a Date object
+            // Convert other timestamps to ISO strings for client-side date parsing
             createdAt: data.createdAt.toDate().toISOString(),
             updatedAt: data.updatedAt.toDate().toISOString(),
             customerName: customerInfo.name,
