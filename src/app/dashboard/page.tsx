@@ -99,28 +99,30 @@ export default function DashboardPage() {
           </div>
 
           {/* Card QoroFinance */}
-          <div className="group bg-white rounded-xl shadow-neumorphism hover:shadow-neumorphism-hover hover:-translate-y-2 transition-all duration-300 flex flex-col h-full">
-            <div className="h-2 bg-orange-500 rounded-t-xl"></div>
-            <div className="p-6 flex-grow flex flex-col">
-              <div className="flex items-center mb-4">
-                <div className="p-3 rounded-xl bg-orange-500 text-white mr-4 group-hover:scale-110 transition-transform duration-300 shadow-neumorphism">
-                  <DollarSign className="w-6 h-6" />
+           <Link href="/dashboard/finance/visao-geral">
+            <div className="group bg-white rounded-xl shadow-neumorphism hover:shadow-neumorphism-hover hover:-translate-y-2 transition-all duration-300 flex flex-col h-full">
+              <div className="h-2 bg-orange-500 rounded-t-xl"></div>
+              <div className="p-6 flex-grow flex flex-col">
+                <div className="flex items-center mb-4">
+                  <div className="p-3 rounded-xl bg-orange-500 text-white mr-4 group-hover:scale-110 transition-transform duration-300 shadow-neumorphism">
+                    <DollarSign className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-black">
+                      QoroFinance
+                    </h4>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-lg font-bold text-black">
-                    QoroFinance
-                  </h4>
+                <p className="text-sm text-gray-600 mb-6 flex-grow">
+                  Controle financeiro completo para seu negócio, com dashboards claros e relatórios simplificados.
+                </p>
+                <div className="group/button w-full bg-black text-white py-2.5 px-4 rounded-full hover:bg-gray-800 transition-colors flex items-center justify-center text-sm font-medium">
+                  <span>Acessar</span>
+                  <ArrowRight className="w-4 h-4 ml-2 transform transition-transform duration-300 group-hover/button:translate-x-1" />
                 </div>
               </div>
-              <p className="text-sm text-gray-600 mb-6 flex-grow">
-                Controle financeiro completo para seu negócio, com dashboards claros e relatórios simplificados.
-              </p>
-              <button className="group/button w-full bg-black text-white py-2.5 px-4 rounded-full hover:bg-gray-800 transition-colors flex items-center justify-center text-sm font-medium">
-                <span>Acessar</span>
-                <ArrowRight className="w-4 h-4 ml-2 transform transition-transform duration-300 group-hover/button:translate-x-1" />
-              </button>
             </div>
-          </div>
+          </Link>
         </div>
       </div>
     </div>
