@@ -1,7 +1,7 @@
 
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { CustomerSchema, CustomerProfileSchema, SaleLeadProfileSchema, SaleLeadSchema, ProductSchema, ProductProfileSchema, QuoteProfileSchema } from '@/ai/schemas';
+import { CustomerSchema, CustomerProfileSchema, SaleLeadProfileSchema, SaleLeadSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import type { SaleLeadProfile, QuoteProfile } from '@/ai/schemas';
 
@@ -178,6 +178,18 @@ export const listProducts = async (actorUid: string): Promise<z.infer<typeof Pro
         });
     });
     return products;
+};
+
+export const createQuote = async (input: z.infer<typeof QuoteSchema>, actorUid: string) => {
+    const { organizationId } = await getAdminAndOrg(actorUid);
+    const newQuoteData = {
+        ...input,
+        companyId: organizationId,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+    };
+    const quoteRef = await db.collection('quotes').add(newQuoteData);
+    return { id: quoteRef.id };
 };
 
 export const listQuotes = async (actorUid: string): Promise<QuoteProfile[]> => {

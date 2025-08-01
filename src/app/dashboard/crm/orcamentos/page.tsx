@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-// import { QuoteForm } from '@/components/dashboard/crm/QuoteForm';
+import { QuoteForm } from '@/components/dashboard/crm/QuoteForm';
 
 export default function OrcamentosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,7 +36,6 @@ export default function OrcamentosPage() {
           <DialogTrigger asChild>
             <Button 
               className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold"
-              disabled // A ser habilitado quando o formulário for criado
             >
               <PlusCircle className="mr-2 w-5 h-5" />
               Criar Orçamento
@@ -49,7 +48,7 @@ export default function OrcamentosPage() {
                 Selecione o cliente, adicione os itens e defina os termos.
               </DialogDescription>
             </DialogHeader>
-            {/* <QuoteForm onQuoteCreated={handleQuoteCreated} /> */}
+            <QuoteForm onQuoteCreated={handleQuoteCreated} />
           </DialogContent>
         </Dialog>
       </div>
