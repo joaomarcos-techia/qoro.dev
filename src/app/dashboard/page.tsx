@@ -145,7 +145,7 @@ export default function DashboardPage() {
                 <MetricCard title="Total de Clientes" value={crmMetrics.totalCustomers} icon={Users} isLoading={isLoading.metrics} />
                 <MetricCard title="Leads no Funil" value={crmMetrics.totalLeads} icon={TrendingUp} isLoading={isLoading.metrics} />
                 <MetricCard title="Tarefas Pendentes" value={taskMetrics.pendingTasks} icon={ListTodo} isLoading={isLoading.metrics} />
-                <MetricCard title="Saldo Atual" value="R$ --" icon={DollarSign} isLoading={false} />
+                <MetricCard title="Saldo Atual" value="R$ --" icon={DollarSign} isLoading={true} />
             </div>
         </div>
 
