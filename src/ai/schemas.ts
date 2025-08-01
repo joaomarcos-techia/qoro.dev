@@ -191,3 +191,23 @@ export const AccountProfileSchema = AccountSchema.extend({
     createdAt: z.string(),
 });
 export type AccountProfile = z.infer<typeof AccountProfileSchema>;
+
+export const TransactionSchema = z.object({
+    accountId: z.string().min(1, "É necessário selecionar uma conta."),
+    type: z.enum(['income', 'expense']),
+    amount: z.coerce.number().positive('O valor deve ser maior que zero.'),
+    description: z.string().min(1, 'A descrição é obrigatória.'),
+    date: z.date(),
+    category: z.string().min(1, "A categoria é obrigatória."),
+    status: z.enum(['pending', 'paid', 'cancelled']).default('paid'),
+    paymentMethod: z.enum(['cash', 'credit_card', 'debit_card', 'pix', 'bank_transfer', 'boleto']),
+    tags: z.array(z.string()).optional(),
+});
+
+export const TransactionProfileSchema = TransactionSchema.extend({
+    id: z.string(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+    accountName: z.string().optional(), // Denormalized for display
+});
+export type TransactionProfile = z.infer<typeof TransactionProfileSchema>;
