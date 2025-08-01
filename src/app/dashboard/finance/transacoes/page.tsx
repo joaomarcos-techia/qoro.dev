@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-// import { TransactionForm } from '@/components/dashboard/finance/TransactionForm';
+import { TransactionForm } from '@/components/dashboard/finance/TransactionForm';
 
 export default function TransacoesPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,7 +35,6 @@ export default function TransacoesPage() {
              <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogTrigger asChild>
                     <Button 
-                        disabled // Habilitar na próxima etapa
                         className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold"
                     >
                     <PlusCircle className="mr-2 w-5 h-5" />
@@ -49,7 +48,7 @@ export default function TransacoesPage() {
                             Preencha as informações para registrar uma nova movimentação financeira.
                         </DialogDescription>
                     </DialogHeader>
-                    {/* <TransactionForm onTransactionCreated={handleTransactionCreated} /> */}
+                    <TransactionForm onTransactionCreated={handleTransactionCreated} />
                 </DialogContent>
             </Dialog>
         </div>

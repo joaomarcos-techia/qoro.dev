@@ -1,0 +1,200 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { createTransaction, listAccounts } from '@/ai/flows/finance-management';
+import { TransactionSchema, AccountProfile } from '@/ai/schemas';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { Loader2, AlertCircle, CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+
+type TransactionFormProps = {
+  onTransactionCreated: () => void;
+};
+
+export function TransactionForm({ onTransactionCreated }: TransactionFormProps) {
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [accounts, setAccounts] = useState<AccountProfile[]>([]);
+  
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+        listAccounts({ actor: currentUser.uid })
+            .then(setAccounts)
+            .catch(err => {
+                console.error("Failed to load accounts", err);
+                setError("Não foi possível carregar as contas. Tente novamente.");
+            });
+    }
+  }, [currentUser]);
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<z.infer<typeof TransactionSchema>>({
+    resolver: zodResolver(TransactionSchema),
+    defaultValues: {
+      type: 'expense',
+      status: 'paid',
+      paymentMethod: 'pix',
+      date: new Date(),
+    },
+  });
+
+  const onSubmit = async (data: z.infer<typeof TransactionSchema>) => {
+    if (!currentUser) {
+      setError('Você precisa estar autenticado para criar uma transação.');
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      await createTransaction({ ...data, actor: currentUser.uid });
+      onTransactionCreated();
+    } catch (err) {
+      console.error(err);
+      setError('Falha ao criar a transação. Tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="description">Descrição*</Label>
+          <Input id="description" {...register('description')} placeholder="Ex: Pagamento de fornecedor, Venda de produto" />
+          {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+            <Label>Conta*</Label>
+             <Controller
+                name="accountId"
+                control={control}
+                render={({ field }) => (
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Selecione a conta" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {accounts.map(account => (
+                            <SelectItem key={account.id} value={account.id}>{account.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                )}
+            />
+             {errors.accountId && <p className="text-red-500 text-sm">{errors.accountId.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label>Tipo*</Label>
+          <Controller name="type" control={control} render={({ field }) => (
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <SelectTrigger><SelectValue/></SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="income">Receita</SelectItem>
+                    <SelectItem value="expense">Despesa</SelectItem>
+                </SelectContent>
+            </Select>
+          )}/>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="amount">Valor (R$)*</Label>
+          <Input id="amount" type="number" step="0.01" {...register('amount')} />
+          {errors.amount && <p className="text-red-500 text-sm">{errors.amount.message}</p>}
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="date">Data da Transação*</Label>
+          <Controller name="date" control={control} render={({ field }) => (
+            <Popover>
+                <PopoverTrigger asChild>
+                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {field.value ? format(field.value, "PPP") : <span>Escolha uma data</span>}
+                </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+            </Popover>
+          )}/>
+           {errors.date && <p className="text-red-500 text-sm">{errors.date.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="category">Categoria*</Label>
+          <Input id="category" {...register('category')} placeholder="Ex: Vendas, Marketing, Software" />
+          {errors.category && <p className="text-red-500 text-sm">{errors.category.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label>Método de Pagamento*</Label>
+          <Controller name="paymentMethod" control={control} render={({ field }) => (
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <SelectTrigger><SelectValue/></SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="pix">PIX</SelectItem>
+                    <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
+                    <SelectItem value="debit_card">Cartão de Débito</SelectItem>
+                    <SelectItem value="bank_transfer">Transferência</SelectItem>
+                    <SelectItem value="boleto">Boleto</SelectItem>
+                    <SelectItem value="cash">Dinheiro</SelectItem>
+                </SelectContent>
+            </Select>
+          )}/>
+        </div>
+
+         <div className="space-y-2 md:col-span-2">
+          <Label>Status*</Label>
+          <Controller name="status" control={control} render={({ field }) => (
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <SelectTrigger><SelectValue/></SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="paid">Pago</SelectItem>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="cancelled">Cancelada</SelectItem>
+                </SelectContent>
+            </Select>
+          )}/>
+        </div>
+
+      </div>
+       {error && (
+            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg flex items-center mt-4">
+              <AlertCircle className="w-5 h-5 mr-3" />
+              <span className="text-sm">{error}</span>
+            </div>
+        )}
+      <div className="flex justify-end pt-4">
+        <Button type="submit" disabled={isLoading} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
+          {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
+          {isLoading ? 'Salvando...' : 'Salvar Transação'}
+        </Button>
+      </div>
+    </form>
+  );
+}

@@ -18,6 +18,15 @@ export const createTransaction = async (input: z.infer<typeof TransactionSchema>
 
     const transactionRef = await db.collection('transactions').add(newTransactionData);
 
+    // After creating, let's update the account balance
+    const accountRef = db.collection('accounts').doc(input.accountId);
+    const amount = input.type === 'income' ? input.amount : -input.amount;
+
+    await accountRef.update({
+        balance: FieldValue.increment(amount)
+    });
+
+
     return { id: transactionRef.id };
 };
 
