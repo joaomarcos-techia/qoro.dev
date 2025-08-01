@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { AskPulseInputSchema } from '@/ai/schemas';
 import { listCustomersTool, listSaleLeadsTool } from '@/ai/tools/crm-tools';
 import { listTasksTool } from '@/ai/tools/task-tools';
+import { listAccountsTool } from '@/ai/tools/finance-tools';
 
 export async function askPulse(input: z.infer<typeof AskPulseInputSchema>): Promise<string> {
   return pulseFlow(input);
@@ -45,7 +46,7 @@ const pulseFlow = ai.defineFlow(
         model: 'googleai/gemini-2.0-flash',
         prompt: prompt,
         history: history,
-        tools: [listCustomersTool, listSaleLeadsTool, listTasksTool],
+        tools: [listCustomersTool, listSaleLeadsTool, listTasksTool, listAccountsTool],
         toolConfig: {
           // Pass the actor UID to the tool through the request context
           context: { actor },
@@ -58,6 +59,7 @@ const pulseFlow = ai.defineFlow(
         - Use a ferramenta 'listCustomersTool' para perguntas sobre clientes.
         - Use a ferramenta 'listSaleLeadsTool' para perguntas sobre o funil de vendas.
         - Use a ferramenta 'listTasksTool' para perguntas sobre tarefas, projetos e produtividade.
+        - Use a ferramenta 'listAccountsTool' para perguntas sobre contas financeiras (bancárias, caixas, etc).
         
         Analise os dados retornados pelas ferramentas para formular sua resposta.
         
