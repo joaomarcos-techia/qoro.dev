@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
@@ -288,6 +287,7 @@ export default function SettingsPage() {
                                             type="submit"
                                             disabled={isLoading.accountSave}
                                             className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
+                                            {isLoading.accountSave ? <Loader2 className="w-5 h-5 mr-2 animate-spin"/> : null}
                                             {isLoading.accountSave ? 'Salvando...' : 'Salvar Alterações'}
                                         </button>
                                     </div>
@@ -432,6 +432,7 @@ export default function SettingsPage() {
                                                 type="submit"
                                                 disabled={isLoading.orgSave}
                                                 className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
+                                                {isLoading.orgSave ? <Loader2 className="w-5 h-5 mr-2 animate-spin"/> : null}
                                                 {isLoading.orgSave ? 'Salvando...' : 'Salvar Alterações'}
                                             </button>
                                         </div>
