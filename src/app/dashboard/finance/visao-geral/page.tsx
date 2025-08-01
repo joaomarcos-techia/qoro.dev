@@ -3,9 +3,7 @@
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-// NOTE: We will need a new flow to get financial dashboard metrics.
-// For now, we will structure the page and use placeholders.
-// import { getDashboardMetrics } from '@/ai/flows/finance-management';
+import { getDashboardMetrics } from '@/ai/flows/finance-management';
 import { BarChart, DollarSign, ArrowUp, ArrowDown, Landmark, LineChart, PieChart, Loader2, ServerCrash } from 'lucide-react';
 
 interface FinanceMetrics {
@@ -40,12 +38,23 @@ export default function VisaoGeralPage() {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
           setCurrentUser(user);
-          // For now, we'll just stop loading after a bit.
-          // In the future, we'll fetch metrics here.
-          setTimeout(() => setIsLoading(false), 1000); 
         });
         return () => unsubscribe();
     }, []);
+
+    useEffect(() => {
+        if (currentUser) {
+            setIsLoading(true);
+            setError(null);
+            getDashboardMetrics({ actor: currentUser.uid })
+                .then(setMetrics)
+                .catch(err => {
+                    console.error(err);
+                    setError('Não foi possível carregar as métricas financeiras.');
+                })
+                .finally(() => setIsLoading(false));
+        }
+    }, [currentUser]);
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('pt-BR', {

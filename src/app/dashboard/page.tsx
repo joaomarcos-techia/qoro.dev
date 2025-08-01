@@ -17,6 +17,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { getDashboardMetrics as getCrmMetrics } from '@/ai/flows/crm-management';
 import { getDashboardMetrics as getTaskMetrics } from '@/ai/flows/task-management';
+import { getDashboardMetrics as getFinanceMetrics } from '@/ai/flows/finance-management';
+
 
 interface UserPermissions {
   qoroCrm: boolean;
@@ -34,7 +36,18 @@ interface TaskMetrics {
     pendingTasks: number;
 }
 
-const MetricCard = ({ title, value, icon: Icon, isLoading }: { title: string, value: number | string, icon: React.ElementType, isLoading: boolean }) => (
+interface FinanceMetrics {
+    totalBalance: number;
+}
+
+const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+};
+
+const MetricCard = ({ title, value, icon: Icon, isLoading }: { title: string, value: string, icon: React.ElementType, isLoading: boolean }) => (
     <div className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100 flex items-center">
         <div className="p-3 rounded-xl bg-primary text-white mr-4 shadow-neumorphism">
             <Icon className="w-6 h-6" />
@@ -56,6 +69,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState({ permissions: true, metrics: true });
   const [crmMetrics, setCrmMetrics] = useState<CrmMetrics>({ totalCustomers: 0, totalLeads: 0 });
   const [taskMetrics, setTaskMetrics] = useState<TaskMetrics>({ pendingTasks: 0 });
+  const [financeMetrics, setFinanceMetrics] = useState<FinanceMetrics>({ totalBalance: 0 });
 
 
   useEffect(() => {
@@ -84,33 +98,35 @@ export default function DashboardPage() {
         setIsLoading(prev => ({...prev, metrics: true}));
 
         try {
-            // Fetch CRM metrics only if the user has permission
             const crmPromise = permissions?.qoroCrm 
                 ? getCrmMetrics({ actor: currentUser.uid }) 
-                : Promise.resolve({ totalCustomers: 0, totalLeads: 0, conversionRate: 0, totalRevenueWon: 0 });
+                : Promise.resolve(null);
 
-            // Fetch Task metrics only if the user has permission
             const taskPromise = permissions?.qoroTask 
                 ? getTaskMetrics({ actor: currentUser.uid }) 
-                : Promise.resolve({ totalTasks: 0, completedTasks: 0, inProgressTasks: 0, pendingTasks: 0 });
+                : Promise.resolve(null);
+
+            const financePromise = permissions?.qoroFinance
+                ? getFinanceMetrics({ actor: currentUser.uid })
+                : Promise.resolve(null);
             
-            const [crmData, taskData] = await Promise.all([
+            const [crmData, taskData, financeData] = await Promise.all([
                 crmPromise,
-                taskPromise
+                taskPromise,
+                financePromise
             ]);
 
-            setCrmMetrics({ totalCustomers: crmData.totalCustomers, totalLeads: crmData.totalLeads });
-            setTaskMetrics({ pendingTasks: taskData.pendingTasks });
+            if(crmData) setCrmMetrics({ totalCustomers: crmData.totalCustomers, totalLeads: crmData.totalLeads });
+            if(taskData) setTaskMetrics({ pendingTasks: taskData.pendingTasks });
+            if(financeData) setFinanceMetrics({ totalBalance: financeData.totalBalance });
 
         } catch (error) {
             console.error("Failed to fetch dashboard metrics:", error);
-            // Optionally, set an error state to show in the UI
         } finally {
             setIsLoading(prev => ({...prev, metrics: false}));
         }
     }
     
-    // We fetch metrics only when permissions are loaded and resolved.
     if (currentUser && permissions) {
         fetchMetrics();
     }
@@ -138,14 +154,13 @@ export default function DashboardPage() {
         </p>
       </div>
 
-       {/* Metrics Section */}
        <div className="mb-12">
             <h3 className="text-xl font-bold text-black mb-6">Métricas e Insights Rápidos</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <MetricCard title="Total de Clientes" value={crmMetrics.totalCustomers} icon={Users} isLoading={isLoading.metrics} />
-                <MetricCard title="Leads no Funil" value={crmMetrics.totalLeads} icon={TrendingUp} isLoading={isLoading.metrics} />
-                <MetricCard title="Tarefas Pendentes" value={taskMetrics.pendingTasks} icon={ListTodo} isLoading={isLoading.metrics} />
-                <MetricCard title="Saldo Atual" value="Carregando..." icon={DollarSign} isLoading={isLoading.metrics} />
+                <MetricCard title="Total de Clientes" value={String(crmMetrics.totalCustomers)} icon={Users} isLoading={isLoading.metrics} />
+                <MetricCard title="Leads no Funil" value={String(crmMetrics.totalLeads)} icon={TrendingUp} isLoading={isLoading.metrics} />
+                <MetricCard title="Tarefas Pendentes" value={String(taskMetrics.pendingTasks)} icon={ListTodo} isLoading={isLoading.metrics} />
+                <MetricCard title="Saldo Atual" value={formatCurrency(financeMetrics.totalBalance)} icon={DollarSign} isLoading={isLoading.metrics} />
             </div>
         </div>
 
@@ -155,7 +170,6 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Card QoroCRM */}
           {permissions?.qoroCrm && (
             <Link href="/dashboard/crm/dashboard">
               <div className="group bg-white rounded-xl shadow-neumorphism hover:shadow-neumorphism-hover hover:-translate-y-2 transition-all duration-300 flex flex-col h-full">
@@ -181,7 +195,6 @@ export default function DashboardPage() {
             </Link>
           )}
 
-          {/* Card QoroPulse */}
           {permissions?.qoroPulse && (
             <Link href="/dashboard/pulse">
               <div className="group bg-white rounded-xl shadow-neumorphism hover:shadow-neumorphism-hover hover:-translate-y-2 transition-all duration-300 flex flex-col h-full">
@@ -207,7 +220,6 @@ export default function DashboardPage() {
             </Link>
           )}
 
-          {/* Card QoroTask */}
           {permissions?.qoroTask && (
              <Link href="/dashboard/task/tarefas">
               <div className="group bg-white rounded-xl shadow-neumorphism hover:shadow-neumorphism-hover hover:-translate-y-2 transition-all duration-300 flex flex-col h-full">
@@ -233,7 +245,6 @@ export default function DashboardPage() {
             </Link>
           )}
 
-          {/* Card QoroFinance */}
           {permissions?.qoroFinance && (
              <Link href="/dashboard/finance/visao-geral">
               <div className="group bg-white rounded-xl shadow-neumorphism hover:shadow-neumorphism-hover hover:-translate-y-2 transition-all duration-300 flex flex-col h-full">
