@@ -6,21 +6,20 @@ import { usePathname } from 'next/navigation';
 import {
   Users,
   LayoutGrid,
-  ShoppingCart,
-  Wrench,
-  FileText,
-  ChevronLeft,
   CheckSquare,
   ClipboardList,
   Calendar,
   BarChart3,
+  DollarSign,
+  Activity,
+  ChevronLeft,
+  FileText,
+  ShoppingCart,
+  Wrench,
   LayoutDashboard,
   ArrowLeftRight,
   Receipt,
-  Landmark,
-  DollarSign,
-  Activity,
-  Home
+  Landmark
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Header } from '@/components/dashboard/Header';
