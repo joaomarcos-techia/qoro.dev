@@ -96,8 +96,9 @@ export const columns: ColumnDef<TaskProfile>[] = [
         const dueDate = row.getValue('dueDate') as string | null;
         if (!dueDate) return '-';
         try {
+            // Firestore Timestamps might be converted to strings in flows, so we parse ISO string
             const date = parseISO(dueDate);
-            return format(date, "dd 'de' MMM 'de' yyyy", { locale: ptBR });
+            return format(date, "dd 'de' MMM, yyyy", { locale: ptBR });
         } catch (error) {
             console.error('Invalid date format for dueDate:', dueDate);
             return 'Data inválida';
