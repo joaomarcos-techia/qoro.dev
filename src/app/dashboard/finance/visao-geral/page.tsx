@@ -4,7 +4,12 @@ import { useState, useEffect } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getDashboardMetrics } from '@/ai/flows/finance-management';
-import { BarChart, DollarSign, ArrowUp, ArrowDown, Landmark, LineChart, PieChart, Loader2, ServerCrash } from 'lucide-react';
+import { listTransactions } from '@/ai/flows/finance-management';
+import { TransactionProfile } from '@/ai/schemas';
+import { Bar, BarChart as BarChartPrimitive, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Pie, PieChart as PieChartPrimitive, Cell } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { DollarSign, ArrowUp, ArrowDown, Landmark, Loader2, ServerCrash, TrendingUp, TrendingDown, Wallet, Component } from 'lucide-react';
 
 interface FinanceMetrics {
   totalIncome: number;
@@ -12,6 +17,11 @@ interface FinanceMetrics {
   netProfit: number;
   totalBalance: number;
 }
+
+const chartConfig = {
+    receita: { label: "Receita", color: "hsl(var(--chart-2))" },
+    despesa: { label: "Despesa", color: "hsl(var(--chart-1))" },
+};
 
 const MetricCard = ({ title, value, icon: Icon, isLoading, color, format }: { title: string, value: number, icon: React.ElementType, isLoading: boolean, color: string, format?: (value: number) => string }) => (
   <div className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100 flex items-center">
@@ -31,6 +41,7 @@ const MetricCard = ({ title, value, icon: Icon, isLoading, color, format }: { ti
 
 export default function VisaoGeralPage() {
     const [metrics, setMetrics] = useState<FinanceMetrics | null>(null);
+    const [transactions, setTransactions] = useState<TransactionProfile[]>([]);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -46,13 +57,21 @@ export default function VisaoGeralPage() {
         if (currentUser) {
             setIsLoading(true);
             setError(null);
-            getDashboardMetrics({ actor: currentUser.uid })
-                .then(setMetrics)
-                .catch(err => {
+            const fetchAllData = async () => {
+                try {
+                    const metricsPromise = getDashboardMetrics({ actor: currentUser.uid });
+                    const transactionsPromise = listTransactions({ actor: currentUser.uid });
+                    const [metricsData, transactionsData] = await Promise.all([metricsPromise, transactionsPromise]);
+                    setMetrics(metricsData);
+                    setTransactions(transactionsData);
+                } catch (err) {
                     console.error(err);
-                    setError('Não foi possível carregar as métricas financeiras.');
-                })
-                .finally(() => setIsLoading(false));
+                    setError('Não foi possível carregar os dados financeiros.');
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            fetchAllData();
         }
     }, [currentUser]);
 
@@ -62,6 +81,32 @@ export default function VisaoGeralPage() {
           currency: 'BRL',
         }).format(value);
     }
+    
+    const monthlyCashFlowData = transactions.reduce((acc, t) => {
+        const month = new Date(t.date).toLocaleString('default', { month: 'short' });
+        if (!acc[month]) {
+            acc[month] = { month, receita: 0, despesa: 0 };
+        }
+        if (t.type === 'income') {
+            acc[month].receita += t.amount;
+        } else {
+            acc[month].despesa += t.amount;
+        }
+        return acc;
+    }, {} as Record<string, { month: string; receita: number; despesa: number }>);
+    const cashFlowChartData = Object.values(monthlyCashFlowData).reverse();
+
+    const expenseByCategoryData = transactions
+        .filter(t => t.type === 'expense')
+        .reduce((acc, t) => {
+            const category = t.category || 'Outros';
+            if (!acc[category]) {
+                acc[category] = { name: category, value: 0, fill: `hsl(var(--chart-${Object.keys(acc).length + 1}))` };
+            }
+            acc[category].value += t.amount;
+            return acc;
+        }, {} as Record<string, { name: string; value: number; fill: string }>);
+    const expenseChartData = Object.values(expenseByCategoryData);
 
     const renderContent = () => {
         if (error) {
@@ -78,26 +123,50 @@ export default function VisaoGeralPage() {
             <div className="space-y-8">
                 {/* Metrics Section */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <MetricCard title="Receita Total (Mês)" value={metrics?.totalIncome ?? 0} icon={ArrowUp} isLoading={isLoading} color="bg-green-500" format={formatCurrency} />
-                    <MetricCard title="Despesa Total (Mês)" value={metrics?.totalExpense ?? 0} icon={ArrowDown} isLoading={isLoading} color="bg-red-500" format={formatCurrency} />
+                    <MetricCard title="Receita (Mês)" value={metrics?.totalIncome ?? 0} icon={TrendingUp} isLoading={isLoading} color="bg-green-500" format={formatCurrency} />
+                    <MetricCard title="Despesa (Mês)" value={metrics?.totalExpense ?? 0} icon={TrendingDown} isLoading={isLoading} color="bg-red-500" format={formatCurrency} />
                     <MetricCard title="Lucro Líquido (Mês)" value={metrics?.netProfit ?? 0} icon={DollarSign} isLoading={isLoading} color="bg-blue-500" format={formatCurrency} />
-                    <MetricCard title="Saldo em Contas" value={metrics?.totalBalance ?? 0} icon={Landmark} isLoading={isLoading} color="bg-yellow-500" format={formatCurrency} />
+                    <MetricCard title="Saldo em Contas" value={metrics?.totalBalance ?? 0} icon={Wallet} isLoading={isLoading} color="bg-yellow-500" format={formatCurrency} />
                 </div>
                 
                 {/* Charts Section */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100">
-                        <h3 className="text-lg font-bold text-black mb-4 flex items-center"><LineChart className="w-5 h-5 mr-3 text-primary"/>Fluxo de Caixa Mensal</h3>
-                        <div className="h-80 flex items-center justify-center bg-gray-50 rounded-xl">
-                            <p className="text-gray-400">Componente de Gráfico - Em breve</p>
-                        </div>
-                    </div>
-                    <div className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100">
-                        <h3 className="text-lg font-bold text-black mb-4 flex items-center"><PieChart className="w-5 h-5 mr-3 text-primary"/>Composição de Despesas</h3>
-                        <div className="h-80 flex items-center justify-center bg-gray-50 rounded-xl">
-                            <p className="text-gray-400">Componente de Gráfico - Em breve</p>
-                        </div>
-                    </div>
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    <Card className="lg:col-span-3 bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100">
+                        <CardHeader>
+                            <CardTitle>Fluxo de Caixa Mensal</CardTitle>
+                             <CardDescription>Receitas vs. Despesas nos últimos meses.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+                                <BarChartPrimitive data={cashFlowChartData} accessibilityLayer>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
+                                    <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `R$ ${value / 1000}k`} />
+                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                    <Bar dataKey="receita" fill="var(--color-receita)" radius={8} />
+                                    <Bar dataKey="despesa" fill="var(--color-despesa)" radius={8} />
+                                </BarChartPrimitive>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                    <Card className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100">
+                        <CardHeader>
+                           <CardTitle>Composição de Despesas</CardTitle>
+                           <CardDescription>Categorias de despesas no mês atual.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex justify-center">
+                            <ChartContainer config={chartConfig} className="min-h-[300px] w-full max-w-[300px]">
+                                <PieChartPrimitive>
+                                <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                                <Pie data={expenseChartData} dataKey="value" nameKey="name" innerRadius={60}>
+                                    {expenseChartData.map((entry) => (
+                                        <Cell key={entry.name} fill={entry.fill} />
+                                    ))}
+                                </Pie>
+                                </PieChartPrimitive>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         );
