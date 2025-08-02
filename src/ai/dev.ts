@@ -12,3 +12,4 @@ import './flows/supplier-management';
 import './tools/crm-tools';
 import './tools/task-tools';
 import './tools/finance-tools';
+import './tools/supplier-tools';

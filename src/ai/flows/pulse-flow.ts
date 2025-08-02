@@ -12,6 +12,7 @@ import { AskPulseInputSchema } from '@/ai/schemas';
 import { listCustomersTool, listSaleLeadsTool } from '@/ai/tools/crm-tools';
 import { createTaskTool, listTasksTool } from '@/ai/tools/task-tools';
 import { listAccountsTool, getFinanceSummaryTool } from '@/ai/tools/finance-tools';
+import { listSuppliersTool } from '@/ai/tools/supplier-tools';
 
 export async function askPulse(input: z.infer<typeof AskPulseInputSchema>): Promise<string> {
   return pulseFlow(input);
@@ -46,7 +47,7 @@ const pulseFlow = ai.defineFlow(
         model: 'googleai/gemini-2.0-flash',
         prompt: prompt,
         history: history,
-        tools: [listCustomersTool, listSaleLeadsTool, listTasksTool, createTaskTool, listAccountsTool, getFinanceSummaryTool],
+        tools: [listCustomersTool, listSaleLeadsTool, listTasksTool, createTaskTool, listAccountsTool, getFinanceSummaryTool, listSuppliersTool],
         toolConfig: {
           // Pass the actor UID to the tool through the request context
           context: { actor },
@@ -62,6 +63,7 @@ const pulseFlow = ai.defineFlow(
         - Use a ferramenta 'createTaskTool' quando o usuário pedir para criar uma tarefa, um lembrete ou um item a fazer.
         - Use a ferramenta 'listAccountsTool' para perguntas sobre contas financeiras (bancárias, caixas, etc).
         - Use a ferramenta 'getFinanceSummaryTool' para obter um resumo da saúde financeira, incluindo receitas, despesas e lucro do mês.
+        - Use a ferramenta 'listSuppliersTool' para perguntas sobre fornecedores.
         
         Analise os dados retornados pelas ferramentas para formular sua resposta.
         
