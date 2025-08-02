@@ -140,7 +140,6 @@ export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCust
     const newCustomersPromise = customersRef.where('createdAt', '>=', sixMonthsAgo).get();
 
     // Get leads data
-    // Temporarily simplified query to avoid composite index error
     const leadsDataPromise = db.collection('sales_pipeline')
                                .where('companyId', '==', organizationId)
                                .get();
@@ -165,7 +164,6 @@ export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCust
     let totalRevenueWon = 0;
     let closedWonCount = 0;
     let closedLostCount = 0;
-    let activeLeadsCount = 0;
     const leadStages = { prospect: 0, qualified: 0, proposal: 0, negotiation: 0 };
 
     leadsDataSnapshot.forEach(doc => {
@@ -177,10 +175,10 @@ export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCust
             closedLostCount++;
         } else if (lead.stage in leadStages) {
             leadStages[lead.stage as keyof typeof leadStages]++;
-            activeLeadsCount++;
         }
     });
-
+    
+    const activeLeadsCount = Object.values(leadStages).reduce((a, b) => a + b, 0);
     const totalClosedDeals = closedWonCount + closedLostCount;
     const conversionRate = totalClosedDeals > 0 ? (closedWonCount / totalClosedDeals) * 100 : 0;
 
