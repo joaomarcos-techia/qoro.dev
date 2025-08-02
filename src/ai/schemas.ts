@@ -11,6 +11,10 @@ export const SignUpSchema = z.object({
     contactPhone: z.string().optional(),
 });
 
+export const InviteUserSchema = z.object({
+    email: z.string().email('O e-mail fornecido não é válido.'),
+});
+
 const AppPermissionsSchema = z.object({
     qoroCrm: z.boolean().default(true),
     qoroPulse: z.boolean().default(true),

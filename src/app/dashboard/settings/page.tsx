@@ -1,13 +1,11 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Mail, Send, KeyRound, UserPlus, Building, AlertCircle, CheckCircle, ArrowLeft, User, Shield, Users, Loader2, Trash2, Phone, FileText } from 'lucide-react';
-import { inviteUser, listUsers, updateUserPermissions, getOrganizationDetails, updateOrganizationDetails } from '@/ai/flows/user-management';
-import { UserProfile, OrganizationProfile } from '@/ai/schemas';
-import { changePassword } from '@/lib/auth';
+import { Mail, Send, KeyRound, UserPlus, Building, AlertCircle, CheckCircle, ArrowLeft, User, Shield, Users, Loader2 } from 'lucide-react';
+import { inviteUser, listUsers, updateUserPermissions } from '@/ai/flows/user-management';
+import { UserProfile } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth } from '@/lib/firebase';
 
 
 type AppPermission = 'qoroCrm' | 'qoroPulse' | 'qoroTask' | 'qoroFinance';
@@ -22,28 +20,17 @@ const appPermissionsMap: Record<AppPermission, string> = {
 export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('account');
     const [inviteEmail, setInviteEmail] = useState('');
-    const [passwords, setPasswords] = useState({ current: '', new: '' });
+    const [password, setPassword] = useState('');
     const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-    const [userName, setUserName] = useState('');
-    const [isLoading, setIsLoading] = useState({ invite: false, password: false, users: true, permissions: '', org: true, orgSave: false, accountSave: false });
+    const [isLoading, setIsLoading] = useState({ invite: false, password: false, users: true, permissions: '' });
     const [feedback, setFeedback] = useState<{ type: 'error' | 'success', message: string, context: string } | null>(null);
     const [users, setUsers] = useState<UserProfile[]>([]);
-    const [organization, setOrganization] = useState<Partial<OrganizationProfile>>({ name: '', cnpj: '', contactEmail: '', contactPhone: '' });
 
     const clearFeedback = (context: string) => {
         if (feedback?.context === context) {
             setFeedback(null);
         }
     };
-    
-    const fetchCurrentUserData = useCallback(async (user: FirebaseUser) => {
-        if (!user) return;
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-            setUserName(userDoc.data().name || '');
-        }
-    }, []);
     
     const fetchUsers = useCallback(async () => {
         if (!currentUser) return;
@@ -58,44 +45,23 @@ export default function SettingsPage() {
             setIsLoading(prev => ({ ...prev, users: false }));
         }
     }, [currentUser]);
-    
-    const fetchOrganization = useCallback(async () => {
-        if (!currentUser) return;
-        setIsLoading(prev => ({ ...prev, org: true }));
-        try {
-            const orgDetails = await getOrganizationDetails({ actor: currentUser.uid });
-            setOrganization(orgDetails);
-        } catch (error) {
-            console.error("Failed to fetch organization:", error);
-            setFeedback({ type: 'error', message: 'Não foi possível carregar os dados da organização.', context: 'org' });
-        } finally {
-            setIsLoading(prev => ({ ...prev, org: false }));
-        }
-    }, [currentUser]);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setCurrentUser(user);
-            if (user) {
-                fetchCurrentUserData(user);
-            }
         });
         return () => unsubscribe();
-    }, [fetchCurrentUserData]);
+    }, []);
 
     useEffect(() => {
-        if (currentUser) {
-            if (activeTab === 'users') {
-                fetchUsers();
-            } else if (activeTab === 'organization') {
-                fetchOrganization();
-            }
+        if (currentUser && activeTab === 'users') {
+            fetchUsers();
         }
-        setFeedback(null);
-    }, [activeTab, currentUser, fetchUsers, fetchOrganization]);
+    }, [activeTab, currentUser, fetchUsers]);
     
     const handleTabChange = (tab: string) => {
         setActiveTab(tab);
+        setFeedback(null); // Clear feedback when changing tabs
     };
 
     const handleInviteUser = async (e: React.FormEvent) => {
@@ -113,40 +79,6 @@ export default function SettingsPage() {
             setFeedback({ type: 'error', message: 'Falha ao enviar convite. Verifique o e-mail ou se o usuário já existe.', context: 'invite' });
         } finally {
             setIsLoading(prev => ({ ...prev, invite: false }));
-        }
-    };
-    
-    const handleAccountSave = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(prev => ({ ...prev, accountSave: true }));
-        clearFeedback('account');
-    
-        if (passwords.new && !passwords.current) {
-            setFeedback({ type: 'error', message: 'Por favor, insira sua senha atual para definir uma nova.', context: 'account' });
-            setIsLoading(prev => ({ ...prev, accountSave: false }));
-            return;
-        }
-    
-        try {
-            if(currentUser) {
-                const userDocRef = doc(db, "users", currentUser.uid);
-                await setDoc(userDocRef, { name: userName }, { merge: true });
-            }
-            if (passwords.new) {
-                if (passwords.new.length < 6) {
-                    setFeedback({ type: 'error', message: 'A nova senha deve ter pelo menos 6 caracteres.', context: 'account' });
-                    setIsLoading(prev => ({ ...prev, accountSave: false }));
-                    return;
-                }
-                await changePassword(passwords.current, passwords.new);
-                setPasswords({ current: '', new: '' });
-            }
-            setFeedback({ type: 'success', message: 'Dados da conta salvos com sucesso!', context: 'account' });
-        } catch (error) {
-            console.error(error);
-            setFeedback({ type: 'error', message: `Falha ao salvar dados: ${error instanceof Error ? error.message : 'Tente novamente.'}`, context: 'account' });
-        } finally {
-            setIsLoading(prev => ({ ...prev, accountSave: false }));
         }
     };
 
@@ -181,35 +113,6 @@ export default function SettingsPage() {
         }
     };
 
-    const handleOrgDetailsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setOrganization({
-            ...organization,
-            [e.target.name]: e.target.value
-        });
-    };
-
-    const handleSaveOrgDetails = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!currentUser) return;
-        setIsLoading(prev => ({...prev, orgSave: true}));
-        clearFeedback('org');
-        try {
-            await updateOrganizationDetails({
-                name: organization.name || '',
-                cnpj: organization.cnpj || undefined,
-                contactEmail: organization.contactEmail || undefined,
-                contactPhone: organization.contactPhone || undefined,
-                actor: currentUser.uid,
-            });
-            setFeedback({ type: 'success', message: 'Dados da organização salvos com sucesso!', context: 'org' });
-        } catch (error) {
-            console.error(error);
-            setFeedback({ type: 'error', message: 'Não foi possível salvar os dados. Tente novamente.', context: 'org' });
-        } finally {
-            setIsLoading(prev => ({...prev, orgSave: false}));
-        }
-    }
-
 
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -241,65 +144,23 @@ export default function SettingsPage() {
             {/* Content Area */}
             <div>
                 {activeTab === 'account' && (
-                     <div className="bg-white p-8 rounded-2xl shadow-neumorphism border border-gray-200 max-w-2xl mx-auto">
-                         <div className="flex items-start">
-                            <div className="p-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white mr-6 shadow-neumorphism">
+                    <div className="bg-white p-8 rounded-2xl shadow-neumorphism border border-gray-200 max-w-lg mx-auto">
+                        <div className="flex items-center mb-6">
+                            <div className="p-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white mr-4 shadow-neumorphism">
                                 <User className="w-6 h-6" />
                             </div>
-                            <form onSubmit={handleAccountSave} className="flex-grow">
-                                <h3 className="text-xl font-bold text-black mb-1">Configurações da Conta</h3>
-                                <p className="text-gray-600 mb-6">Altere seu nome e senha de acesso.</p>
-                                <div className="space-y-4">
-                                     <div className="relative">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                        <input type="email" value={currentUser?.email || 'Carregando...'} disabled className="w-full pl-12 pr-4 py-3 bg-gray-100 rounded-xl shadow-neumorphism-inset cursor-not-allowed"/>
-                                    </div>
-                                    <div className="relative">
-                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                        <input 
-                                            type="text" 
-                                            placeholder="Seu nome"
-                                            value={userName}
-                                            onChange={(e) => {setUserName(e.target.value); clearFeedback('account');}}
-                                            required 
-                                            className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
-                                    </div>
-                                    <div className="relative">
-                                        <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                        <input 
-                                            type="password" 
-                                            placeholder="Senha Atual (obrigatório para trocar a senha)"
-                                            value={passwords.current}
-                                            onChange={(e) => {setPasswords(p => ({...p, current: e.target.value})); clearFeedback('account');}}
-                                            className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
-                                    </div>
-                                     <div className="relative">
-                                        <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                        <input 
-                                            type="password" 
-                                            placeholder="Nova Senha (deixe em branco para não alterar)"
-                                            value={passwords.new}
-                                            onChange={(e) => {setPasswords(p => ({...p, new: e.target.value})); clearFeedback('account');}}
-                                            className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
-                                    </div>
-                                    <div className="flex justify-end">
-                                        <button 
-                                            type="submit"
-                                            disabled={isLoading.accountSave}
-                                            className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
-                                            {isLoading.accountSave ? <Loader2 className="w-5 h-5 mr-2 animate-spin"/> : null}
-                                            {isLoading.accountSave ? 'Salvando...' : 'Salvar Alterações'}
-                                        </button>
-                                    </div>
-                                </div>
-                                 {feedback && feedback.context === 'account' && (
-                                     <div className={`mt-4 p-4 rounded-lg flex items-center text-sm ${feedback.type === 'success' ? 'bg-green-100 border-l-4 border-green-500 text-green-800' : 'bg-red-100 border-l-4 border-red-500 text-red-700'}`}>
-                                        {feedback.type === 'success' ? <CheckCircle className="w-5 h-5 mr-3" /> : <AlertCircle className="w-5 h-5 mr-3" />}
-                                        <span>{feedback.message}</span>
-                                    </div>
-                                )}
-                            </form>
+                            <h3 className="text-xl font-bold text-black">Minha Conta</h3>
                         </div>
+                         <div className="space-y-4">
+                             <div className="relative">
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <input type="email" value={currentUser?.email || 'Carregando...'} disabled className="w-full pl-12 pr-4 py-3 bg-gray-100 rounded-xl shadow-neumorphism-inset cursor-not-allowed"/>
+                            </div>
+                             <div className="relative">
+                                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <input type="password" placeholder="Nova Senha" className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
+                            </div>
+                         </div>
                     </div>
                 )}
                 {activeTab === 'users' && (
@@ -388,91 +249,16 @@ export default function SettingsPage() {
                     </div>
                 )}
                  {activeTab === 'organization' && (
-                    <div className="space-y-8">
-                         {isLoading.org ? (
-                             <div className="flex justify-center items-center py-8">
-                                <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                                <p className="ml-4 text-gray-600">Carregando dados da organização...</p>
+                     <div className="bg-white p-8 rounded-2xl shadow-neumorphism border border-gray-200 max-w-lg mx-auto">
+                        <div className="flex items-center mb-6">
+                            <div className="p-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white mr-4 shadow-neumorphism">
+                                <Building className="w-6 h-6" />
                             </div>
-                         ) : (
-                            <>
-                            {/* Organization Profile */}
-                            <div className="bg-white p-8 rounded-2xl shadow-neumorphism border border-gray-200">
-                                <div className="flex items-start">
-                                    <div className="p-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white mr-6 shadow-neumorphism">
-                                        <Building className="w-6 h-6" />
-                                    </div>
-                                    <form onSubmit={handleSaveOrgDetails} className="flex-grow">
-                                        <h3 className="text-xl font-bold text-black mb-1">Perfil da Organização</h3>
-                                        <p className="text-gray-600 mb-6">Veja e gerencie as informações da sua organização.</p>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {/* Nome da Organização */}
-                                            <div className="relative">
-                                                <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                                <input type="text" name="name" placeholder="Nome da Organização" value={organization.name || ''} onChange={handleOrgDetailsChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
-                                            </div>
-                                            {/* CNPJ */}
-                                            <div className="relative">
-                                                <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                                <input type="text" name="cnpj" placeholder="CNPJ" value={organization.cnpj || ''} onChange={handleOrgDetailsChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
-                                            </div>
-                                            {/* Email de Contato */}
-                                            <div className="relative">
-                                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                                <input type="email" name="contactEmail" placeholder="Email de Contato" value={organization.contactEmail || ''} onChange={handleOrgDetailsChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
-                                            </div>
-                                            {/* Telefone de Contato */}
-                                            <div className="relative">
-                                                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                                <input type="tel" name="contactPhone" placeholder="Telefone de Contato" value={organization.contactPhone || ''} onChange={handleOrgDetailsChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
-                                            </div>
-                                        </div>
-                                        <div className="flex justify-end mt-6">
-                                            <button 
-                                                type="submit"
-                                                disabled={isLoading.orgSave}
-                                                className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
-                                                {isLoading.orgSave ? <Loader2 className="w-5 h-5 mr-2 animate-spin"/> : null}
-                                                {isLoading.orgSave ? 'Salvando...' : 'Salvar Alterações'}
-                                            </button>
-                                        </div>
-                                        {feedback && feedback.context === 'org' && (
-                                            <div className={`mt-4 p-4 rounded-lg flex items-center text-sm ${feedback.type === 'success' ? 'bg-green-100 border-l-4 border-green-500 text-green-800' : 'bg-red-100 border-l-4 border-red-500 text-red-700'}`}>
-                                                {feedback.type === 'success' ? <CheckCircle className="w-5 h-5 mr-3" /> : <AlertCircle className="w-5 h-5 mr-3" />}
-                                                <span>{feedback.message}</span>
-                                            </div>
-                                        )}
-                                    </form>
-                                </div>
-                            </div>
-
-                            {/* Danger Zone */}
-                            <div className="bg-white p-8 rounded-2xl shadow-neumorphism border border-red-300">
-                                <div className="flex items-start">
-                                    <div className="p-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white mr-6 shadow-neumorphism">
-                                        <AlertCircle className="w-6 h-6" />
-                                    </div>
-                                    <div className="flex-grow">
-                                        <h3 className="text-xl font-bold text-red-700 mb-1">Zona de Perigo</h3>
-                                        <p className="text-gray-600 mb-6">Ações nesta área são perigosas e irreversíveis. Tenha certeza do que está fazendo.</p>
-                                        <div className="flex justify-between items-center p-4 border border-red-200 rounded-xl bg-red-50/50">
-                                            <div>
-                                                <p className="font-bold text-black">Excluir esta organização</p>
-                                                <p className="text-sm text-gray-600">Todo o conteúdo, usuários e configurações serão permanentemente deletados.</p>
-                                            </div>
-                                            <button 
-                                                disabled // Feature desabilitada por segurança
-                                                className="bg-red-600 text-white px-6 py-3 rounded-xl hover:bg-red-700 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400"
-                                            >
-                                                <Trash2 className="mr-2 w-5 h-5"/>
-                                                Excluir Organização
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            </>
-                         )}
+                            <h3 className="text-xl font-bold text-black">Organização</h3>
+                        </div>
+                        <div className="text-center p-8 bg-gray-50 rounded-xl shadow-neumorphism-inset">
+                            <p className="text-gray-500">Detalhes e configurações da organização estarão disponíveis em breve.</p>
+                        </div>
                     </div>
                 )}
             </div>
