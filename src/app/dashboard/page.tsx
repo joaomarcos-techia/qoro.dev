@@ -19,6 +19,7 @@ import { auth, db } from '@/lib/firebase';
 import { getDashboardMetrics as getCrmMetrics } from '@/ai/flows/crm-management';
 import { getDashboardMetrics as getTaskMetrics } from '@/ai/flows/task-management';
 import { getDashboardMetrics as getFinanceMetrics } from '@/ai/flows/finance-management';
+import { ErrorBoundary } from 'react-error-boundary';
 
 
 interface UserPermissions {
@@ -64,7 +65,24 @@ const MetricCard = ({ title, value, icon: Icon, isLoading, error }: { title: str
     </div>
 );
 
-export default function DashboardPage() {
+function DashboardErrorFallback({ error, resetErrorBoundary }: { error: Error, resetErrorBoundary: () => void }) {
+    return (
+        <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg" role="alert">
+            <h3 className="font-bold">Ocorreu um Erro no Dashboard</h3>
+            <p className="mt-2">Não foi possível carregar alguns dados do dashboard. Isso pode ser temporário.</p>
+            <p className="text-xs mt-1">Detalhe: {error.message}</p>
+            <button
+                onClick={resetErrorBoundary}
+                className="mt-4 bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+                Tentar Novamente
+            </button>
+        </div>
+    );
+}
+
+
+function DashboardContent() {
   const [permissions, setPermissions] = useState<UserPermissions | null>(null);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState({ permissions: true, metrics: true });
@@ -78,11 +96,16 @@ export default function DashboardPage() {
     const unsubscribe = onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
         setCurrentUser(user);
       if (user) {
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setPermissions(userData.permissions || { qoroCrm: false, qoroPulse: false, qoroTask: false, qoroFinance: false });
+        try {
+            const userDocRef = doc(db, 'users', user.uid);
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              setPermissions(userData.permissions || { qoroCrm: false, qoroPulse: false, qoroTask: false, qoroFinance: false });
+            }
+        } catch (e) {
+            console.error("Failed to fetch user permissions", e)
+            setPermissions(null)
         }
       } else {
         setPermissions(null);
@@ -178,7 +201,8 @@ export default function DashboardPage() {
           Gerencie toda a sua empresa em uma única plataforma integrada
         </p>
       </div>
-
+      
+      <ErrorBoundary FallbackComponent={DashboardErrorFallback}>
        <div className="mb-12">
             <h3 className="text-xl font-bold text-black mb-6">Métricas e Insights Rápidos</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -197,6 +221,7 @@ export default function DashboardPage() {
                 </div>
             )}
         </div>
+      </ErrorBoundary>
 
       <div>
         <div className="flex items-center justify-between mb-6">
@@ -309,4 +334,12 @@ export default function DashboardPage() {
       </div>
     </div>
   );
+}
+
+export default function Dashboard() {
+    return (
+        <ErrorBoundary FallbackComponent={DashboardErrorFallback}>
+            <DashboardContent />
+        </ErrorBoundary>
+    )
 }
