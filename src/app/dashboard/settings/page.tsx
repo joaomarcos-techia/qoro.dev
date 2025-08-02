@@ -6,6 +6,7 @@ import { inviteUser, listUsers, updateUserPermissions } from '@/ai/flows/user-ma
 import { UserProfile } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { OrganizationForm } from '@/components/dashboard/settings/OrganizationForm';
 
 
 type AppPermission = 'qoroCrm' | 'qoroPulse' | 'qoroTask' | 'qoroFinance';
@@ -249,19 +250,11 @@ export default function SettingsPage() {
                     </div>
                 )}
                  {activeTab === 'organization' && (
-                     <div className="bg-white p-8 rounded-2xl shadow-neumorphism border border-gray-200 max-w-lg mx-auto">
-                        <div className="flex items-center mb-6">
-                            <div className="p-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white mr-4 shadow-neumorphism">
-                                <Building className="w-6 h-6" />
-                            </div>
-                            <h3 className="text-xl font-bold text-black">Organização</h3>
-                        </div>
-                        <div className="text-center p-8 bg-gray-50 rounded-xl shadow-neumorphism-inset">
-                            <p className="text-gray-500">Detalhes e configurações da organização estarão disponíveis em breve.</p>
-                        </div>
-                    </div>
+                     <OrganizationForm />
                 )}
             </div>
         </div>
     );
 }
+
+    
