@@ -26,3 +26,25 @@ export const listAccountsTool = ai.defineTool(
         return financeService.listAccounts(context.actor);
     }
 );
+
+// Define the tool for getting a financial summary
+export const getFinanceSummaryTool = ai.defineTool(
+    {
+        name: 'getFinanceSummaryTool',
+        description: 'Retrieves a summary of the current financial health for the organization, including total balance, total income for the current month, total expenses for the current month, and the resulting net profit. Use this for high-level questions about financial performance.',
+        inputSchema: z.object({}), // No specific input needed from the AI
+        outputSchema: z.object({
+            totalBalance: z.number(),
+            totalIncome: z.number(),
+            totalExpense: z.number(),
+            netProfit: z.number(),
+        }),
+    },
+    async (_, context) => {
+        // The actor's UID is passed in the context by the flow
+        if (!context?.actor) {
+            throw new Error('User authentication is required to get a financial summary.');
+        }
+        return financeService.getDashboardMetrics(context.actor);
+    }
+);

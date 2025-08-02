@@ -11,7 +11,7 @@ import { z } from 'zod';
 import { AskPulseInputSchema } from '@/ai/schemas';
 import { listCustomersTool, listSaleLeadsTool } from '@/ai/tools/crm-tools';
 import { listTasksTool } from '@/ai/tools/task-tools';
-import { listAccountsTool } from '@/ai/tools/finance-tools';
+import { listAccountsTool, getFinanceSummaryTool } from '@/ai/tools/finance-tools';
 
 export async function askPulse(input: z.infer<typeof AskPulseInputSchema>): Promise<string> {
   return pulseFlow(input);
@@ -46,7 +46,7 @@ const pulseFlow = ai.defineFlow(
         model: 'googleai/gemini-2.0-flash',
         prompt: prompt,
         history: history,
-        tools: [listCustomersTool, listSaleLeadsTool, listTasksTool, listAccountsTool],
+        tools: [listCustomersTool, listSaleLeadsTool, listTasksTool, listAccountsTool, getFinanceSummaryTool],
         toolConfig: {
           // Pass the actor UID to the tool through the request context
           context: { actor },
@@ -60,6 +60,7 @@ const pulseFlow = ai.defineFlow(
         - Use a ferramenta 'listSaleLeadsTool' para perguntas sobre o funil de vendas.
         - Use a ferramenta 'listTasksTool' para perguntas sobre tarefas, projetos e produtividade.
         - Use a ferramenta 'listAccountsTool' para perguntas sobre contas financeiras (bancárias, caixas, etc).
+        - Use a ferramenta 'getFinanceSummaryTool' para obter um resumo da saúde financeira, incluindo receitas, despesas e lucro do mês.
         
         Analise os dados retornados pelas ferramentas para formular sua resposta.
         

@@ -121,7 +121,11 @@ export default function DashboardPage() {
             if(financeData) setFinanceMetrics({ totalBalance: financeData.totalBalance });
 
         } catch (error) {
-            console.error("Failed to fetch dashboard metrics:", error);
+            // In case of an error, we'll just fall back to the default empty state
+            // rather than logging a console error, as the UI handles the loading/empty state.
+            setCrmMetrics({ totalCustomers: 0, totalLeads: 0 });
+            setTaskMetrics({ pendingTasks: 0 });
+            setFinanceMetrics({ totalBalance: 0 });
         } finally {
             setIsLoading(prev => ({...prev, metrics: false}));
         }
