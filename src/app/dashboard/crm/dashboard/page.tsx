@@ -20,7 +20,7 @@ interface CrmMetrics {
     proposal: number;
     negotiation: number;
   };
-  newCustomersPerMonth: { month: string; count: number }[];
+  newCustomersPerMonth: { month: string; customers: number }[];
 }
 
 const chartConfig = {
@@ -70,7 +70,7 @@ export default function DashboardCrmPage() {
       getDashboardMetrics({ actor: currentUser.uid })
         .then(setMetrics)
         .catch(err => {
-          console.error(err);
+          console.error("Erro ao buscar métricas do CRM:", err);
           setError('Não foi possível carregar as métricas do CRM.');
         })
         .finally(() => setIsLoading(false));
@@ -124,7 +124,7 @@ export default function DashboardCrmPage() {
                 </CardHeader>
                 <CardContent>
                     <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-                        <BarChartPrimitive data={funnelChartData}>
+                        <BarChartPrimitive data={funnelChartData} accessibilityLayer>
                             <CartesianGrid vertical={false} />
                             <XAxis dataKey="stage" tickLine={false} tickMargin={10} axisLine={false} />
                             <YAxis tickLine={false} axisLine={false} />
@@ -141,12 +141,12 @@ export default function DashboardCrmPage() {
                 </CardHeader>
                 <CardContent>
                     <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-                        <BarChartPrimitive data={newCustomersChartData}>
+                        <BarChartPrimitive data={newCustomersChartData} accessibilityLayer>
                             <CartesianGrid vertical={false} />
                             <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
                             <YAxis tickLine={false} axisLine={false} />
                             <ChartTooltip content={<ChartTooltipContent />} />
-                            <Bar dataKey="count" name="Novos Clientes" radius={8} />
+                            <Bar dataKey="customers" name="Novos Clientes" radius={8} fill="var(--color-customers)" />
                         </BarChartPrimitive>
                     </ChartContainer>
                 </CardContent>

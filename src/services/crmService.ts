@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { CustomerSchema, CustomerProfileSchema, SaleLeadProfileSchema, SaleLeadSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import type { SaleLeadProfile, QuoteProfile } from '@/ai/schemas';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const db = getFirestore();
 
@@ -115,21 +117,18 @@ export const listSaleLeads = async (actorUid: string): Promise<SaleLeadProfile[]
 };
 
 
-export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCustomers: number; totalLeads: number; conversionRate: number; totalRevenueWon: number; leadStages: { prospect: number; qualified: number; proposal: number; negotiation: number; }; newCustomersPerMonth: { month: string; count: number; }[] }> => {
+export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCustomers: number; totalLeads: number; conversionRate: number; totalRevenueWon: number; leadStages: { prospect: number; qualified: number; proposal: number; negotiation: number; }; newCustomersPerMonth: { month: string; customers: number; }[] }> => {
     const { organizationId } = await getAdminAndOrg(actorUid);
 
     const customersRef = db.collection('customers').where('companyId', '==', organizationId);
     const leadsRef = db.collection('sales_pipeline').where('companyId', '==', organizationId);
     
-    // 1. Get total customers count
     const totalCustomersPromise = customersRef.count().get();
     
-    // 2. Get new customers per month for the last 6 months
     const now = new Date();
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
     const newCustomersPromise = customersRef.where('createdAt', '>=', sixMonthsAgo).get();
 
-    // 3. Get all leads to process their stages and values
     const allLeadsPromise = leadsRef.get();
     
     const [totalCustomersSnapshot, newCustomersSnapshot, allLeadsSnapshot] = await Promise.all([
@@ -138,33 +137,35 @@ export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCust
         allLeadsPromise
     ]);
     
-    // Process new customers
-    const monthlyCounts: Record<string, number> = {};
-    const monthLabels: string[] = [];
+    const monthlyCounts: { [key: string]: number } = {};
     for (let i = 5; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        const monthLabel = d.toLocaleString('default', { month: 'short' });
+        const monthKey = format(d, 'yyyy-MM');
         monthlyCounts[monthKey] = 0;
-        monthLabels.push(monthLabel);
     }
+
     newCustomersSnapshot.forEach(doc => {
         const createdAt = doc.data().createdAt.toDate();
-        const monthKey = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, '0')}`;
+        const monthKey = format(createdAt, 'yyyy-MM');
         if (monthlyCounts.hasOwnProperty(monthKey)) {
             monthlyCounts[monthKey]++;
         }
     });
-    const newCustomersPerMonth = Object.keys(monthlyCounts).map((key, index) => ({
-        month: monthLabels[index],
-        count: monthlyCounts[key],
-    }));
 
-    // Process leads
+    const newCustomersPerMonth = Object.keys(monthlyCounts).map(key => {
+        const [year, month] = key.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1);
+        return {
+            month: format(date, 'MMM', { locale: ptBR }),
+            customers: monthlyCounts[key],
+        };
+    });
+
     let totalRevenueWon = 0;
     let closedWonCount = 0;
     let closedLostCount = 0;
     const leadStages = { prospect: 0, qualified: 0, proposal: 0, negotiation: 0 };
+    let activeLeadsCount = 0;
 
     allLeadsSnapshot.forEach(doc => {
         const lead = doc.data();
@@ -175,10 +176,10 @@ export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCust
             closedLostCount++;
         } else if (lead.stage in leadStages) {
             leadStages[lead.stage as keyof typeof leadStages]++;
+            activeLeadsCount++;
         }
     });
     
-    const activeLeadsCount = Object.values(leadStages).reduce((a, b) => a + b, 0);
     const totalClosedDeals = closedWonCount + closedLostCount;
     const conversionRate = totalClosedDeals > 0 ? parseFloat(((closedWonCount / totalClosedDeals) * 100).toFixed(1)) : 0;
 
