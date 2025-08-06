@@ -46,16 +46,41 @@ const ChartTooltip = RechartsTooltip
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<typeof RechartsTooltip.Content>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "z-50 overflow-hidden rounded-lg border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-sm animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-      className
-    )}
-    {...props}
-  />
-))
+>(({ className, ...props }, ref) => {
+  // Destructure props specific to Recharts that are not valid HTML attributes
+  const {
+    active,
+    payload,
+    label,
+    formatter,
+    itemStyle,
+    labelStyle,
+    contentStyle,
+    cursor,
+    viewBox,
+    offset,
+    coordinate,
+    position,
+    isAnimationActive,
+    animationDuration,
+    animationEasing,
+    filterNull,
+    useTranslate3d,
+    // and any others that might be passed by Recharts
+    ...rest
+  } = props;
+  
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        "z-50 overflow-hidden rounded-lg border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-sm animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+        className
+      )}
+      {...rest} // Pass only the remaining valid HTML attributes
+    />
+  )
+})
 ChartTooltipContent.displayName = "ChartTooltipContent"
 // #endregion
 
