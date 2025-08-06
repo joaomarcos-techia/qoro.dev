@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { CustomerSchema, CustomerProfileSchema, SaleLeadProfileSchema, SaleLeadSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import type { SaleLeadProfile, QuoteProfile } from '@/ai/schemas';
-import { format } from 'date-fns';
+import { format, subMonths, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const db = getFirestore();
@@ -124,7 +124,7 @@ export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCust
     const leadsRef = db.collection('sales_pipeline').where('companyId', '==', organizationId);
     
     const now = new Date();
-    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    const sixMonthsAgo = startOfMonth(subMonths(now, 5));
 
     const totalCustomersPromise = customersRef.count().get();
     const newCustomersPromise = customersRef.where('createdAt', '>=', sixMonthsAgo).get();
@@ -138,8 +138,8 @@ export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCust
     
     const monthlyCounts: { [key: string]: number } = {};
     for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const monthKey = format(d, 'yyyy-MM');
+        const monthDate = subMonths(now, i);
+        const monthKey = format(monthDate, 'yyyy-MM');
         monthlyCounts[monthKey] = 0;
     }
 

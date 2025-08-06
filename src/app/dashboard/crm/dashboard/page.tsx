@@ -93,7 +93,7 @@ export default function DashboardCrmPage() {
     { stage: 'Negociação', leads: metrics.leadStages.negotiation, fill: "var(--color-leads)" },
   ] : [];
 
-  const newCustomersChartData = metrics ? metrics.newCustomersPerMonth.map(item => ({ month: item.month, customers: item.count, fill: 'var(--color-customers)' })) : [];
+  const newCustomersChartData = metrics ? metrics.newCustomersPerMonth.map(item => ({ month: item.month.charAt(0).toUpperCase() + item.month.slice(1), customers: item.count, fill: 'var(--color-customers)' })) : [];
 
   const renderContent = () => {
     if (error) {
