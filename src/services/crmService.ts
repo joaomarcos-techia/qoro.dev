@@ -123,18 +123,17 @@ export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCust
     const customersRef = db.collection('customers').where('companyId', '==', organizationId);
     const leadsRef = db.collection('sales_pipeline').where('companyId', '==', organizationId);
     
-    const totalCustomersPromise = customersRef.count().get();
-    
     const now = new Date();
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-    const newCustomersPromise = customersRef.where('createdAt', '>=', sixMonthsAgo).get();
 
+    const totalCustomersPromise = customersRef.count().get();
+    const newCustomersPromise = customersRef.where('createdAt', '>=', sixMonthsAgo).get();
     const allLeadsPromise = leadsRef.get();
     
     const [totalCustomersSnapshot, newCustomersSnapshot, allLeadsSnapshot] = await Promise.all([
         totalCustomersPromise, 
         newCustomersPromise, 
-        allLeadsSnapshot
+        allLeadsPromise
     ]);
     
     const monthlyCounts: { [key: string]: number } = {};
