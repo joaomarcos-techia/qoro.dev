@@ -46,15 +46,10 @@ const ChartTooltip = RechartsTooltip
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div"> & {
-    hideLabel?: boolean
-    hideIndicator?: boolean
-  }
->(({
-  className,
-  style,
-  ...props
-}, ref) => {
+  React.ComponentProps<typeof RechartsTooltip.Content>
+>(({ className, style, ...props }, ref) => {
+  // We explicitly ignore the rest of the props passed by Recharts
+  // to prevent them from being passed to the DOM and causing warnings.
   return (
     <div
       ref={ref}
