@@ -117,7 +117,7 @@ export const listSaleLeads = async (actorUid: string): Promise<SaleLeadProfile[]
 };
 
 
-export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCustomers: number; totalLeads: number; conversionRate: number; totalRevenueWon: number; leadStages: { prospect: number; qualified: number; proposal: number; negotiation: number; }; newCustomersPerMonth: { month: string; customers: number; }[] }> => {
+export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCustomers: number; totalLeads: number; conversionRate: number; totalRevenueWon: number; leadStages: { prospect: number; qualified: number; proposal: number; negotiation: number; }; newCustomersPerMonth: { month: string; count: number; }[] }> => {
     const { organizationId } = await getAdminAndOrg(actorUid);
 
     const customersRef = db.collection('customers').where('companyId', '==', organizationId);
@@ -134,7 +134,7 @@ export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCust
     const [totalCustomersSnapshot, newCustomersSnapshot, allLeadsSnapshot] = await Promise.all([
         totalCustomersPromise, 
         newCustomersPromise, 
-        allLeadsPromise
+        allLeadsSnapshot
     ]);
     
     const monthlyCounts: { [key: string]: number } = {};
@@ -157,7 +157,7 @@ export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCust
         const date = new Date(parseInt(year), parseInt(month) - 1);
         return {
             month: format(date, 'MMM', { locale: ptBR }),
-            customers: monthlyCounts[key],
+            count: monthlyCounts[key],
         };
     });
 

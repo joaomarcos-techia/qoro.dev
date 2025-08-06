@@ -20,7 +20,7 @@ interface CrmMetrics {
     proposal: number;
     negotiation: number;
   };
-  newCustomersPerMonth: { month: string; customers: number }[];
+  newCustomersPerMonth: { month: string; count: number }[];
 }
 
 const chartConfig = {
@@ -93,7 +93,7 @@ export default function DashboardCrmPage() {
     { stage: 'Negociação', leads: metrics.leadStages.negotiation, fill: "var(--color-leads)" },
   ] : [];
 
-  const newCustomersChartData = metrics ? metrics.newCustomersPerMonth.map(item => ({...item, fill: 'var(--color-customers)' })) : [];
+  const newCustomersChartData = metrics ? metrics.newCustomersPerMonth.map(item => ({ month: item.month, customers: item.count, fill: 'var(--color-customers)' })) : [];
 
   const renderContent = () => {
     if (error) {
