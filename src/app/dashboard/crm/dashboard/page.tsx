@@ -124,7 +124,7 @@ export default function DashboardCrmPage() {
                 </CardHeader>
                 <CardContent>
                     <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-                        <BarChartPrimitive data={funnelChartData} accessibilityLayer>
+                        <BarChartPrimitive data={funnelChartData} >
                             <CartesianGrid vertical={false} />
                             <XAxis dataKey="stage" tickLine={false} tickMargin={10} axisLine={false} />
                             <YAxis tickLine={false} axisLine={false} />
@@ -141,7 +141,7 @@ export default function DashboardCrmPage() {
                 </CardHeader>
                 <CardContent>
                     <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-                        <BarChartPrimitive data={newCustomersChartData} accessibilityLayer>
+                        <BarChartPrimitive data={newCustomersChartData} >
                             <CartesianGrid vertical={false} />
                             <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
                             <YAxis tickLine={false} axisLine={false} />
