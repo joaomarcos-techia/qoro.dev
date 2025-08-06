@@ -170,6 +170,15 @@ const BarChartLabelList = LabelList
 
 // #region Line Chart
 const LineChart = LineChartPrimitive
+const LineChartLine = React.forwardRef<
+  React.ComponentRef<typeof Line>,
+  React.ComponentProps<typeof Line>
+>((props, ref) => (
+  // @ts-expect-error - ref is not a valid prop
+  <Line ref={ref} {...props} />
+))
+LineChartLine.displayName = "LineChartLine"
+
 const LineChartYAxis = YAxis
 const LineChartXAxis = XAxis
 const LineChartTooltip = ChartTooltip
@@ -179,15 +188,6 @@ const LineChartContent = ChartContainer
 const LineChartStyle = ChartStyle
 const LineChartReferenceLine = ReferenceLine
 const LineChartBrush = Bar
-
-const LineChartLine = React.forwardRef<
-  React.ComponentRef<typeof Line>,
-  React.ComponentProps<typeof Line>
->((props, ref) => (
-  // @ts-expect-error - ref is not a valid prop
-  <Line ref={ref} {...props} />
-))
-LineChartLine.displayName = "LineChartLine"
 // #endregion
 
 // #region Pie Chart
@@ -218,14 +218,6 @@ PieChartCell.displayName = "PieChartCell"
 
 // #region Radial Chart
 const RadialChart = RadialBarChartPrimitive
-const RadialChartTooltip = ChartTooltip
-const RadialChartLegend = ChartLegend
-const RadialChartContent = ChartContainer
-const RadialChartStyle = ChartStyle
-const RadialChartGrid = PolarGrid
-const RadialChartAngleAxis = PolarAngleAxis
-const RadialChartRadiusAxis = PolarRadiusAxis
-
 const RadialChartBar = React.forwardRef<
   React.ComponentRef<typeof RadialBar>,
   React.ComponentProps<typeof RadialBar>
@@ -234,10 +226,27 @@ const RadialChartBar = React.forwardRef<
   <RadialBar ref={ref} {...props} />
 ))
 RadialChartBar.displayName = "RadialChartBar"
+
+const RadialChartTooltip = ChartTooltip
+const RadialChartLegend = ChartLegend
+const RadialChartContent = ChartContainer
+const RadialChartStyle = ChartStyle
+const RadialChartGrid = PolarGrid
+const RadialChartAngleAxis = PolarAngleAxis
+const RadialChartRadiusAxis = PolarRadiusAxis
 // #endregion
 
 // #region Scatter Chart
 const ScatterChart = ScatterChartPrimitive
+const ScatterChartScatter = React.forwardRef<
+  React.ComponentRef<typeof Scatter>,
+  React.ComponentProps<typeof Scatter>
+>((props, ref) => (
+  // @ts-expect-error - ref is not a valid prop
+  <Scatter ref={ref} {...props} />
+))
+ScatterChartScatter.displayName = "ScatterChartScatter"
+
 const ScatterChartYAxis = YAxis
 const ScatterChartXAxis = XAxis
 const ScatterChartTooltip = ChartTooltip
@@ -247,15 +256,6 @@ const ScatterChartContent = ChartContainer
 const ScatterChartStyle = ChartStyle
 const ScatterChartReferenceLine = ReferenceLine
 const ScatterChartBrush = Bar
-
-const ScatterChartScatter = React.forwardRef<
-  React.ComponentRef<typeof Scatter>,
-  React.ComponentProps<typeof Scatter>
->((props, ref) => (
-  // @ts-expect-error - ref is not a valid prop
-  <Scatter ref={ref} {...props} />
-))
-ScatterChartScatter.displayName = "ScatterChartScatter"
 // #endregion
 
 export {
