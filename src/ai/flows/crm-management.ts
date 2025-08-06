@@ -20,20 +20,8 @@ import * as crmService from '@/services/crmService';
 const ActorSchema = z.object({ actor: z.string() });
 
 const DashboardMetricsOutputSchema = z.object({
-    totalCustomers: z.number(),
-    totalLeads: z.number(),
-    conversionRate: z.number(),
-    totalRevenueWon: z.number(),
-    leadStages: z.object({
-        prospect: z.number(),
-        qualified: z.number(),
-        proposal: z.number(),
-        negotiation: z.number(),
-    }),
-    newCustomersPerMonth: z.array(z.object({
-        month: z.string(),
-        count: z.number(),
-    })),
+    customers: z.array(CustomerProfileSchema),
+    leads: z.array(SaleLeadProfileSchema),
 });
 
 // Define flows

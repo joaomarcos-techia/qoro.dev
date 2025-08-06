@@ -1,13 +1,16 @@
 
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getDashboardMetrics } from '@/ai/flows/crm-management';
-import { Bar, BarChart as BarChartPrimitive, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import { CustomerProfile, SaleLeadProfile } from '@/ai/schemas';
+import { Bar, BarChart as BarChartPrimitive, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { LineChart, Users, TrendingUp, Percent, DollarSign, Loader2, ServerCrash } from 'lucide-react';
+import { subMonths, format, startOfMonth } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface CrmMetrics {
   totalCustomers: number;
@@ -20,7 +23,7 @@ interface CrmMetrics {
     proposal: number;
     negotiation: number;
   };
-  newCustomersPerMonth: { month: string; count: number }[];
+  newCustomersPerMonth: { month: string; customers: number }[];
 }
 
 const chartConfig = {
@@ -63,12 +66,75 @@ export default function DashboardCrmPage() {
     return () => unsubscribe();
   }, []);
 
+  const calculateMetrics = (customers: CustomerProfile[], leads: SaleLeadProfile[]): CrmMetrics => {
+    const totalCustomers = customers.length;
+    
+    let totalRevenueWon = 0;
+    let closedWonCount = 0;
+    let closedLostCount = 0;
+    const leadStages = { prospect: 0, qualified: 0, proposal: 0, negotiation: 0 };
+    
+    leads.forEach(lead => {
+        if(lead.stage === 'closed_won') {
+            totalRevenueWon += lead.value || 0;
+            closedWonCount++;
+        } else if (lead.stage === 'closed_lost') {
+            closedLostCount++;
+        } else if (lead.stage in leadStages) {
+            leadStages[lead.stage as keyof typeof leadStages]++;
+        }
+    });
+
+    const totalLeads = Object.values(leadStages).reduce((a, b) => a + b, 0);
+    const totalClosedDeals = closedWonCount + closedLostCount;
+    const conversionRate = totalClosedDeals > 0 ? parseFloat(((closedWonCount / totalClosedDeals) * 100).toFixed(1)) : 0;
+
+    const now = new Date();
+    const monthlyCounts: { [key: string]: number } = {};
+    for (let i = 5; i >= 0; i--) {
+        const monthDate = subMonths(now, i);
+        const monthKey = format(monthDate, 'yyyy-MM');
+        monthlyCounts[monthKey] = 0;
+    }
+
+    customers.forEach(customer => {
+        const createdAt = new Date(customer.createdAt);
+        if (createdAt >= startOfMonth(subMonths(now, 5))) {
+            const monthKey = format(createdAt, 'yyyy-MM');
+            if (monthlyCounts.hasOwnProperty(monthKey)) {
+                monthlyCounts[monthKey]++;
+            }
+        }
+    });
+    
+    const newCustomersPerMonth = Object.keys(monthlyCounts).map(key => {
+        const [year, month] = key.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1);
+        return {
+            month: format(date, 'MMM', { locale: ptBR }),
+            customers: monthlyCounts[key],
+        };
+    });
+
+    return {
+        totalCustomers,
+        totalLeads,
+        conversionRate,
+        totalRevenueWon,
+        leadStages,
+        newCustomersPerMonth
+    };
+  }
+
   useEffect(() => {
     if (currentUser) {
       setIsLoading(true);
       setError(null);
       getDashboardMetrics({ actor: currentUser.uid })
-        .then(setMetrics)
+        .then(({ customers, leads }) => {
+           const calculatedMetrics = calculateMetrics(customers, leads);
+           setMetrics(calculatedMetrics);
+        })
         .catch(err => {
           console.error("Erro ao buscar métricas do CRM:", err);
           setError('Não foi possível carregar as métricas do CRM.');
@@ -93,7 +159,8 @@ export default function DashboardCrmPage() {
     { stage: 'Negociação', leads: metrics.leadStages.negotiation, fill: "var(--color-leads)" },
   ] : [];
 
-  const newCustomersChartData = metrics ? metrics.newCustomersPerMonth.map(item => ({ month: item.month.charAt(0).toUpperCase() + item.month.slice(1), customers: item.count, fill: 'var(--color-customers)' })) : [];
+  const newCustomersChartData = metrics ? metrics.newCustomersPerMonth.map(item => ({ ...item, month: item.month.charAt(0).toUpperCase() + item.month.slice(1) })) : [];
+
 
   const renderContent = () => {
     if (error) {

@@ -41,10 +41,8 @@ export const listCustomers = async (actorUid: string): Promise<z.infer<typeof Cu
         const parsedData = {
             id: doc.id,
             ...data,
-            // Ensure createdAt is an ISO string for client-side date parsing
             createdAt: data.createdAt.toDate().toISOString(), 
         };
-        // Safely parse, providing default for missing fields
         return CustomerProfileSchema.parse(parsedData);
     });
     
@@ -78,8 +76,6 @@ export const listSaleLeads = async (actorUid: string): Promise<SaleLeadProfile[]
     const customers: Record<string, { name?: string, email?: string }> = {};
 
     if (customerIds.length > 0) {
-        // Firestore 'in' queries are limited to 30 items. For larger sets, chunk the array.
-        // For this app's scale, we'll assume it's under 30 for now.
         const customersSnapshot = await db.collection('customers').where('__name__', 'in', customerIds).get();
         customersSnapshot.forEach(doc => {
             customers[doc.id] = {
@@ -92,21 +88,18 @@ export const listSaleLeads = async (actorUid: string): Promise<SaleLeadProfile[]
     const leads: SaleLeadProfile[] = leadsSnapshot.docs.map(doc => {
         const data = doc.data();
         const customerInfo = customers[data.customerId] || {};
-        // Firestore timestamps need to be converted to Date objects for Zod schema
         const expectedCloseDate = data.expectedCloseDate ? data.expectedCloseDate.toDate() : new Date();
 
         const parsedData = SaleLeadProfileSchema.parse({
             id: doc.id,
             ...data,
-            expectedCloseDate, // This is now a Date object
-            // Convert other timestamps to ISO strings for client-side date parsing
+            expectedCloseDate, 
             createdAt: data.createdAt.toDate().toISOString(),
             updatedAt: data.updatedAt.toDate().toISOString(),
             customerName: customerInfo.name,
             customerEmail: customerInfo.email
         });
         
-        // Convert Date object back to ISO string for the client
         return {
             ...parsedData,
             expectedCloseDate: parsedData.expectedCloseDate.toISOString()
@@ -117,78 +110,15 @@ export const listSaleLeads = async (actorUid: string): Promise<SaleLeadProfile[]
 };
 
 
-export const getDashboardMetrics = async (actorUid: string): Promise<{ totalCustomers: number; totalLeads: number; conversionRate: number; totalRevenueWon: number; leadStages: { prospect: number; qualified: number; proposal: number; negotiation: number; }; newCustomersPerMonth: { month: string; count: number; }[] }> => {
+export const getDashboardMetrics = async (actorUid: string): Promise<{ customers: z.infer<typeof CustomerProfileSchema>[], leads: SaleLeadProfile[] }> => {
     const { organizationId } = await getAdminAndOrg(actorUid);
 
-    const customersRef = db.collection('customers').where('companyId', '==', organizationId);
-    const leadsRef = db.collection('sales_pipeline').where('companyId', '==', organizationId);
+    const customers = await listCustomers(actorUid);
+    const leads = await listSaleLeads(actorUid);
     
-    const now = new Date();
-    const sixMonthsAgo = startOfMonth(subMonths(now, 5));
-
-    const totalCustomersPromise = customersRef.count().get();
-    const newCustomersPromise = customersRef.where('createdAt', '>=', sixMonthsAgo).get();
-    const allLeadsPromise = leadsRef.get();
-    
-    const [totalCustomersSnapshot, newCustomersSnapshot, allLeadsSnapshot] = await Promise.all([
-        totalCustomersPromise, 
-        newCustomersPromise, 
-        allLeadsPromise
-    ]);
-    
-    const monthlyCounts: { [key: string]: number } = {};
-    for (let i = 5; i >= 0; i--) {
-        const monthDate = subMonths(now, i);
-        const monthKey = format(monthDate, 'yyyy-MM');
-        monthlyCounts[monthKey] = 0;
-    }
-
-    newCustomersSnapshot.forEach(doc => {
-        const createdAt = doc.data().createdAt.toDate();
-        const monthKey = format(createdAt, 'yyyy-MM');
-        if (monthlyCounts.hasOwnProperty(monthKey)) {
-            monthlyCounts[monthKey]++;
-        }
-    });
-
-    const newCustomersPerMonth = Object.keys(monthlyCounts).map(key => {
-        const [year, month] = key.split('-');
-        const date = new Date(parseInt(year), parseInt(month) - 1);
-        return {
-            month: format(date, 'MMM', { locale: ptBR }),
-            count: monthlyCounts[key],
-        };
-    });
-
-    let totalRevenueWon = 0;
-    let closedWonCount = 0;
-    let closedLostCount = 0;
-    const leadStages = { prospect: 0, qualified: 0, proposal: 0, negotiation: 0 };
-    let activeLeadsCount = 0;
-
-    allLeadsSnapshot.forEach(doc => {
-        const lead = doc.data();
-        if(lead.stage === 'closed_won') {
-            totalRevenueWon += lead.value || 0;
-            closedWonCount++;
-        } else if (lead.stage === 'closed_lost') {
-            closedLostCount++;
-        } else if (lead.stage in leadStages) {
-            leadStages[lead.stage as keyof typeof leadStages]++;
-            activeLeadsCount++;
-        }
-    });
-    
-    const totalClosedDeals = closedWonCount + closedLostCount;
-    const conversionRate = totalClosedDeals > 0 ? parseFloat(((closedWonCount / totalClosedDeals) * 100).toFixed(1)) : 0;
-
     return {
-        totalCustomers: totalCustomersSnapshot.data().count,
-        totalLeads: activeLeadsCount,
-        conversionRate: conversionRate,
-        totalRevenueWon,
-        leadStages,
-        newCustomersPerMonth,
+        customers,
+        leads,
     };
 };
 
