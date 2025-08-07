@@ -23,6 +23,35 @@ type CustomerFormProps = {
   onCustomerCreated: () => void;
 };
 
+// --- Funções de formatação ---
+const formatCPF = (value: string) => {
+    if (!value) return "";
+    value = value.replace(/\D/g, ''); // Remove tudo o que não é dígito
+    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    return value.slice(0, 14); // Limita ao tamanho máximo de um CPF formatado
+};
+
+const formatCNPJ = (value: string) => {
+    if (!value) return "";
+    value = value.replace(/\D/g, '');
+    value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+    value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+    value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+    value = value.replace(/(\d{4})(\d)/, '$1-$2');
+    return value.slice(0, 18);
+};
+
+const formatPhone = (value: string) => {
+    if (!value) return "";
+    value = value.replace(/\D/g, '');
+    value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+    value = value.replace(/(\d{5})(\d)/, '$1-$2');
+    return value.slice(0, 15);
+};
+// -----------------------------
+
 export function CustomerForm({ onCustomerCreated }: CustomerFormProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,6 +68,8 @@ export function CustomerForm({ onCustomerCreated }: CustomerFormProps) {
     register,
     handleSubmit,
     control,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<z.infer<typeof CustomerSchema>>({
     resolver: zodResolver(CustomerSchema),
@@ -57,7 +88,14 @@ export function CustomerForm({ onCustomerCreated }: CustomerFormProps) {
     setIsLoading(true);
     setError(null);
     try {
-      await createCustomer({ ...data, actor: currentUser.uid });
+      // Remove a formatação antes de enviar
+      const unformattedData = {
+        ...data,
+        cpf: data.cpf?.replace(/\D/g, ''),
+        cnpj: data.cnpj?.replace(/\D/g, ''),
+        phone: data.phone?.replace(/\D/g, ''),
+      };
+      await createCustomer({ ...unformattedData, actor: currentUser.uid });
       onCustomerCreated();
     } catch (err) {
       console.error(err);
@@ -84,8 +122,18 @@ export function CustomerForm({ onCustomerCreated }: CustomerFormProps) {
             {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
-            <Label htmlFor="phone">Telefone</Label>
-            <Input id="phone" {...register('phone')} />
+                <Label htmlFor="phone">Telefone</Label>
+                <Controller
+                    name="phone"
+                    control={control}
+                    render={({ field }) => (
+                        <Input
+                            id="phone"
+                            value={field.value}
+                            onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                        />
+                    )}
+                />
             </div>
              <div className="space-y-2">
                 <Label htmlFor="birthDate">Data de Nascimento</Label>
@@ -107,7 +155,17 @@ export function CustomerForm({ onCustomerCreated }: CustomerFormProps) {
             </div>
              <div className="space-y-2">
                 <Label htmlFor="cpf">CPF</Label>
-                <Input id="cpf" {...register('cpf')} />
+                <Controller
+                    name="cpf"
+                    control={control}
+                    render={({ field }) => (
+                        <Input
+                            id="cpf"
+                            value={field.value}
+                            onChange={(e) => field.onChange(formatCPF(e.target.value))}
+                        />
+                    )}
+                />
             </div>
         </div>
       </div>
@@ -122,7 +180,17 @@ export function CustomerForm({ onCustomerCreated }: CustomerFormProps) {
             </div>
              <div className="space-y-2">
                 <Label htmlFor="cnpj">CNPJ</Label>
-                <Input id="cnpj" {...register('cnpj')} />
+                 <Controller
+                    name="cnpj"
+                    control={control}
+                    render={({ field }) => (
+                        <Input
+                            id="cnpj"
+                            value={field.value}
+                            onChange={(e) => field.onChange(formatCNPJ(e.target.value))}
+                        />
+                    )}
+                />
             </div>
         </div>
       </div>
@@ -203,3 +271,5 @@ export function CustomerForm({ onCustomerCreated }: CustomerFormProps) {
     </form>
   );
 }
+
+    
