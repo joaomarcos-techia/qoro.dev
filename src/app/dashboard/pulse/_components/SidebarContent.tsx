@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { MessageSquare, PlusCircle, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
+import { MessageSquare, PlusCircle, Trash2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Conversation } from '@/ai/schemas';

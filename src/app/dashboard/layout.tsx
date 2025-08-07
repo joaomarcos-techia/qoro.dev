@@ -21,21 +21,9 @@ import {
   Receipt,
   Landmark,
   Truck,
-  PlusCircle,
-  MessageSquare,
-  Trash2
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Header } from '@/components/dashboard/Header';
-import { Conversation } from '@/ai/schemas';
-import { deleteConversation as deleteConversationFlow } from '@/ai/flows/pulse-flow';
-import { useEffect, useState, startTransition } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
-
 
 interface NavItem {
   href: string;
@@ -105,10 +93,8 @@ export default function DashboardLayout({
     pulseConversations?: React.ReactNode 
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const segments = pathname.split('/');
   const currentModule = segments.length > 2 ? segments[2] : 'home';
-  const conversationId = currentModule === 'pulse' && segments.length > 3 ? segments[3] : null;
 
   const renderSidebar = () => {
     if (currentModule === 'home' || !navConfig[currentModule]) {

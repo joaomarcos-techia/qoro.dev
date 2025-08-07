@@ -1,6 +1,6 @@
 
 import { auth } from '@/lib/firebase';
-import { listConversations, deleteConversation as deleteConversationFlow } from '@/ai/flows/pulse-flow';
+import { listConversations } from '@/ai/flows/pulse-flow';
 import { Conversation } from '@/ai/schemas';
 import { SidebarContent } from './_components/SidebarContent';
 import DashboardLayout from '../layout';
