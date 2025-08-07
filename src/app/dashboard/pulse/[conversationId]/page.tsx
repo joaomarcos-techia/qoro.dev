@@ -54,7 +54,7 @@ export default function PulsePage({ params }: { params: { conversationId: string
              setError("Conversa não encontrada ou acesso negado.");
         }
     } catch (err) {
-        console.error(err);
+        console.error("Failed to fetch conversation history:", err);
         setError("Não foi possível carregar o histórico da conversa.");
     } finally {
         setIsHistoryLoading(false);
@@ -96,9 +96,9 @@ export default function PulsePage({ params }: { params: { conversationId: string
         }
         setMessages(prev => [...prev, assistantMessage]);
         
+        // If this was a new conversation, the backend returns the new ID.
+        // We then redirect to the new URL.
         if (response.conversationId && conversationId !== response.conversationId) {
-             // Redirect to the new conversation URL to make it bookmarkable
-             // and to update the sidebar.
              router.push(`/dashboard/pulse/${response.conversationId}`);
         }
 
