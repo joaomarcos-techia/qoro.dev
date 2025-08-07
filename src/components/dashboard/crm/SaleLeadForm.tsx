@@ -40,7 +40,7 @@ export function SaleLeadForm({ onSaleLeadCreated }: SaleLeadFormProps) {
   } = useForm<z.infer<typeof SaleLeadSchema>>({
     resolver: zodResolver(SaleLeadSchema),
     defaultValues: {
-      stage: 'prospect',
+      stage: 'new',
       priority: 'medium',
       expectedCloseDate: new Date(),
     },
@@ -146,12 +146,13 @@ export function SaleLeadForm({ onSaleLeadCreated }: SaleLeadFormProps) {
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <SelectTrigger><SelectValue/></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="prospect">Prospect</SelectItem>
-                            <SelectItem value="qualified">Qualificado</SelectItem>
+                            <SelectItem value="new">Novo / Lead Recebido</SelectItem>
+                            <SelectItem value="initial_contact">Contato Inicial</SelectItem>
+                            <SelectItem value="qualified">Qualificação</SelectItem>
                             <SelectItem value="proposal">Proposta</SelectItem>
                             <SelectItem value="negotiation">Negociação</SelectItem>
-                            <SelectItem value="closed_won">Ganha</SelectItem>
-                            <SelectItem value="closed_lost">Perdida</SelectItem>
+                            <SelectItem value="won">Ganho</SelectItem>
+                            <SelectItem value="lost">Perdido</SelectItem>
                         </SelectContent>
                     </Select>
                 )}/>

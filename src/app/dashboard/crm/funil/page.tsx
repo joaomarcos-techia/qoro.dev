@@ -37,7 +37,10 @@ export default function FunilPage() {
       setIsLoading(true);
       setError(null);
       listSaleLeads({ actor: currentUser.uid })
-        .then(setLeads)
+        .then(data => {
+            const activeLeads = data.filter(lead => lead.stage !== 'won' && lead.stage !== 'lost');
+            setLeads(activeLeads);
+        })
         .catch((err) => {
           console.error(err);
           setError('Não foi possível carregar os leads do funil.');
@@ -55,21 +58,21 @@ export default function FunilPage() {
 
   const columns = useMemo(() => {
     const stageOrder: SaleLeadProfile['stage'][] = [
-      'prospect',
+      'new',
+      'initial_contact',
       'qualified',
       'proposal',
       'negotiation',
-      'closed_won',
-      'closed_lost',
     ];
     
     const stageNames: Record<SaleLeadProfile['stage'], string> = {
-        prospect: 'Prospect',
-        qualified: 'Qualificado',
+        new: 'Novo / Lead Recebido',
+        initial_contact: 'Contato Inicial',
+        qualified: 'Qualificação',
         proposal: 'Proposta',
         negotiation: 'Negociação',
-        closed_won: 'Ganha',
-        closed_lost: 'Perdida'
+        won: 'Ganho',
+        lost: 'Perdido'
     };
 
     const columns = stageOrder.map((stage) => ({

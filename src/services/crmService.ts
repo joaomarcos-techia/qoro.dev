@@ -87,9 +87,24 @@ export const listSaleLeads = async (actorUid: string): Promise<SaleLeadProfile[]
         const customerInfo = customers[data.customerId] || {};
         const expectedCloseDate = data.expectedCloseDate ? data.expectedCloseDate.toDate() : new Date();
 
+        const stageMap: Record<string, SaleLeadProfile['stage']> = {
+            prospect: 'new',
+            initial_contact: 'initial_contact',
+            qualified: 'qualified',
+            proposal: 'proposal',
+            negotiation: 'negotiation',
+            closed_won: 'won',
+            closed_lost: 'lost',
+            won: 'won',
+            lost: 'lost',
+            new: 'new',
+        };
+        const mappedStage = stageMap[data.stage] || 'new';
+
         const parsedData = SaleLeadProfileSchema.parse({
             id: doc.id,
             ...data,
+            stage: mappedStage,
             expectedCloseDate, 
             createdAt: data.createdAt.toDate().toISOString(),
             updatedAt: data.updatedAt.toDate().toISOString(),
