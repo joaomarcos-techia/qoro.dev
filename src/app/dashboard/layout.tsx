@@ -166,16 +166,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <ChevronLeft className="w-4 h-4 mr-2" />
                     <span>Voltar ao Dashboard</span>
                 </Link>
-                 {currentModule === 'pulse' && (
-                    <Link href="/dashboard/pulse/new">
-                        <Button className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold">
-                            <PlusCircle className="mr-2 w-5 h-5"/>
-                            Nova Conversa
-                        </Button>
-                    </Link>
-                )}
             </div>
             <nav className="flex-grow p-4 overflow-y-auto">
+                 {currentModule === 'pulse' && (
+                    <div className="mb-4">
+                        <Link href="/dashboard/pulse/new">
+                            <Button className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold">
+                                <PlusCircle className="mr-2 w-5 h-5"/>
+                                Nova Conversa
+                            </Button>
+                        </Link>
+                    </div>
+                )}
                 {currentModule === 'pulse' ? (
                     <ul className="space-y-1">
                         {conversations.length > 0 ? conversations.map(convo => (
