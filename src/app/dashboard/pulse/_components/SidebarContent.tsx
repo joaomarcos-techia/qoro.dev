@@ -34,8 +34,8 @@ export function PulseSidebarContent() {
     setError(null);
     try {
       const convos = await listConversations({ actor: user.uid });
-      const sortedConvos = [...convos].sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime());
-      setConversations(sortedConvos);
+      // The sorting is now handled directly in the query with the new index
+      setConversations(convos);
     } catch (err: any) {
         console.error("Failed to fetch conversations:", err);
         setError("Não foi possível carregar o histórico. O índice do banco de dados pode estar sendo criado. Tente recarregar a página em alguns minutos.");
@@ -66,7 +66,10 @@ export function PulseSidebarContent() {
             if (id === conversationId) {
                 router.push('/dashboard/pulse/new');
             } else {
-                router.refresh(); 
+                // Manually refetch after deletion to ensure UI is up-to-date
+                if(currentUser) {
+                  fetchConversations(currentUser);
+                }
             }
         } catch (err) {
             console.error("Failed to delete conversation", err);
