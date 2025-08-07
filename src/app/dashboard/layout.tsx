@@ -82,7 +82,7 @@ const navConfig: Record<string, NavGroup> = {
         icon: Activity,
         color: 'bg-purple-500',
         items: [
-             { href: '/dashboard/pulse', label: 'Chat', icon: Activity },
+             { href: '/dashboard/pulse', label: 'Nova Conversa', icon: Activity },
         ]
     }
 };
