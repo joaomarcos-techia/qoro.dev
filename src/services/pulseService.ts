@@ -69,8 +69,27 @@ export const listConversations = async (actorUid: string): Promise<z.infer<typeo
             id: doc.id,
             title: data.title,
             createdAt: data.createdAt.toDate().toISOString(),
-            messages: data.messages,
+            // Ensure messages is always an array, even if missing in Firestore
+            messages: data.messages || [],
         });
+    });
+};
+
+export const getConversation = async (conversationId: string, actorUid: string): Promise<z.infer<typeof ConversationSchema> | null> => {
+    const { organizationId } = await getAdminAndOrg(actorUid);
+    const docRef = db.collection('pulse_conversations').doc(conversationId);
+    
+    const doc = await docRef.get();
+    if (!doc.exists || doc.data()?.organizationId !== organizationId || doc.data()?.userId !== actorUid) {
+        return null; // Return null instead of throwing error for "not found" cases
+    }
+
+    const data = doc.data()!;
+    return ConversationSchema.parse({
+        id: doc.id,
+        title: data.title,
+        createdAt: data.createdAt.toDate().toISOString(),
+        messages: data.messages || [],
     });
 };
 

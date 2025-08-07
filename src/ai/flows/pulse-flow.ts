@@ -4,6 +4,7 @@
  * @fileOverview A conversational AI agent for business insights.
  * - askPulse - A function that handles the conversational chat with QoroPulse.
  * - listConversations - Lists all conversations for the user.
+ * - getConversation - Gets a single conversation.
  * - deleteConversation - Deletes a specific conversation.
  */
 
@@ -17,6 +18,8 @@ import { listSuppliersTool } from '@/ai/tools/supplier-tools';
 import * as pulseService from '@/services/pulseService';
 
 const ActorSchema = z.object({ actor: z.string() });
+const ConversationIdSchema = z.object({ conversationId: z.string() });
+
 
 export async function askPulse(input: z.infer<typeof AskPulseInputSchema>): Promise<z.infer<typeof PulseMessageSchema>> {
   return pulseFlow(input);
@@ -26,7 +29,11 @@ export async function listConversations(input: z.infer<typeof ActorSchema>): Pro
     return listConversationsFlow(input);
 }
 
-export async function deleteConversation(input: { conversationId: string } & z.infer<typeof ActorSchema>): Promise<{ success: boolean }> {
+export async function getConversation(input: z.infer<typeof ConversationIdSchema> & z.infer<typeof ActorSchema>): Promise<z.infer<typeof ConversationSchema> | null> {
+    return getConversationFlow(input);
+}
+
+export async function deleteConversation(input: z.infer<typeof ConversationIdSchema> & z.infer<typeof ActorSchema>): Promise<{ success: boolean }> {
     return deleteConversationFlow(input);
 }
 
@@ -41,10 +48,22 @@ const listConversationsFlow = ai.defineFlow(
     }
 );
 
+const getConversationFlow = ai.defineFlow(
+    {
+        name: 'getPulseConversationFlow',
+        inputSchema: ConversationIdSchema.extend(ActorSchema.shape),
+        outputSchema: ConversationSchema.nullable(),
+    },
+    async ({ conversationId, actor }) => {
+        return pulseService.getConversation(conversationId, actor);
+    }
+);
+
+
 const deleteConversationFlow = ai.defineFlow(
     {
         name: 'deletePulseConversationFlow',
-        inputSchema: z.object({ conversationId: z.string(), actor: z.string() }),
+        inputSchema: ConversationIdSchema.extend(ActorSchema.shape),
         outputSchema: z.object({ success: z.boolean() }),
     },
     async ({ conversationId, actor }) => {
@@ -64,7 +83,6 @@ const pulseFlow = ai.defineFlow(
     const { actor, messages } = input;
     let conversationId = input.conversationId;
 
-    // Correctly separate the latest prompt from the history
     const history = messages.slice(0, -1).map(message => ({
         role: message.role === 'user' ? 'user' : 'model',
         parts: [{ text: message.content }],
@@ -73,7 +91,6 @@ const pulseFlow = ai.defineFlow(
     const lastMessage = messages[messages.length - 1];
     const prompt = lastMessage.content;
     
-    // Generate the main response
     const llmResponse = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
         prompt: prompt,
@@ -127,16 +144,14 @@ Transformar dados empresariais em decisões estratégicas com impacto real. Iden
     
     const updatedMessages = [...messages, assistantResponse];
 
-    // If it's a new conversation, generate a title and save it.
-    if (!conversationId) {
+    if (!conversationId || conversationId === 'new') {
         const titleResponse = await ai.generate({
             model: 'googleai/gemini-2.0-flash',
             prompt: `Crie um título curto (máximo 5 palavras) para a seguinte conversa:\n\nUsuário: ${prompt}\nAssistente: ${assistantResponse.content}`,
         });
-        const title = titleResponse.text.replace(/"/g, ''); // Remove quotes from title
+        const title = titleResponse.text.replace(/"/g, '');
         conversationId = await pulseService.saveConversation(actor, title, updatedMessages);
     } else {
-        // Otherwise, just update the existing conversation
         await pulseService.updateConversation(conversationId, actor, updatedMessages);
     }
     
