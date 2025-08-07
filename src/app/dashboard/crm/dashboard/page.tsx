@@ -11,6 +11,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { LineChart, Users, TrendingUp, Percent, DollarSign, Loader2, ServerCrash } from 'lucide-react';
 import { subMonths, format, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { SuppressRechartsWarning } from '@/components/utils/SuppressRechartsWarning';
 
 interface CrmMetrics {
   totalCustomers: number;
@@ -71,22 +72,21 @@ export default function DashboardCrmPage() {
     
     let totalRevenueWon = 0;
     let closedWonCount = 0;
-    let closedLostCount = 0;
     const leadStages = { prospect: 0, qualified: 0, proposal: 0, negotiation: 0 };
     
     leads.forEach(lead => {
         if(lead.stage === 'closed_won') {
             totalRevenueWon += lead.value || 0;
             closedWonCount++;
-        } else if (lead.stage === 'closed_lost') {
-            closedLostCount++;
-        } else if (lead.stage in leadStages) {
-            leadStages[lead.stage as keyof typeof leadStages]++;
+        } else if (lead.stage !== 'closed_lost') {
+            if (lead.stage in leadStages) {
+                leadStages[lead.stage as keyof typeof leadStages]++;
+            }
         }
     });
 
     const totalLeads = Object.values(leadStages).reduce((a, b) => a + b, 0);
-    const totalClosedDeals = closedWonCount + closedLostCount;
+    const totalClosedDeals = closedWonCount + leads.filter(l => l.stage === 'closed_lost').length;
     const conversionRate = totalClosedDeals > 0 ? parseFloat(((closedWonCount / totalClosedDeals) * 100).toFixed(1)) : 0;
 
     const now = new Date();
@@ -174,52 +174,54 @@ export default function DashboardCrmPage() {
     }
     
     return (
-      <div className="space-y-8">
-        {/* Métricas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <MetricCard title="Total de Clientes" value={metrics?.totalCustomers ?? 0} icon={Users} isLoading={isLoading} color="bg-blue-500" />
-          <MetricCard title="Leads Ativos" value={metrics?.totalLeads ?? 0} icon={TrendingUp} isLoading={isLoading} color="bg-purple-500" />
-          <MetricCard title="Taxa de Conversão" value={metrics?.conversionRate ?? 0} icon={Percent} isLoading={isLoading} color="bg-green-500" format={formatPercentage} />
-          <MetricCard title="Receita Gerada" value={metrics?.totalRevenueWon ?? 0} icon={DollarSign} isLoading={isLoading} color="bg-yellow-500" format={formatCurrency} />
-        </div>
+        <SuppressRechartsWarning>
+            <div className="space-y-8">
+                {/* Métricas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <MetricCard title="Total de Clientes" value={metrics?.totalCustomers ?? 0} icon={Users} isLoading={isLoading} color="bg-blue-500" />
+                <MetricCard title="Leads Ativos" value={metrics?.totalLeads ?? 0} icon={TrendingUp} isLoading={isLoading} color="bg-purple-500" />
+                <MetricCard title="Taxa de Conversão" value={metrics?.conversionRate ?? 0} icon={Percent} isLoading={isLoading} color="bg-green-500" format={formatPercentage} />
+                <MetricCard title="Receita Gerada" value={metrics?.totalRevenueWon ?? 0} icon={DollarSign} isLoading={isLoading} color="bg-yellow-500" format={formatCurrency} />
+                </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-             <Card className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100">
-                <CardHeader>
-                    <CardTitle className="flex items-center"><TrendingUp className="w-5 h-5 mr-3 text-primary"/>Funil de Vendas</CardTitle>
-                    <CardDescription>Distribuição de leads ativos por estágio.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-                        <BarChartPrimitive data={funnelChartData} >
-                            <CartesianGrid vertical={false} />
-                            <XAxis dataKey="stage" tickLine={false} tickMargin={10} axisLine={false} />
-                            <YAxis tickLine={false} axisLine={false} />
-                            <ChartTooltip content={<ChartTooltipContent />} />
-                            <Bar dataKey="leads" radius={8} />
-                        </BarChartPrimitive>
-                    </ChartContainer>
-                </CardContent>
-            </Card>
-            <Card className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100">
-                <CardHeader>
-                    <CardTitle className="flex items-center"><LineChart className="w-5 h-5 mr-3 text-primary"/>Novos Clientes por Mês</CardTitle>
-                    <CardDescription>Crescimento da base de clientes nos últimos 6 meses.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-                        <BarChartPrimitive data={newCustomersChartData} >
-                            <CartesianGrid vertical={false} />
-                            <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
-                            <YAxis tickLine={false} axisLine={false} />
-                            <ChartTooltip content={<ChartTooltipContent />} />
-                            <Bar dataKey="customers" name="Novos Clientes" radius={8} fill="var(--color-customers)" />
-                        </BarChartPrimitive>
-                    </ChartContainer>
-                </CardContent>
-            </Card>
-        </div>
-      </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <Card className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100">
+                        <CardHeader>
+                            <CardTitle className="flex items-center"><TrendingUp className="w-5 h-5 mr-3 text-primary"/>Funil de Vendas</CardTitle>
+                            <CardDescription>Distribuição de leads ativos por estágio.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+                                <BarChartPrimitive data={funnelChartData} >
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="stage" tickLine={false} tickMargin={10} axisLine={false} />
+                                    <YAxis tickLine={false} axisLine={false} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Bar dataKey="leads" radius={8} />
+                                </BarChartPrimitive>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100">
+                        <CardHeader>
+                            <CardTitle className="flex items-center"><LineChart className="w-5 h-5 mr-3 text-primary"/>Novos Clientes por Mês</CardTitle>
+                            <CardDescription>Crescimento da base de clientes nos últimos 6 meses.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+                                <BarChartPrimitive data={newCustomersChartData} >
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
+                                    <YAxis tickLine={false} axisLine={false} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Bar dataKey="customers" name="Novos Clientes" radius={8} fill="var(--color-customers)" />
+                                </BarChartPrimitive>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        </SuppressRechartsWarning>
     );
   };
 
