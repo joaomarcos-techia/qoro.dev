@@ -6,7 +6,7 @@
 
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAdminAndOrg } from './utils';
-import { ConversationSchema, PulseMessageSchema, type Conversation } from '@/ai/schemas';
+import { PulseMessageSchema } from '@/ai/schemas';
 import { z } from 'zod';
 
 const db = getFirestore();
@@ -49,43 +49,4 @@ export const updateConversation = async (
         messages,
         updatedAt: FieldValue.serverTimestamp(),
     });
-}
-
-export const listConversations = async (actorUid: string): Promise<Conversation[]> => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
-    
-    const snapshot = await db.collection('pulse_conversations')
-        .where('organizationId', '==', organizationId)
-        .where('userId', '==', actorUid)
-        .orderBy('updatedAt', 'desc')
-        .get();
-
-    if (snapshot.empty) {
-        return [];
-    }
-
-    const conversations: Conversation[] = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return ConversationSchema.parse({
-            id: doc.id,
-            title: data.title,
-            messages: data.messages,
-            createdAt: data.createdAt.toDate().toISOString(),
-        });
-    });
-
-    return conversations;
-}
-
-export const deleteConversation = async (conversationId: string, actorUid: string): Promise<{ success: boolean }> => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
-    const conversationRef = db.collection('pulse_conversations').doc(conversationId);
-
-    const doc = await conversationRef.get();
-    if (!doc.exists || doc.data()?.organizationId !== organizationId || doc.data()?.userId !== actorUid) {
-         throw new Error("Conversation not found or access denied.");
-    }
-
-    await conversationRef.delete();
-    return { success: true };
 }

@@ -7,6 +7,10 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
+// This file is kept for potential future use but is no longer
+// directly used by the main pulse flow after removing the conversation history feature.
+// It can be repurposed for other metadata generation tasks.
+
 export const generateTitleTool = ai.defineTool(
     {
         name: 'generateTitleTool',

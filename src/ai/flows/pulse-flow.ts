@@ -8,27 +8,16 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { AskPulseInputSchema, ConversationSchema, PulseMessageSchema } from '@/ai/schemas';
+import { AskPulseInputSchema, PulseMessageSchema } from '@/ai/schemas';
 import { listCustomersTool, listSaleLeadsTool } from '@/ai/tools/crm-tools';
 import { createTaskTool, listTasksTool } from '@/ai/tools/task-tools';
 import { listAccountsTool, getFinanceSummaryTool } from '@/ai/tools/finance-tools';
 import { listSuppliersTool } from '@/ai/tools/supplier-tools';
 import * as pulseService from '@/services/pulseService';
-import { generateTitleTool } from '@/ai/tools/pulse-tools';
-
 
 export async function askPulse(input: z.infer<typeof AskPulseInputSchema>): Promise<z.infer<typeof PulseMessageSchema>> {
   return pulseFlow(input);
 }
-
-export async function listConversations(actor: string): Promise<z.infer<typeof ConversationSchema>[]> {
-    return pulseService.listConversations(actor);
-}
-
-export async function deleteConversation(conversationId: string, actor: string): Promise<{ success: boolean }> {
-    return pulseService.deleteConversation(conversationId, actor);
-}
-
 
 const pulseFlow = ai.defineFlow(
   {
@@ -57,7 +46,7 @@ const pulseFlow = ai.defineFlow(
         config: {
           temperature: 0.7,
         },
-        tools: [listCustomersTool, listSaleLeadsTool, listTasksTool, createTaskTool, listAccountsTool, getFinanceSummaryTool, listSuppliersTool, generateTitleTool],
+        tools: [listCustomersTool, listSaleLeadsTool, listTasksTool, createTaskTool, listAccountsTool, getFinanceSummaryTool, listSuppliersTool],
         toolConfig: {
           context: { actor },
         },

@@ -82,9 +82,7 @@ const navConfig: Record<string, NavGroup> = {
         group: 'QoroPulse',
         icon: Activity,
         color: 'bg-purple-500',
-        items: [
-             { href: '/dashboard/pulse', label: 'Nova Conversa', icon: PlusCircle },
-        ]
+        items: [] // Pulse page has no sub-navigation in the sidebar
     }
 };
 
@@ -95,15 +93,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const currentModule = segments.length > 2 ? segments[2] : 'home';
 
   const renderSidebar = () => {
+    // Hide sidebar on the main dashboard page or if module doesn't exist
     if (currentModule === 'home' || !navConfig[currentModule]) {
       return null;
     }
     
     const navData = navConfig[currentModule];
     const { group, icon: GroupIcon, color, items } = navData;
-    
-    // Special case for QoroPulse to reorder items
-    const isPulse = currentModule === 'pulse';
     
     return (
         <aside className="w-64 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col shadow-neumorphism-right">
@@ -118,20 +114,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <ChevronLeft className="w-4 h-4 mr-2" />
                     <span>Voltar ao Dashboard</span>
                 </Link>
-                {/* For Pulse, render "Nova Conversa" button here */}
-                 {isPulse && items.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 bg-primary text-white shadow-neumorphism-inset`}
-                    >
-                      <item.icon className="w-5 h-5 mr-3" />
-                      {item.label}
-                    </Link>
-                ))}
             </div>
-            {/* For other modules, render the nav list normally */}
-            {!isPulse && (
+            {items.length > 0 && (
                 <nav className="flex-grow p-4">
                     <ul>
                         {items.map((item) => (
