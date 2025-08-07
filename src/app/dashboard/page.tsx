@@ -228,14 +228,6 @@ function DashboardContent() {
       <div>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-black">Seus Aplicativos Qoro</h3>
-            {permissions?.qoroPulse && (
-                <Link href="/dashboard/pulse">
-                    <Button className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold">
-                        <PlusCircle className="mr-2 w-5 h-5" />
-                        Nova Conversa
-                    </Button>
-                </Link>
-            )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
