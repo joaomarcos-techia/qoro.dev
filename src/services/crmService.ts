@@ -4,8 +4,6 @@ import { z } from 'zod';
 import { CustomerSchema, CustomerProfileSchema, SaleLeadProfileSchema, SaleLeadSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import type { SaleLeadProfile, QuoteProfile } from '@/ai/schemas';
-import { format, subMonths, startOfMonth } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 const db = getFirestore();
 
@@ -111,8 +109,8 @@ export const listSaleLeads = async (actorUid: string): Promise<SaleLeadProfile[]
 
 
 export const getDashboardMetrics = async (actorUid: string): Promise<{ customers: z.infer<typeof CustomerProfileSchema>[], leads: SaleLeadProfile[] }> => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
-
+    // This function is now simpler: it just fetches the raw data.
+    // The calculation logic has been moved to the frontend for better control.
     const customers = await listCustomers(actorUid);
     const leads = await listSaleLeads(actorUid);
     
