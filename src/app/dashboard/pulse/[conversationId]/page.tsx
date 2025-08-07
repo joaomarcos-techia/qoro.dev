@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { askPulse, getConversation } from '@/ai/flows/pulse-flow';
-import type { PulseMessage, Conversation } from '@/ai/schemas';
+import type { PulseMessage } from '@/ai/schemas';
 
 const exampleQuestions = [
     "Quais são meus clientes mais valiosos este mês?",
@@ -46,6 +46,7 @@ export default function PulsePage({ params }: { params: { conversationId: string
     }
     
     setIsHistoryLoading(true);
+    setError(null);
     try {
         const convo = await getConversation({ actor: currentUser.uid, conversationId });
         if (convo) {
@@ -148,7 +149,7 @@ export default function PulsePage({ params }: { params: { conversationId: string
   );
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto">
+    <div className="flex flex-col h-full max-w-4xl mx-auto bg-white rounded-2xl shadow-neumorphism border border-gray-200">
         <div 
             ref={scrollAreaRef}
             className="flex-1 overflow-y-auto p-6 space-y-6"
