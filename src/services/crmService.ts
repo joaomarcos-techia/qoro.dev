@@ -86,8 +86,7 @@ export const listSaleLeads = async (actorUid: string): Promise<SaleLeadProfile[]
     const leads: SaleLeadProfile[] = leadsSnapshot.docs.map(doc => {
         const data = doc.data();
         const customerInfo = customers[data.customerId] || {};
-        // This handles both Firestore Timestamps (from older data) and ISO strings (from new data)
-        const expectedCloseDate = data.expectedCloseDate ? new Date(data.expectedCloseDate.seconds ? data.expectedCloseDate.toDate() : data.expectedCloseDate) : new Date();
+        const expectedCloseDate = data.expectedCloseDate; // It's already a string
 
         const stageMap: Record<string, SaleLeadProfile['stage']> = {
             prospect: 'new',
@@ -114,10 +113,7 @@ export const listSaleLeads = async (actorUid: string): Promise<SaleLeadProfile[]
             customerEmail: customerInfo.email
         });
         
-        return {
-            ...parsedData,
-            expectedCloseDate: parsedData.expectedCloseDate.toISOString()
-        };
+        return parsedData;
     });
 
     return leads;
