@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useEffect, useState, useTransition, useCallback } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { listConversations, deleteConversation as deleteConversationFlow, listConversationsSortedByCreation } from '@/ai/flows/pulse-flow';
+import { listConversations, deleteConversation as deleteConversationFlow } from '@/ai/flows/pulse-flow';
 import type { Conversation } from '@/ai/schemas';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -34,20 +33,12 @@ export function PulseSidebarContent() {
     setIsLoading(true);
     setError(null);
     try {
-      // Tenta primeiro com 'updatedAt', que precisa do índice novo.
       const convos = await listConversations({ actor: user.uid });
       const sortedConvos = [...convos].sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime());
       setConversations(sortedConvos);
     } catch (err: any) {
-        console.warn("Query by 'updatedAt' failed, falling back to 'createdAt'. This is expected while the index is building.", err.message);
-        try {
-            // Se a primeira falhar (índice construindo), usa 'createdAt' que já tem índice.
-            const convos = await listConversationsSortedByCreation({ actor: user.uid });
-            setConversations(convos);
-        } catch (finalErr) {
-            console.error("Failed to fetch conversations with fallback:", finalErr);
-            setError("Não foi possível carregar o histórico. Tente recarregar a página em alguns minutos.");
-        }
+        console.error("Failed to fetch conversations:", err);
+        setError("Não foi possível carregar o histórico. O índice do banco de dados pode estar sendo criado. Tente recarregar a página em alguns minutos.");
     } finally {
       setIsLoading(false);
     }
