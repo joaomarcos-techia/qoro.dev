@@ -26,6 +26,15 @@
       ]
     },
     {
+      "collectionGroup": "pulse_conversations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "organizationId", "order": "ASCENDING" },
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "quotes",
       "queryScope": "COLLECTION",
       "fields": [
