@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { listConversations, deleteConversation as deleteConversationFlow } from '@/ai/flows/pulse-flow';
@@ -17,6 +17,7 @@ export function PulseSidebarContent() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const pathname = usePathname();
   const router = useRouter();
@@ -44,7 +45,7 @@ export function PulseSidebarContent() {
         })
         .finally(() => setIsLoading(false));
     }
-  }, [currentUser, pathname]); // Re-fetch when pathname changes (e.g., after creating a new chat)
+  }, [currentUser, pathname]); // Re-fetch when pathname changes
 
   const handleDeleteConversation = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -52,19 +53,23 @@ export function PulseSidebarContent() {
 
     if (!currentUser) return;
 
-    const previousConversations = conversations;
-    setConversations(prev => prev.filter(c => c.id !== id));
+    startTransition(async () => {
+        const previousConversations = conversations;
+        setConversations(prev => prev.filter(c => c.id !== id));
 
-    try {
-        await deleteConversationFlow({ conversationId: id, actor: currentUser.uid });
-        if (id === conversationId) {
-            router.push('/dashboard/pulse/new');
+        try {
+            await deleteConversationFlow({ conversationId: id, actor: currentUser.uid });
+            if (id === conversationId) {
+                router.push('/dashboard/pulse/new');
+            } else {
+                router.refresh(); 
+            }
+        } catch (err) {
+            console.error("Failed to delete conversation", err);
+            setError("Falha ao excluir a conversa.");
+            setConversations(previousConversations);
         }
-    } catch (err) {
-        console.error("Failed to delete conversation", err);
-        setError("Falha ao excluir a conversa.");
-        setConversations(previousConversations);
-    }
+    });
   }
 
   const renderContent = () => {
@@ -104,6 +109,7 @@ export function PulseSidebarContent() {
                         variant="ghost"
                         size="icon"
                         onClick={(e) => handleDeleteConversation(convo.id, e)}
+                        disabled={isPending}
                         className={cn(
                             "h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0",
                             convo.id === conversationId ? "hover:bg-primary/80" : "hover:bg-red-100 text-red-500"
