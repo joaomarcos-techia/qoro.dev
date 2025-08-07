@@ -65,11 +65,11 @@ export default function FunilPage() {
       'negotiation',
     ];
     
-    const stageNames: Record<SaleLeadProfile['stage'], string> = {
+    const stageNames: Record<string, string> = {
         new: 'Novo / Lead Recebido',
         initial_contact: 'Contato Inicial',
-        qualified: 'Qualificação',
-        proposal: 'Proposta',
+        qualified: 'Qualificação / Diagnóstico',
+        proposal: 'Apresentação / Proposta',
         negotiation: 'Negociação',
         won: 'Ganho',
         lost: 'Perdido'

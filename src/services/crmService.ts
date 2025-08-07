@@ -39,6 +39,7 @@ export const listCustomers = async (actorUid: string): Promise<z.infer<typeof Cu
             id: doc.id,
             ...data,
             createdAt: data.createdAt.toDate().toISOString(), 
+            birthDate: data.birthDate || null,
         };
         return CustomerProfileSchema.parse(parsedData);
     });
@@ -85,7 +86,8 @@ export const listSaleLeads = async (actorUid: string): Promise<SaleLeadProfile[]
     const leads: SaleLeadProfile[] = leadsSnapshot.docs.map(doc => {
         const data = doc.data();
         const customerInfo = customers[data.customerId] || {};
-        const expectedCloseDate = data.expectedCloseDate ? data.expectedCloseDate.toDate() : new Date();
+        // This handles both Firestore Timestamps (from older data) and ISO strings (from new data)
+        const expectedCloseDate = data.expectedCloseDate ? new Date(data.expectedCloseDate.seconds ? data.expectedCloseDate.toDate() : data.expectedCloseDate) : new Date();
 
         const stageMap: Record<string, SaleLeadProfile['stage']> = {
             prospect: 'new',
@@ -203,7 +205,7 @@ export const listQuotes = async (actorUid: string): Promise<QuoteProfile[]> => {
     const quotes: QuoteProfile[] = quotesSnapshot.docs.map(doc => {
         const data = doc.data();
         const customerInfo = customers[data.customerId] || {};
-        const validUntil = data.validUntil ? data.validUntil.toDate() : new Date();
+        const validUntil = data.validUntil ? new Date(data.validUntil.seconds ? data.validUntil.toDate() : data.validUntil) : new Date();
 
         const parsedData = QuoteProfileSchema.parse({
             id: doc.id,
