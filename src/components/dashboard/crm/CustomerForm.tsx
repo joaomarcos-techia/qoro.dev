@@ -97,7 +97,7 @@ export function CustomerForm({ onCustomerCreated }: CustomerFormProps) {
                             <PopoverTrigger asChild>
                             <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? format(field.value, "dd/MM/yyyy") : <span>Selecione a data</span>}
+                                {field.value ? format(new Date(field.value), "dd/MM/yyyy") : <span>Selecione a data</span>}
                             </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} /></PopoverContent>
