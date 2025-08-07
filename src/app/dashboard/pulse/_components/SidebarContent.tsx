@@ -48,7 +48,7 @@ export function PulseSidebarContent() {
     if (currentUser) {
       fetchConversations(currentUser);
     }
-  }, [currentUser, pathname, fetchConversations]);
+  }, [currentUser, fetchConversations]);
 
   const handleDeleteConversation = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -65,7 +65,6 @@ export function PulseSidebarContent() {
             if (id === conversationId) {
                 router.push('/dashboard/pulse/new');
             } else {
-                // Manually refetch after deletion to ensure UI is up-to-date
                 if(currentUser) {
                   fetchConversations(currentUser);
                 }
