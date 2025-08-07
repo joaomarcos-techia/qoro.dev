@@ -25,27 +25,33 @@ export const createAccount = async (input: z.infer<typeof AccountSchema>, actorU
 export const listAccounts = async (actorUid: string): Promise<z.infer<typeof AccountProfileSchema>[]> => {
     const { organizationId } = await getAdminAndOrg(actorUid);
     
-    const accountsSnapshot = await db.collection('accounts')
-                                     .where('companyId', '==', organizationId)
-                                     .orderBy('createdAt', 'desc')
-                                     .get();
+    try {
+        const accountsSnapshot = await db.collection('accounts')
+                                         .where('companyId', '==', organizationId)
+                                         .orderBy('createdAt', 'desc')
+                                         .get();
+        
+        if (accountsSnapshot.empty) {
+            return [];
+        }
+        
+        const accounts: z.infer<typeof AccountProfileSchema>[] = accountsSnapshot.docs.map(doc => {
+            const data = doc.data();
+            const parsedData = {
+                id: doc.id,
+                ...data,
+                createdAt: data.createdAt.toDate().toISOString(),
+            };
     
-    if (accountsSnapshot.empty) {
-        return [];
+            return AccountProfileSchema.parse(parsedData);
+        });
+        
+        return accounts;
+    } catch (error) {
+        console.error("Erro ao buscar contas:", error);
+        // Lançar um erro mais genérico para o cliente, mas logar o erro real no servidor
+        throw new Error("Não foi possível carregar as contas financeiras devido a um erro no servidor.");
     }
-    
-    const accounts: z.infer<typeof AccountProfileSchema>[] = accountsSnapshot.docs.map(doc => {
-        const data = doc.data();
-        const parsedData = {
-            id: doc.id,
-            ...data,
-            createdAt: data.createdAt.toDate().toISOString(),
-        };
-
-        return AccountProfileSchema.parse(parsedData);
-    });
-    
-    return accounts;
 };
 
 export const getDashboardMetrics = async (actorUid: string) => {
