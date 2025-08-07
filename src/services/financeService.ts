@@ -14,10 +14,14 @@ export const createAccount = async (input: z.infer<typeof AccountSchema>, actorU
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
-
-    const accountRef = await adminDb.collection('accounts').add(newAccountData);
-
-    return { id: accountRef.id };
+    
+    try {
+        const accountRef = await adminDb.collection('accounts').add(newAccountData);
+        return { id: accountRef.id };
+    } catch (error: any) {
+        console.error("Erro ao criar conta no Firestore:", error, error.stack);
+        throw new Error("Falha ao salvar a conta no banco de dados. Tente novamente mais tarde.");
+    }
 };
 
 

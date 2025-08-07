@@ -10,44 +10,47 @@ export const createTransaction = async (input: z.infer<typeof TransactionSchema>
     const { organizationId } = await getAdminAndOrg(actorUid);
 
     const accountRef = adminDb.collection('accounts').doc(input.accountId);
-    const transactionRef = adminDb.collection('transactions').doc(); // Create a new ref for the transaction
+    const transactionRef = adminDb.collection('transactions').doc();
 
-    await adminDb.runTransaction(async (t) => {
-        const accountDoc = await t.get(accountRef);
-        if (!accountDoc.exists) {
-            throw new Error("A conta financeira especificada não foi encontrada.");
-        }
+    try {
+        await adminDb.runTransaction(async (t) => {
+            const accountDoc = await t.get(accountRef);
+            if (!accountDoc.exists) {
+                throw new Error("A conta financeira especificada não foi encontrada.");
+            }
 
-        const accountData = accountDoc.data()!;
-        if (accountData.companyId !== organizationId) {
-             throw new Error("A conta especificada não pertence a esta organização.");
-        }
+            const accountData = accountDoc.data()!;
+            if (accountData.companyId !== organizationId) {
+                throw new Error("A conta especificada não pertence a esta organização.");
+            }
 
-        const currentBalance = accountData.balance || 0;
-        const transactionAmount = input.amount;
+            const currentBalance = accountData.balance || 0;
+            const transactionAmount = input.amount;
 
-        let newBalance;
-        if (input.type === 'income') {
-            newBalance = currentBalance + transactionAmount;
-        } else {
-            newBalance = currentBalance - transactionAmount;
-        }
+            let newBalance;
+            if (input.type === 'income') {
+                newBalance = currentBalance + transactionAmount;
+            } else {
+                newBalance = currentBalance - transactionAmount;
+            }
 
-        // Update the account balance
-        t.update(accountRef, { balance: newBalance });
+            t.update(accountRef, { balance: newBalance });
 
-        // Create the new transaction
-        const newTransactionData = {
-            ...input,
-            companyId: organizationId,
-            createdBy: actorUid,
-            createdAt: FieldValue.serverTimestamp(),
-            updatedAt: FieldValue.serverTimestamp(),
-        };
-        t.set(transactionRef, newTransactionData);
-    });
+            const newTransactionData = {
+                ...input,
+                companyId: organizationId,
+                createdBy: actorUid,
+                createdAt: FieldValue.serverTimestamp(),
+                updatedAt: FieldValue.serverTimestamp(),
+            };
+            t.set(transactionRef, newTransactionData);
+        });
 
-    return { id: transactionRef.id };
+        return { id: transactionRef.id };
+    } catch (error: any) {
+        console.error("Erro ao criar transação no Firestore:", error, error.stack);
+        throw new Error(`Falha ao salvar a transação no banco de dados: ${error.message}`);
+    }
 };
 
 
