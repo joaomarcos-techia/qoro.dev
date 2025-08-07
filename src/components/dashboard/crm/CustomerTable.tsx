@@ -88,7 +88,11 @@ export const columns: ColumnDef<CustomerProfile>[] = [
   {
     accessorKey: 'createdAt',
     header: 'Criado em',
-    cell: ({ row }) => new Date(row.getValue('createdAt')).toLocaleDateString('pt-BR'),
+    cell: ({ row }) => {
+        const createdAt = row.getValue('createdAt');
+        if (!createdAt) return '-';
+        return new Date(createdAt as string).toLocaleDateString('pt-BR');
+    }
   },
   {
     id: 'actions',
