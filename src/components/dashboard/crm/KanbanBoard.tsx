@@ -1,13 +1,13 @@
 'use client';
 
-import { SaleLeadProfile } from '@/ai/schemas';
+import { CustomerProfile } from '@/ai/schemas';
 import { KanbanCard } from './KanbanCard';
 import { LayoutGrid } from 'lucide-react';
 
 export type KanbanColumn = {
   id: string;
   title: string;
-  leads: SaleLeadProfile[];
+  customers: CustomerProfile[];
 };
 
 interface KanbanBoardProps {
@@ -16,14 +16,14 @@ interface KanbanBoardProps {
 
 export function KanbanBoard({ columns }: KanbanBoardProps) {
 
-  const totalLeads = columns.reduce((acc, col) => acc + col.leads.length, 0);
+  const totalCustomers = columns.reduce((acc, col) => acc + col.customers.length, 0);
 
-  if (totalLeads === 0) {
+  if (totalCustomers === 0) {
     return (
         <div className="flex flex-col items-center justify-center text-center min-h-[400px] bg-gray-50/50 rounded-2xl p-8 border border-gray-200 shadow-neumorphism-inset">
             <LayoutGrid className="w-16 h-16 text-gray-300 mb-4" />
-            <h3 className="text-xl font-bold text-black">Nenhuma oportunidade no funil</h3>
-            <p className="text-gray-500 mt-2">Comece criando um cliente e uma oportunidade de venda para vê-la aqui.</p>
+            <h3 className="text-xl font-bold text-black">Nenhum cliente no funil</h3>
+            <p className="text-gray-500 mt-2">Adicione novos clientes para gerenciá-los aqui.</p>
         </div>
     )
   }
@@ -36,12 +36,12 @@ export function KanbanBoard({ columns }: KanbanBoardProps) {
             <h2 className="text-base font-bold text-black mb-4 px-2 flex justify-between items-center">
               <span>{column.title}</span>
               <span className="text-sm font-medium text-gray-500 bg-gray-200 rounded-full px-2.5 py-0.5">
-                {column.leads.length}
+                {column.customers.length}
               </span>
             </h2>
             <div className="space-y-4 min-h-[100px]">
-              {column.leads.map((lead) => (
-                <KanbanCard key={lead.id} lead={lead} />
+              {column.customers.map((customer) => (
+                <KanbanCard key={customer.id} customer={customer} />
               ))}
             </div>
           </div>

@@ -1,22 +1,17 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { KanbanBoard } from '@/components/dashboard/crm/KanbanBoard';
-import { SaleLeadProfile } from '@/ai/schemas';
-import { listSaleLeads } from '@/ai/flows/crm-management';
+import { CustomerProfile } from '@/ai/schemas';
+import { listCustomers } from '@/ai/flows/crm-management';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { Loader2, ServerCrash, PlusCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { SaleLeadForm } from '@/components/dashboard/crm/SaleLeadForm';
+import { Loader2, ServerCrash } from 'lucide-react';
 
 export default function FunilPage() {
-  const [leads, setLeads] = useState<SaleLeadProfile[]>([]);
+  const [customers, setCustomers] = useState<CustomerProfile[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [refreshCounter, setRefreshCounter] = useState(0);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -25,7 +20,7 @@ export default function FunilPage() {
       } else {
         setCurrentUser(null);
         setIsLoading(false);
-        setLeads([]);
+        setCustomers([]);
         setError(null);
       }
     });
@@ -36,60 +31,54 @@ export default function FunilPage() {
     if (currentUser) {
       setIsLoading(true);
       setError(null);
-      listSaleLeads({ actor: currentUser.uid })
-        .then(data => {
-            const activeLeads = data.filter(lead => lead.stage !== 'won' && lead.stage !== 'lost');
-            setLeads(activeLeads);
-        })
+      listCustomers({ actor: currentUser.uid })
+        .then(setCustomers)
         .catch((err) => {
           console.error(err);
-          setError('Não foi possível carregar os leads do funil.');
+          setError('Não foi possível carregar os clientes do funil.');
         })
         .finally(() => setIsLoading(false));
     } else if (!auth.currentUser) {
       setIsLoading(false);
     }
-  }, [currentUser, refreshCounter]);
-
-  const handleLeadCreated = () => {
-    setIsModalOpen(false);
-    setRefreshCounter(prev => prev + 1);
-  };
+  }, [currentUser]);
 
   const columns = useMemo(() => {
-    const stageOrder: SaleLeadProfile['stage'][] = [
+    const stageOrder: CustomerProfile['status'][] = [
       'new',
       'initial_contact',
-      'qualified',
+      'qualification',
       'proposal',
       'negotiation',
+      'won',
+      'lost'
     ];
     
     const stageNames: Record<string, string> = {
         new: 'Novo / Lead Recebido',
         initial_contact: 'Contato Inicial',
-        qualified: 'Qualificação / Diagnóstico',
+        qualification: 'Qualificação / Diagnóstico',
         proposal: 'Apresentação / Proposta',
         negotiation: 'Negociação',
-        won: 'Ganho',
+        won: 'Ganho (Fechamento)',
         lost: 'Perdido'
     };
 
     const columns = stageOrder.map((stage) => ({
       id: stage,
       title: stageNames[stage],
-      leads: leads.filter((lead) => lead.stage === stage),
+      customers: customers.filter((customer) => customer.status === stage),
     }));
 
     return columns;
-  }, [leads]);
+  }, [customers]);
 
   const renderContent = () => {
     if (isLoading) {
       return (
         <div className="flex flex-col items-center justify-center h-96">
           <Loader2 className="w-12 h-12 text-primary animate-spin" />
-          <p className="mt-4 text-gray-600">Carregando funil de vendas...</p>
+          <p className="mt-4 text-gray-600">Carregando funil de clientes...</p>
         </div>
       );
     }
@@ -111,28 +100,11 @@ export default function FunilPage() {
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-black">Funil de Vendas</h1>
+          <h1 className="text-3xl font-bold text-black">Funil de Clientes</h1>
           <p className="text-gray-600">
-            Visualize e gerencie seu pipeline de negócios.
+            Visualize e gerencie a jornada dos seus clientes pelas fases de negociação.
           </p>
         </div>
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogTrigger asChild>
-                 <Button className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold">
-                    <PlusCircle className="mr-2 w-5 h-5" />
-                    Criar Oportunidade
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[700px]">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold text-black">Criar Nova Oportunidade</DialogTitle>
-                    <DialogDescription>
-                        Preencha as informações para adicionar uma nova oportunidade ao funil.
-                    </DialogDescription>
-                </DialogHeader>
-                <SaleLeadForm onSaleLeadCreated={handleLeadCreated} />
-            </DialogContent>
-        </Dialog>
       </div>
       {renderContent()}
     </div>

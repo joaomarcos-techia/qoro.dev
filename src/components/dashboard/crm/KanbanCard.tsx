@@ -1,57 +1,53 @@
 'use client';
 
-import { SaleLeadProfile } from '@/ai/schemas';
+import { CustomerProfile } from '@/ai/schemas';
 import { Button } from '@/components/ui/button';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { DollarSign, User, Calendar, Flag } from 'lucide-react';
+import { Mail, Phone, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 
 interface KanbanCardProps {
-  lead: SaleLeadProfile;
+  customer: CustomerProfile;
 }
 
-const priorityMap: Record<SaleLeadProfile['priority'], { text: string; color: string }> = {
-    low: { text: 'Baixa', color: 'bg-green-100 text-green-800 border-green-200' },
-    medium: { text: 'Média', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-    high: { text: 'Alta', color: 'bg-orange-100 text-orange-800 border-orange-200' },
-};
-
-export function KanbanCard({ lead }: KanbanCardProps) {
-  const formattedValue = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(lead.value);
+export function KanbanCard({ customer }: KanbanCardProps) {
   
-  const priorityInfo = priorityMap[lead.priority] || priorityMap.medium;
+  const handleMove = (direction: 'prev' | 'next') => {
+    // Placeholder for moving logic
+    alert(`Mover ${customer.name} para ${direction === 'next' ? 'próxima' : 'anterior'} fase.`);
+  };
+
+  const handleDelete = () => {
+    // Placeholder for delete logic
+    alert(`Remover ${customer.name} do funil.`);
+  }
 
   return (
     <div className="bg-white rounded-xl p-4 shadow-neumorphism hover:shadow-neumorphism-hover transition-shadow duration-300 border border-gray-100">
-      <h3 className="font-bold text-black text-base mb-3 break-words">{lead.title}</h3>
+      <h3 className="font-bold text-black text-base mb-3 break-words">{customer.name}</h3>
       
       <div className="space-y-2 text-sm text-gray-700">
         <div className="flex items-center">
-            <User className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
-            <span className="truncate">{lead.customerName || 'Cliente não informado'}</span>
+            <Mail className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
+            <span className="truncate">{customer.email}</span>
         </div>
-        <div className="flex items-center font-semibold text-green-600">
-            <DollarSign className="w-4 h-4 mr-2 text-green-400 flex-shrink-0" />
-            <span>{formattedValue}</span>
-        </div>
-        <div className="flex items-center">
-            <Calendar className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
-            <span className="text-xs">
-                {format(new Date(lead.expectedCloseDate), "dd 'de' MMM, yyyy", { locale: ptBR })}
-            </span>
-        </div>
+         {customer.phone && (
+            <div className="flex items-center">
+                <Phone className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
+                <span className="truncate">{customer.phone}</span>
+            </div>
+        )}
       </div>
       
       <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center">
-        <div className={`flex items-center text-xs font-medium px-2 py-1 rounded-full border ${priorityInfo.color}`}>
-          <Flag className="w-3 h-3 mr-1.5" />
-          {priorityInfo.text}
+        <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMove('prev')}>
+                <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50 hover:text-red-600" onClick={handleDelete}>
+                <Trash2 className="w-4 h-4" />
+            </Button>
         </div>
-        <Button variant="ghost" size="sm" className="text-primary h-auto p-1 text-xs hover:bg-primary/10">
-            Detalhes
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMove('next')}>
+            <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
     </div>
