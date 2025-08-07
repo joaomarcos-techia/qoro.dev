@@ -62,6 +62,11 @@ export const columns: ColumnDef<CustomerProfile>[] = [
     accessorKey: 'email',
     header: 'Email',
   },
+   {
+    accessorKey: 'cpf',
+    header: 'CPF',
+    cell: ({ row }) => row.getValue('cpf') || '-',
+  },
   {
     accessorKey: 'phone',
     header: 'Telefone',

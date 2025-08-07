@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,11 @@ import { createCustomer } from '@/ai/flows/crm-management';
 import { CustomerSchema } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 type CustomerFormProps = {
   onCustomerCreated: () => void;
@@ -64,55 +68,139 @@ export function CustomerForm({ onCustomerCreated }: CustomerFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Nome Completo*</Label>
-          <Input id="name" {...register('name')} />
-          {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email*</Label>
-          <Input id="email" type="email" {...register('email')} />
-          {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="phone">Telefone</Label>
-          <Input id="phone" {...register('phone')} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="company">Empresa</Label>
-          <Input id="company" {...register('company')} />
-        </div>
-        <div className="space-y-2">
-          <Label>Status</Label>
-          <Select name="status" onValueChange={(value) => control.setValue('status', value as any)} defaultValue="prospect">
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="prospect">Prospect</SelectItem>
-              <SelectItem value="active">Ativo</SelectItem>
-              <SelectItem value="inactive">Inativo</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Fonte</Label>
-           <Select name="source" onValueChange={(value) => control.setValue('source', value as any)} defaultValue="other">
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione a fonte" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="website">Website</SelectItem>
-              <SelectItem value="referral">Indicação</SelectItem>
-              <SelectItem value="social">Rede Social</SelectItem>
-              <SelectItem value="cold_call">Cold Call</SelectItem>
-              <SelectItem value="other">Outro</SelectItem>
-            </SelectContent>
-          </Select>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 py-4">
+      {/* Informações Pessoais */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Informações Pessoais</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+            <Label htmlFor="name">Nome Completo*</Label>
+            <Input id="name" {...register('name')} />
+            {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
+            </div>
+            <div className="space-y-2">
+            <Label htmlFor="email">Email*</Label>
+            <Input id="email" type="email" {...register('email')} />
+            {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+            </div>
+            <div className="space-y-2">
+            <Label htmlFor="phone">Telefone</Label>
+            <Input id="phone" {...register('phone')} />
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="birthDate">Data de Nascimento</Label>
+                <Controller
+                    name="birthDate"
+                    control={control}
+                    render={({ field }) => (
+                        <Popover>
+                            <PopoverTrigger asChild>
+                            <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {field.value ? format(field.value, "dd/MM/yyyy") : <span>Selecione a data</span>}
+                            </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} /></PopoverContent>
+                        </Popover>
+                    )}
+                />
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="cpf">CPF</Label>
+                <Input id="cpf" {...register('cpf')} />
+            </div>
         </div>
       </div>
+      
+       {/* Informações da Empresa */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Informações da Empresa (Opcional)</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+                <Label htmlFor="company">Nome da Empresa</Label>
+                <Input id="company" {...register('company')} />
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="cnpj">CNPJ</Label>
+                <Input id="cnpj" {...register('cnpj')} />
+            </div>
+        </div>
+      </div>
+
+       {/* Endereço */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Endereço</h3>
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+             <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="address.street">Rua</Label>
+                <Input id="address.street" {...register('address.street')} />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="address.number">Número</Label>
+                <Input id="address.number" {...register('address.number')} />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="address.neighborhood">Bairro</Label>
+                <Input id="address.neighborhood" {...register('address.neighborhood')} />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="address.city">Cidade</Label>
+                <Input id="address.city" {...register('address.city')} />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="address.state">Estado</Label>
+                <Input id="address.state" {...register('address.state')} />
+            </div>
+        </div>
+      </div>
+      
+       {/* Status e Fonte */}
+       <div>
+         <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Status e Fonte</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+            <Label>Status</Label>
+            <Controller
+                name="status"
+                control={control}
+                render={({ field }) => (
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger>
+                    <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    <SelectItem value="prospect">Prospect</SelectItem>
+                    <SelectItem value="active">Ativo</SelectItem>
+                    <SelectItem value="inactive">Inativo</SelectItem>
+                    </SelectContent>
+                </Select>
+                )}
+            />
+            </div>
+            <div className="space-y-2">
+            <Label>Fonte</Label>
+            <Controller
+                name="source"
+                control={control}
+                render={({ field }) => (
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger>
+                    <SelectValue placeholder="Selecione a fonte" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    <SelectItem value="website">Website</SelectItem>
+                    <SelectItem value="referral">Indicação</SelectItem>
+                    <SelectItem value="social">Rede Social</SelectItem>
+                    <SelectItem value="cold_call">Cold Call</SelectItem>
+                    <SelectItem value="other">Outro</SelectItem>
+                    </SelectContent>
+                </Select>
+                )}
+            />
+            </div>
+        </div>
+      </div>
+
        {error && (
             <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg flex items-center">
               <AlertCircle className="w-5 h-5 mr-3" />

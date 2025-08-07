@@ -40,7 +40,7 @@ export default function ClientesPage() {
               Adicionar Cliente
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[750px]">
             <DialogHeader>
               <DialogTitle className="text-2xl font-bold text-black">Adicionar Novo Cliente</DialogTitle>
               <DialogDescription>

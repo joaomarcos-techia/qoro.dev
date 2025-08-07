@@ -62,6 +62,8 @@ export const UpdateOrganizationDetailsSchema = z.object({
 // Schemas for CRM
 export const AddressSchema = z.object({
     street: z.string().optional(),
+    number: z.string().optional(),
+    neighborhood: z.string().optional(),
     city: z.string().optional(),
     state: z.string().optional(),
     zipCode: z.string().optional(),
@@ -72,6 +74,9 @@ export const CustomerSchema = z.object({
   email: z.string().email('Email inválido'),
   phone: z.string().optional(),
   company: z.string().optional(),
+  cpf: z.string().optional(),
+  cnpj: z.string().optional(),
+  birthDate: z.date().optional().nullable(),
   address: AddressSchema.optional(),
   tags: z.array(z.string()).optional(),
   source: z.enum(['website', 'referral', 'social', 'cold_call', 'other']).default('other'),
