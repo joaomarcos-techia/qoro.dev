@@ -47,6 +47,9 @@ const pulseFlow = ai.defineFlow(
         model: 'googleai/gemini-2.0-flash',
         prompt: prompt,
         history: history,
+        config: {
+          temperature: 0.7, // Aumenta a criatividade e evita respostas repetitivas
+        },
         tools: [listCustomersTool, listSaleLeadsTool, listTasksTool, createTaskTool, listAccountsTool, getFinanceSummaryTool, listSuppliersTool],
         toolConfig: {
           // Pass the actor UID to the tool through the request context
