@@ -53,26 +53,32 @@ export const updateConversation = async (
 export const listConversations = async (actorUid: string): Promise<z.infer<typeof ConversationSchema>[]> => {
     const { organizationId } = await getAdminAndOrg(actorUid);
 
-    const snapshot = await adminDb.collection('pulse_conversations')
-        .where('organizationId', '==', organizationId)
-        .where('userId', '==', actorUid)
-        .orderBy('updatedAt', 'desc')
-        .get();
-        
-    if (snapshot.empty) {
-        return [];
-    }
+    try {
+        const snapshot = await adminDb.collection('pulse_conversations')
+            .where('organizationId', '==', organizationId)
+            .where('userId', '==', actorUid)
+            .orderBy('updatedAt', 'desc')
+            .get();
+            
+        if (snapshot.empty) {
+            return [];
+        }
 
-    return snapshot.docs.map(doc => {
-        const data = doc.data();
-        return ConversationSchema.parse({
-            id: doc.id,
-            title: data.title,
-            createdAt: data.createdAt.toDate().toISOString(),
-            // Ensure messages is always an array, even if missing in Firestore
-            messages: data.messages || [],
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            return ConversationSchema.parse({
+                id: doc.id,
+                title: data.title,
+                createdAt: data.createdAt.toDate().toISOString(),
+                // Ensure messages is always an array, even if missing in Firestore
+                messages: data.messages || [],
+            });
         });
-    });
+    } catch (error) {
+        console.error("Critical error in listConversations:", error);
+        // Lançar um erro mais genérico para o cliente, mas logar o erro real no servidor
+        throw new Error("Failed to fetch conversation history due to a server error.");
+    }
 };
 
 export const getConversation = async (conversationId: string, actorUid: string): Promise<z.infer<typeof ConversationSchema> | null> => {
