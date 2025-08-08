@@ -25,7 +25,7 @@ type CustomerFormProps = {
 };
 
 const FormSchema = CustomerSchema.extend({
-  birthDate: z.date().optional().nullable(),
+  birthDate: z.union([z.string(), z.date()]).optional().nullable(),
 });
 
 type FormValues = z.infer<typeof FormSchema>;
@@ -110,7 +110,7 @@ export function CustomerForm({ onCustomerAction, customer }: CustomerFormProps) 
         cpf: data.cpf?.replace(/\D/g, ''),
         cnpj: data.cnpj?.replace(/\D/g, ''),
         phone: data.phone?.replace(/\D/g, ''),
-        birthDate: data.birthDate ? data.birthDate.toISOString() : null,
+        birthDate: data.birthDate ? new Date(data.birthDate).toISOString() : null,
       };
 
       if (isEditMode) {
@@ -170,7 +170,7 @@ export function CustomerForm({ onCustomerAction, customer }: CustomerFormProps) 
                                 {field.value ? format(new Date(field.value), "dd/MM/yyyy") : <span>Selecione a data</span>}
                             </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} /></PopoverContent>
+                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} /></PopoverContent>
                         </Popover>
                     )}
                 />

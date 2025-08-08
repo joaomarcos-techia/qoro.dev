@@ -181,9 +181,9 @@ export function CustomerTable() {
                             <Edit className="mr-2 h-4 w-4" />
                             Editar Cliente
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(customer.id)}>
+                        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(customer.cpf || '')} disabled={!customer.cpf}>
                             <Copy className="mr-2 h-4 w-4" />
-                            Copiar ID
+                            Copiar CPF
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <AlertDialogTrigger asChild>
