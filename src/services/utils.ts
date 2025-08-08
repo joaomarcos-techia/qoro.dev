@@ -6,26 +6,28 @@ export const getAdminAndOrg = async (actorUid: string) => {
         throw new Error('User must be authenticated to perform this action.');
     }
     
-    const adminDocRef = adminDb.collection('users').doc(actorUid);
-    const adminDoc = await adminDocRef.get();
+    const userDocRef = adminDb.collection('users').doc(actorUid);
+    const userDoc = await userDocRef.get();
     
-    if (!adminDoc.exists) {
-        throw new Error('Admin user not found in Firestore.');
+    if (!userDoc.exists) {
+        throw new Error('User not found in Firestore.');
     }
     
-    const adminData = adminDoc.data()!;
-    const organizationId = adminData.organizationId;
+    const userData = userDoc.data()!;
+    const organizationId = userData.organizationId;
+    const userRole = userData.role || 'member'; // Default to 'member' if role is not set
     
     if (!organizationId) {
-        throw new Error('Admin user does not belong to an organization.');
+        throw new Error('User does not belong to an organization.');
     }
     
-    if (adminData.role !== 'admin') {
-        // For now, let's allow non-admins to perform some actions,
-        // but we can tighten this later.
-        // For example, only admins can invite users, but members can view customers.
-        // throw new Error('User does not have admin privileges.');
-    }
+    // The user's role is now available to be used in the services that call this function.
+    // This allows for more granular permission checks, e.g., restricting certain actions to 'admin' users.
+    // Example in a service:
+    // const { organizationId, userRole } = await getAdminAndOrg(actorUid);
+    // if (userRole !== 'admin') {
+    //   throw new Error("You do not have permission to perform this action.");
+    // }
 
-    return { adminDocRef, adminData, organizationId, adminUid: actorUid };
+    return { userDocRef, userData, organizationId, userRole, actorUid };
 };
