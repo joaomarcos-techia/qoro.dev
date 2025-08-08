@@ -2,7 +2,7 @@
 
 import { CustomerProfile } from '@/ai/schemas';
 import { Button } from '@/components/ui/button';
-import { Mail, Phone, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Mail, Phone, ChevronLeft, ChevronRight, Archive } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -61,20 +61,20 @@ export function KanbanCard({ customer, stageIds, onMove, onArchive }: KanbanCard
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50 hover:text-red-600">
-                    <Trash2 className="w-4 h-4" />
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-500 hover:bg-gray-100 hover:text-gray-600" title="Arquivar Cliente">
+                    <Archive className="w-4 h-4" />
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Mover cliente para "Perdido"?</AlertDialogTitle>
+                  <AlertDialogTitle>Arquivar este cliente?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Esta ação irá mover o cliente <span className='font-semibold'>{customer.name}</span> para a coluna "Perdido". Isso não excluirá o cliente do sistema, apenas o removerá do funil ativo.
+                    Esta ação irá remover o cliente <span className='font-semibold'>{customer.name}</span> da visualização do funil. Ele não será excluído e poderá ser encontrado na lista geral de clientes.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleArchive} className='bg-destructive text-destructive-foreground hover:bg-destructive/90'>Mover para Perdido</AlertDialogAction>
+                  <AlertDialogAction onClick={handleArchive} className='bg-primary text-primary-foreground hover:bg-primary/90'>Sim, Arquivar</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

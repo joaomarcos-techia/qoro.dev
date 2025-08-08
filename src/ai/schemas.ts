@@ -80,7 +80,7 @@ export const CustomerSchema = z.object({
   address: AddressSchema.optional(),
   tags: z.array(z.string()).optional(),
   source: z.string().optional(),
-  status: z.enum(['new', 'initial_contact', 'qualification', 'proposal', 'negotiation', 'won', 'lost']).default('new'),
+  status: z.enum(['new', 'initial_contact', 'qualification', 'proposal', 'negotiation', 'won', 'lost', 'archived']).default('new'),
   customFields: z.record(z.any()).optional(),
 });
 

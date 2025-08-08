@@ -73,12 +73,12 @@ export default function FunilPage() {
 
         const originalCustomers = [...customers];
         
-        // Optimistic UI update: change status to 'lost'
-        setCustomers(prev => prev.map(c => c.id === customerId ? { ...c, status: 'lost' } : c));
+        // Optimistic UI update: remove the customer from the list
+        setCustomers(prev => prev.filter(c => c.id !== customerId));
         
         try {
-            await updateCustomerStatus({ customerId, status: 'lost', actor: currentUser.uid });
-            setFeedback({ type: 'success', message: "Cliente movido para 'Perdido'." });
+            await updateCustomerStatus({ customerId, status: 'archived', actor: currentUser.uid });
+            setFeedback({ type: 'success', message: "Cliente arquivado e removido do funil." });
         } catch (err) {
             console.error("Failed to archive customer", err);
             setFeedback({ type: 'error', message: "Erro ao arquivar cliente." });
@@ -108,12 +108,13 @@ export default function FunilPage() {
   };
     
   const columns = useMemo(() => {
+    const activeCustomers = customers.filter(c => c.status !== 'archived');
     return stageOrder.map((stage) => ({
       id: stage,
       title: stageNames[stage],
-      customers: customers.filter((customer) => customer.status === stage),
+      customers: activeCustomers.filter((customer) => customer.status === stage),
     }));
-  }, [customers, stageOrder, stageNames]);
+  }, [customers]);
 
   const renderContent = () => {
     if (isLoading) {
