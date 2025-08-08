@@ -122,6 +122,10 @@ export const ProductSchema = z.object({
     isActive: z.boolean().default(true),
 });
 
+export const UpdateProductSchema = ProductSchema.extend({
+    id: z.string(),
+});
+
 export const ProductProfileSchema = ProductSchema.extend({
     id: z.string(),
     createdAt: z.string(),

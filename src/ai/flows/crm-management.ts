@@ -9,6 +9,8 @@
  * - getDashboardMetrics - Retrieves key metrics for the CRM dashboard.
  * - createProduct - Creates a new product.
  * - listProducts - Lists all products.
+ * - updateProduct - Updates a product.
+ * - deleteProduct - Deletes a product.
  * - createQuote - Creates a new quote.
  * - listQuotes - Lists all quotes.
  * - updateCustomerStatus - Updates the status of a customer.
@@ -17,7 +19,7 @@
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { CustomerSchema, CustomerProfileSchema, SaleLeadSchema, SaleLeadProfileSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema } from '@/ai/schemas';
+import { CustomerSchema, CustomerProfileSchema, SaleLeadSchema, SaleLeadProfileSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema } from '@/ai/schemas';
 import * as crmService from '@/services/crmService';
 
 const ActorSchema = z.object({ actor: z.string() });
@@ -34,6 +36,10 @@ const UpdateCustomerStatusInputSchema = z.object({
 
 const DeleteCustomerInputSchema = z.object({
     customerId: z.string(),
+}).extend(ActorSchema.shape);
+
+const DeleteProductInputSchema = z.object({
+    productId: z.string(),
 }).extend(ActorSchema.shape);
 
 
@@ -100,6 +106,25 @@ const listProductsFlow = ai.defineFlow(
     },
     async ({ actor }) => crmService.listProducts(actor)
 );
+
+const updateProductFlow = ai.defineFlow(
+    {
+        name: 'updateProductFlow',
+        inputSchema: UpdateProductSchema.extend(ActorSchema.shape),
+        outputSchema: z.object({ id: z.string() })
+    },
+    async (input) => crmService.updateProduct(input.id, input, input.actor)
+);
+
+const deleteProductFlow = ai.defineFlow(
+    {
+        name: 'deleteProductFlow',
+        inputSchema: DeleteProductInputSchema,
+        outputSchema: z.object({ id: z.string(), success: z.boolean() })
+    },
+    async (input) => crmService.deleteProduct(input.productId, input.actor)
+);
+
 
 const createQuoteFlow = ai.defineFlow(
     {
@@ -174,6 +199,14 @@ export async function createProduct(input: z.infer<typeof ProductSchema> & z.inf
 
 export async function listProducts(input: z.infer<typeof ActorSchema>): Promise<z.infer<typeof ProductProfileSchema>[]> {
     return listProductsFlow(input);
+}
+
+export async function updateProduct(input: z.infer<typeof UpdateProductSchema> & z.infer<typeof ActorSchema>): Promise<{ id: string; }> {
+    return updateProductFlow(input);
+}
+
+export async function deleteProduct(input: z.infer<typeof DeleteProductInputSchema>): Promise<{ id: string, success: boolean }> {
+    return deleteProductFlow(input);
 }
 
 export async function createQuote(input: z.infer<typeof QuoteSchema> & z.infer<typeof ActorSchema>): Promise<{ id: string; }> {

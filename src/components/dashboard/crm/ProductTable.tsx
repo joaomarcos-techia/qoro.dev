@@ -21,16 +21,28 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, ArrowUpDown, Search, Loader2, ShoppingCart } from 'lucide-react';
-import { listProducts } from '@/ai/flows/crm-management';
+import { MoreHorizontal, ArrowUpDown, Search, Loader2, ShoppingCart, Edit, Trash2, Copy } from 'lucide-react';
+import { listProducts, deleteProduct } from '@/ai/flows/crm-management';
 import type { ProductProfile } from '@/ai/schemas';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -43,63 +55,12 @@ const formatCurrency = (value: number | null | undefined) => {
     }).format(value);
 };
 
-export const columns: ColumnDef<ProductProfile>[] = [
-  {
-    accessorKey: 'name',
-    header: ({ column }) => (
-        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-            Nome <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-    ),
-    cell: ({ row }) => <div className="font-medium text-black">{row.getValue('name')}</div>,
-  },
-  {
-    accessorKey: 'category',
-    header: 'Categoria',
-    cell: ({ row }) => row.getValue('category') || '-',
-  },
-  {
-    accessorKey: 'price',
-    header: 'Preço',
-    cell: ({ row }) => formatCurrency(row.getValue('price')),
-  },
-  {
-    accessorKey: 'cost',
-    header: 'Custo',
-    cell: ({ row }) => formatCurrency(row.getValue('cost')),
-  },
-  {
-    accessorKey: 'createdAt',
-    header: 'Criado em',
-    cell: ({ row }) => new Date(row.getValue('createdAt')).toLocaleDateString('pt-BR'),
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => {
-      const product = row.original;
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Ações</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(product.id)}>
-              Copiar ID do Produto
-            </DropdownMenuItem>
-            <DropdownMenuItem>Editar Produto</DropdownMenuItem>
-            <DropdownMenuItem className="text-red-600">Excluir Produto</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
-  },
-];
+interface ProductTableProps {
+    onEdit: (product: ProductProfile) => void;
+    onRefresh: () => void;
+}
 
-export function ProductTable() {
+export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
   const [data, setData] = React.useState<ProductProfile[]>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -113,6 +74,104 @@ export function ProductTable() {
     });
     return () => unsubscribe();
   }, []);
+
+  const handleDelete = async (productId: string) => {
+    if (!currentUser) return;
+    try {
+        await deleteProduct({ productId, actor: currentUser.uid });
+        onRefresh();
+    } catch(err: any) {
+        console.error("Failed to delete product:", err);
+        setError(err.message || "Não foi possível excluir o produto.");
+    }
+  };
+
+  const columns: ColumnDef<ProductProfile>[] = [
+    {
+      accessorKey: 'name',
+      header: ({ column }) => (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+              Nome <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+      ),
+      cell: ({ row }) => <div className="font-medium text-black">{row.getValue('name')}</div>,
+    },
+    {
+      accessorKey: 'category',
+      header: 'Categoria',
+      cell: ({ row }) => row.getValue('category') || '-',
+    },
+    {
+      accessorKey: 'price',
+      header: 'Preço',
+      cell: ({ row }) => formatCurrency(row.getValue('price')),
+    },
+    {
+      accessorKey: 'cost',
+      header: 'Custo',
+      cell: ({ row }) => formatCurrency(row.getValue('cost')),
+    },
+     {
+      accessorKey: 'sku',
+      header: 'SKU',
+      cell: ({ row }) => row.getValue('sku') || '-',
+    },
+    {
+      accessorKey: 'createdAt',
+      header: 'Criado em',
+      cell: ({ row }) => new Date(row.getValue('createdAt')).toLocaleDateString('pt-BR'),
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => {
+        const product = row.original;
+        return (
+          <AlertDialog>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Abrir menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => onEdit(product)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Editar Produto
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigator.clipboard.writeText(product.sku || '')}>
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copiar Código
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <AlertDialogTrigger asChild>
+                    <DropdownMenuItem className="text-red-600 focus:bg-red-50 focus:text-red-700">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Excluir Produto
+                    </DropdownMenuItem>
+                </AlertDialogTrigger>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o produto <span className='font-bold'>{product.name}</span>.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleDelete(product.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Sim, excluir
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        );
+      },
+    },
+  ];
 
   React.useEffect(() => {
     async function fetchData() {
@@ -130,7 +189,7 @@ export function ProductTable() {
       }
     }
     fetchData();
-  }, [currentUser]);
+  }, [currentUser, onRefresh]);
 
   const table = useReactTable({
     data,

@@ -13,15 +13,36 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { ProductForm } from '@/components/dashboard/crm/ProductForm';
+import { ProductProfile } from '@/ai/schemas';
 
 export default function ProdutosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<ProductProfile | null>(null);
   const [refreshCounter, setRefreshCounter] = useState(0);
 
-  const handleProductCreated = () => {
-    setIsModalOpen(false);
-    setRefreshCounter(prev => prev + 1); // Trigger a refresh
+  const triggerRefresh = () => {
+    setRefreshCounter(prev => prev + 1);
   };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  const handleProductAction = () => {
+    handleModalClose();
+    triggerRefresh();
+  };
+  
+  const handleEdit = (product: ProductProfile) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
+
+  const handleAdd = () => {
+    setSelectedProduct(null);
+    setIsModalOpen(true);
+  }
 
   return (
     <div>
@@ -32,27 +53,29 @@ export default function ProdutosPage() {
             Cadastre e gerencie os produtos que sua empresa vende.
           </p>
         </div>
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <Dialog open={isModalOpen} onOpenChange={handleModalClose}>
           <DialogTrigger asChild>
-            <Button className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold">
+            <Button 
+              onClick={handleAdd}
+              className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold">
               <PlusCircle className="mr-2 w-5 h-5" />
               Adicionar Produto
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-black">Adicionar Novo Produto</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-black">{selectedProduct ? 'Editar Produto' : 'Adicionar Novo Produto'}</DialogTitle>
               <DialogDescription>
-                Preencha as informações abaixo para cadastrar um novo produto no sistema.
+                {selectedProduct ? 'Altere as informações do produto abaixo.' : 'Preencha as informações abaixo para cadastrar um novo produto no sistema.'}
               </DialogDescription>
             </DialogHeader>
-            <ProductForm onProductCreated={handleProductCreated} />
+            <ProductForm onProductAction={handleProductAction} product={selectedProduct} />
           </DialogContent>
         </Dialog>
       </div>
 
       <div className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-200">
-        <ProductTable key={refreshCounter} />
+        <ProductTable key={refreshCounter} onEdit={handleEdit} onRefresh={triggerRefresh} />
       </div>
     </div>
   );

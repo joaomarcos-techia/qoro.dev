@@ -8,20 +8,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { createProduct } from '@/ai/flows/crm-management';
-import { ProductSchema } from '@/ai/schemas';
+import { createProduct, updateProduct } from '@/ai/flows/crm-management';
+import { ProductSchema, ProductProfile, UpdateProductSchema } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 type ProductFormProps = {
-  onProductCreated: () => void;
+  onProductAction: () => void;
+  product?: ProductProfile | null;
 };
 
-export function ProductForm({ onProductCreated }: ProductFormProps) {
+export function ProductForm({ onProductAction, product }: ProductFormProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isEditMode = !!product;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -33,32 +36,44 @@ export function ProductForm({ onProductCreated }: ProductFormProps) {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<z.infer<typeof ProductSchema>>({
     resolver: zodResolver(ProductSchema),
-    defaultValues: {
-        name: '',
-        description: '',
-        category: '',
-        sku: '',
-        price: 0,
-        cost: 0
-    },
   });
+
+  useEffect(() => {
+    if (product) {
+      reset(product);
+    } else {
+      reset({
+          name: '',
+          description: '',
+          category: '',
+          sku: '',
+          price: 0,
+          cost: 0
+      });
+    }
+  }, [product, reset]);
 
   const onSubmit = async (data: z.infer<typeof ProductSchema>) => {
     if (!currentUser) {
-      setError('Você precisa estar autenticado para criar um produto.');
+      setError('Você precisa estar autenticado para executar esta ação.');
       return;
     }
     setIsLoading(true);
     setError(null);
     try {
-      await createProduct({ ...data, actor: currentUser.uid });
-      onProductCreated();
+      if (isEditMode) {
+        await updateProduct({ ...data, id: product.id, actor: currentUser.uid });
+      } else {
+        await createProduct({ ...data, actor: currentUser.uid });
+      }
+      onProductAction();
     } catch (err) {
       console.error(err);
-      setError('Falha ao criar o produto. Tente novamente.');
+      setError(`Falha ao ${isEditMode ? 'atualizar' : 'criar'} o produto. Tente novamente.`);
     } finally {
       setIsLoading(false);
     }
@@ -103,7 +118,7 @@ export function ProductForm({ onProductCreated }: ProductFormProps) {
       <div className="flex justify-end pt-4">
         <Button type="submit" disabled={isLoading} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
           {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
-          {isLoading ? 'Salvando...' : 'Salvar Produto'}
+          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : 'Salvar Produto')}
         </Button>
       </div>
     </form>

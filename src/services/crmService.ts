@@ -1,7 +1,7 @@
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { CustomerSchema, CustomerProfileSchema, SaleLeadProfileSchema, SaleLeadSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema } from '@/ai/schemas';
+import { CustomerSchema, CustomerProfileSchema, SaleLeadProfileSchema, SaleLeadSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import type { SaleLeadProfile, QuoteProfile } from '@/ai/schemas';
 import { adminDb } from '@/lib/firebase-admin';
@@ -166,7 +166,7 @@ export const listSaleLeads = async (actorUid: string): Promise<SaleLeadProfile[]
             id: doc.id,
             ...data,
             stage: mappedStage,
-            expectedCloseDate: data.expectedCloseDate, 
+            expectedCloseDate: data.expectedCloseDate,
             createdAt: data.createdAt.toDate().toISOString(),
             updatedAt: data.updatedAt.toDate().toISOString(),
             customerName: customerInfo.name,
@@ -222,6 +222,44 @@ export const listProducts = async (actorUid: string): Promise<z.infer<typeof Pro
         });
     });
     return products;
+};
+
+export const updateProduct = async (productId: string, input: z.infer<typeof UpdateProductSchema>, actorUid: string) => {
+    const { organizationId } = await getAdminAndOrg(actorUid);
+    const productRef = adminDb.collection('products').doc(productId);
+
+    const productDoc = await productRef.get();
+    if (!productDoc.exists || productDoc.data()?.companyId !== organizationId) {
+        throw new Error('Produto não encontrado ou acesso negado.');
+    }
+
+    const { id, ...updateData } = input;
+
+    await productRef.update({
+        ...updateData,
+        updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    return { id: productId };
+};
+
+export const deleteProduct = async (productId: string, actorUid: string) => {
+    const { organizationId, userRole } = await getAdminAndOrg(actorUid);
+
+    if (userRole !== 'admin') {
+        throw new Error("Permissão negada. Apenas administradores podem excluir produtos.");
+    }
+
+    const productRef = adminDb.collection('products').doc(productId);
+
+    const productDoc = await productRef.get();
+    if (!productDoc.exists || productDoc.data()?.companyId !== organizationId) {
+        throw new Error('Produto não encontrado ou acesso negado.');
+    }
+
+    await productRef.delete();
+
+    return { id: productId, success: true };
 };
 
 export const createQuote = async (input: z.infer<typeof QuoteSchema>, actorUid: string) => {
