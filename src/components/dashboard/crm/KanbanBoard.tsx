@@ -13,10 +13,10 @@ export type KanbanColumn = {
 interface KanbanBoardProps {
   columns: KanbanColumn[];
   onMoveCustomer: (customerId: string, newStatus: CustomerProfile['status']) => void;
-  onDeleteCustomer: (customerId: string) => void;
+  onArchiveCustomer: (customerId: string) => void;
 }
 
-export function KanbanBoard({ columns, onMoveCustomer, onDeleteCustomer }: KanbanBoardProps) {
+export function KanbanBoard({ columns, onMoveCustomer, onArchiveCustomer }: KanbanBoardProps) {
 
   const totalCustomers = columns.reduce((acc, col) => acc + col.customers.length, 0);
   const stageIds = columns.map(c => c.id);
@@ -49,7 +49,7 @@ export function KanbanBoard({ columns, onMoveCustomer, onDeleteCustomer }: Kanba
                   customer={customer} 
                   stageIds={stageIds}
                   onMove={onMoveCustomer}
-                  onDelete={onDeleteCustomer}
+                  onArchive={onArchiveCustomer}
                 />
               ))}
             </div>

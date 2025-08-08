@@ -19,10 +19,10 @@ interface KanbanCardProps {
   customer: CustomerProfile;
   stageIds: string[];
   onMove: (customerId: string, newStatus: CustomerProfile['status']) => void;
-  onDelete: (customerId: string) => void;
+  onArchive: (customerId: string) => void;
 }
 
-export function KanbanCard({ customer, stageIds, onMove, onDelete }: KanbanCardProps) {
+export function KanbanCard({ customer, stageIds, onMove, onArchive }: KanbanCardProps) {
   
   const currentStageIndex = stageIds.findIndex(id => id === customer.status);
 
@@ -33,8 +33,8 @@ export function KanbanCard({ customer, stageIds, onMove, onDelete }: KanbanCardP
     }
   };
 
-  const handleDelete = () => {
-    onDelete(customer.id);
+  const handleArchive = () => {
+    onArchive(customer.id);
   }
 
   return (
@@ -67,14 +67,14 @@ export function KanbanCard({ customer, stageIds, onMove, onDelete }: KanbanCardP
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                  <AlertDialogTitle>Mover cliente para "Perdido"?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o cliente <span className='font-semibold'>{customer.name}</span> e removerá seus dados de nossos servidores.
+                    Esta ação irá mover o cliente <span className='font-semibold'>{customer.name}</span> para a coluna "Perdido". Isso não excluirá o cliente do sistema, apenas o removerá do funil ativo.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete} className='bg-destructive text-destructive-foreground hover:bg-destructive/90'>Excluir</AlertDialogAction>
+                  <AlertDialogAction onClick={handleArchive} className='bg-destructive text-destructive-foreground hover:bg-destructive/90'>Mover para Perdido</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

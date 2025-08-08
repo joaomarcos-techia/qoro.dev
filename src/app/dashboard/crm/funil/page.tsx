@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { KanbanBoard } from '@/components/dashboard/crm/KanbanBoard';
 import { CustomerProfile } from '@/ai/schemas';
-import { listCustomers, updateCustomerStatus, deleteCustomer } from '@/ai/flows/crm-management';
+import { listCustomers, updateCustomerStatus } from '@/ai/flows/crm-management';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Loader2, ServerCrash, AlertCircle } from 'lucide-react';
@@ -66,22 +66,22 @@ export default function FunilPage() {
     });
   }
 
-  const handleDeleteCustomer = (customerId: string) => {
+  const handleArchiveCustomer = (customerId: string) => {
     startTransition(async () => {
         setFeedback(null);
         if (!currentUser) return;
 
         const originalCustomers = [...customers];
         
-        // Optimistic UI update
-        setCustomers(prev => prev.filter(c => c.id !== customerId));
+        // Optimistic UI update: change status to 'lost'
+        setCustomers(prev => prev.map(c => c.id === customerId ? { ...c, status: 'lost' } : c));
         
         try {
-            await deleteCustomer({ customerId, actor: currentUser.uid });
-             setFeedback({ type: 'success', message: "Cliente excluído com sucesso." });
+            await updateCustomerStatus({ customerId, status: 'lost', actor: currentUser.uid });
+            setFeedback({ type: 'success', message: "Cliente movido para 'Perdido'." });
         } catch (err) {
-            console.error("Failed to delete customer", err);
-            setFeedback({ type: 'error', message: "Erro ao excluir cliente." });
+            console.error("Failed to archive customer", err);
+            setFeedback({ type: 'error', message: "Erro ao arquivar cliente." });
             setCustomers(originalCustomers); // Revert on failure
         }
     });
@@ -113,7 +113,7 @@ export default function FunilPage() {
       title: stageNames[stage],
       customers: customers.filter((customer) => customer.status === stage),
     }));
-  }, [customers]);
+  }, [customers, stageOrder, stageNames]);
 
   const renderContent = () => {
     if (isLoading) {
@@ -135,7 +135,7 @@ export default function FunilPage() {
       );
     }
 
-    return <KanbanBoard columns={columns} onMoveCustomer={handleMoveCustomer} onDeleteCustomer={handleDeleteCustomer} />;
+    return <KanbanBoard columns={columns} onMoveCustomer={handleMoveCustomer} onArchiveCustomer={handleArchiveCustomer} />;
   };
 
   return (
