@@ -13,16 +13,18 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createQuote, listCustomers, listProducts } from '@/ai/flows/crm-management';
-import { QuoteSchema, CustomerProfile, ProductProfile, QuoteItemSchema } from '@/ai/schemas';
+import { QuoteSchema, CustomerProfile, ProductProfile } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { Loader2, AlertCircle, CalendarIcon, PlusCircle, Trash2, Search } from 'lucide-react';
+import { Loader2, AlertCircle, CalendarIcon, PlusCircle, Trash2, Search, Package, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 type QuoteFormProps = {
   onQuoteCreated: () => void;
 };
+
+type ItemType = 'product' | 'service';
 
 export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
@@ -31,10 +33,46 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
   
   const [customers, setCustomers] = useState<CustomerProfile[]>([]);
   const [products, setProducts] = useState<ProductProfile[]>([]);
+  const [services, setServices] = useState<ProductProfile[]>([]);
+  
   const [customerSearch, setCustomerSearch] = useState('');
-  const [productSearch, setProductSearch] = useState('');
+  const [itemSearch, setItemSearch] = useState('');
+  const [activeItemTab, setActiveItemTab] = useState<ItemType>('product');
+  
   const [isCustomerPopoverOpen, setIsCustomerPopoverOpen] = useState(false);
-  const [isProductPopoverOpen, setIsProductPopoverOpen] = useState(false);
+  const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+        const fetchData = async () => {
+            try {
+                const [customersData, allItems] = await Promise.all([
+                    listCustomers({ actor: currentUser.uid }),
+                    listProducts({ actor: currentUser.uid })
+                ]);
+                setCustomers(customersData);
+                
+                // Distinguish between products and services
+                const productsList = allItems.filter(item => item.pricingModel === 'fixed');
+                const servicesList = allItems.filter(item => item.pricingModel === 'per_hour');
+                setProducts(productsList);
+                setServices(servicesList);
+
+            } catch (err) {
+                 console.error("Failed to load customers or products", err);
+                 setError("Não foi possível carregar os dados necessários. Tente novamente.");
+            }
+        };
+        fetchData();
+    }
+  }, [currentUser]);
 
   const {
     register,
@@ -74,17 +112,18 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
     setValue('total', total);
   }, [watchItems, watchDiscount, watchTax, setValue]);
 
-  const addProductItem = (product: ProductProfile) => {
+  const addItemToQuote = (item: ProductProfile) => {
     append({
-        type: product.category?.toLowerCase().includes('serviço') ? 'service' : 'product',
-        itemId: product.id,
-        name: product.name,
+        type: item.pricingModel === 'per_hour' ? 'service' : 'product',
+        itemId: item.id,
+        name: item.name,
         quantity: 1,
-        unitPrice: product.price,
-        total: product.price,
-        pricingModel: product.pricingModel,
+        unitPrice: item.price,
+        total: item.price,
+        pricingModel: item.pricingModel,
     });
-    setIsProductPopoverOpen(false);
+    setIsItemPopoverOpen(false);
+    setItemSearch('');
   }
 
   const onSubmit = async (data: z.infer<typeof QuoteSchema>) => {
@@ -94,8 +133,6 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
     }
     setIsLoading(true);
     setError(null);
-
-    // Ensure the number is unique or follows a sequence (simplified here)
     const quoteNumber = `QT-${Date.now().toString().slice(-6)}`;
     
     try {
@@ -110,7 +147,11 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
   };
   
   const filteredCustomers = customers.filter(c => c.name.toLowerCase().includes(customerSearch.toLowerCase()));
-  const filteredProducts = products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()));
+  
+  const getFilteredItems = () => {
+    const list = activeItemTab === 'product' ? products : services;
+    return list.filter(p => p.name.toLowerCase().includes(itemSearch.toLowerCase()));
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
@@ -161,7 +202,7 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
                             <PopoverTrigger asChild>
                             <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? format(field.value, "PPP") : <span>Escolha uma data</span>}
+                                {field.value ? format(field.value, "PPP", { locale: require('date-fns/locale/pt-BR') }) : <span>Escolha uma data</span>}
                             </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus /></PopoverContent>
@@ -177,16 +218,16 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
             <div className="p-4 border rounded-xl bg-gray-50/50 space-y-4">
                 {fields.map((item, index) => (
                     <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
-                        <div className="col-span-5"><Input value={item.name} disabled /></div>
+                        <div className="col-span-5"><Input value={item.name} disabled className="bg-white" /></div>
                         <div className="col-span-2"><Input type="number" value={item.quantity} onChange={(e) => update(index, {...item, quantity: Number(e.target.value), total: Number(e.target.value) * item.unitPrice })} /></div>
                         <div className="col-span-2"><Input type="number" step="0.01" value={item.unitPrice} onChange={(e) => update(index, {...item, unitPrice: Number(e.target.value), total: item.quantity * Number(e.target.value)})} /></div>
-                        <div className="col-span-2"><Input value={(item.total).toFixed(2)} disabled /></div>
+                        <div className="col-span-2"><Input value={(item.total).toFixed(2)} disabled className="bg-white" /></div>
                         <div className="col-span-1"><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="w-4 h-4 text-red-500"/></Button></div>
                     </div>
                 ))}
                 {errors.items && <p className="text-red-500 text-sm">{errors.items.message}</p>}
 
-                 <Popover open={isProductPopoverOpen} onOpenChange={setIsProductPopoverOpen}>
+                 <Popover open={isItemPopoverOpen} onOpenChange={setIsItemPopoverOpen}>
                     <PopoverTrigger asChild>
                         <Button type="button" variant="outline" className="w-full mt-2">
                             <PlusCircle className="mr-2 w-4 h-4"/> Adicionar Produto/Serviço
@@ -194,12 +235,20 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
                     </PopoverTrigger>
                     <PopoverContent className="w-[400px] p-0">
                          <div className="p-2 border-b">
-                            <Input placeholder="Buscar produto..." value={productSearch} onChange={(e) => setProductSearch(e.target.value)} />
+                            <div className="flex border-b mb-2">
+                                <button type="button" onClick={() => setActiveItemTab('product')} className={`px-4 py-2 text-sm font-medium flex items-center ${activeItemTab === 'product' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>
+                                    <Package className="w-4 h-4 mr-2"/> Produtos
+                                </button>
+                                <button type="button" onClick={() => setActiveItemTab('service')} className={`px-4 py-2 text-sm font-medium flex items-center ${activeItemTab === 'service' ? 'border-b-2 border-primary text-primary' : 'text-gray-500'}`}>
+                                    <Wrench className="w-4 h-4 mr-2"/> Serviços
+                                </button>
+                            </div>
+                            <Input placeholder={`Buscar ${activeItemTab === 'product' ? 'produto' : 'serviço'}...`} value={itemSearch} onChange={(e) => setItemSearch(e.target.value)} />
                         </div>
                         <div className="max-h-[200px] overflow-y-auto">
-                            {filteredProducts.map(product => (
-                                <div key={product.id} onClick={() => addProductItem(product)} className="p-2 hover:bg-accent cursor-pointer text-sm">
-                                    {product.name}
+                            {getFilteredItems().map(item => (
+                                <div key={item.id} onClick={() => addItemToQuote(item)} className="p-2 hover:bg-accent cursor-pointer text-sm">
+                                    {item.name}
                                 </div>
                             ))}
                         </div>
@@ -252,3 +301,5 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
     </form>
   );
 }
+
+    
