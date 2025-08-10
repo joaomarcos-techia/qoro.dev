@@ -121,6 +121,7 @@ export const ProductSchema = z.object({
     sku: z.string().optional(),
     isActive: z.boolean().default(true),
     pricingModel: z.enum(['fixed', 'per_hour']).default('fixed').optional(),
+    durationHours: z.coerce.number().optional(),
 });
 
 export const UpdateProductSchema = ProductSchema.extend({

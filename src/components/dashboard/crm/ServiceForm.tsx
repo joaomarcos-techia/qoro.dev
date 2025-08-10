@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -41,6 +42,7 @@ export function ServiceForm({ onServiceCreated }: ServiceFormProps) {
     register,
     handleSubmit,
     control,
+    watch,
     formState: { errors },
   } = useForm<z.infer<typeof ServiceSchema>>({
     resolver: zodResolver(ServiceSchema),
@@ -50,8 +52,11 @@ export function ServiceForm({ onServiceCreated }: ServiceFormProps) {
         category: 'Serviço', // Default category
         price: 0,
         pricingModel: 'fixed',
+        durationHours: 1,
     },
   });
+
+  const pricingModel = watch('pricingModel');
 
   const onSubmit = async (data: z.infer<typeof ServiceSchema>) => {
     if (!currentUser) {
@@ -101,11 +106,19 @@ export function ServiceForm({ onServiceCreated }: ServiceFormProps) {
                 </Select>
             )} />
         </div>
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="price">Preço (R$)*</Label>
+        <div className="space-y-2">
+          <Label htmlFor="price">{pricingModel === 'per_hour' ? 'Preço por Hora (R$)*' : 'Preço (R$)*'}</Label>
           <Input id="price" type="number" step="0.01" {...register('price')} />
           {errors.price && <p className="text-red-500 text-sm">{errors.price.message}</p>}
         </div>
+        
+        {pricingModel === 'per_hour' && (
+            <div className="space-y-2">
+                <Label htmlFor="durationHours">Duração (horas)</Label>
+                <Input id="durationHours" type="number" {...register('durationHours')} placeholder="Ex: 8"/>
+            </div>
+        )}
+
       </div>
        {error && (
             <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg flex items-center mt-4">
