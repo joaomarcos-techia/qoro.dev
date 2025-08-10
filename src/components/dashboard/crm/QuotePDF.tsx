@@ -8,9 +8,13 @@ interface QuotePDFProps {
 
 export const QuotePDF = React.forwardRef<HTMLDivElement, QuotePDFProps>(({ quote }, ref) => {
     const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    const formatDate = (date: string | Date) => {
+        const dateObj = typeof date === 'string' ? new Date(date) : date;
+        return new Intl.DateTimeFormat('pt-BR').format(dateObj);
+    }
 
     return (
-        <div ref={ref}>
+        <div ref={ref} className="bg-white p-0">
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
                 :root { --primary: #1a1a1a; --secondary: #2c2c2c; --accent: #1d3c78; --accent-light: #e8edf7; --accent-dark: #142a5e; --success: #2e7d32; --warning: #ed6c02; --error: #d32f2f; --gray-50: #fafafa; --gray-100: #f5f5f5; --gray-200: #eeeeee; --gray-300: #e0e0e0; --gray-400: #bdbdbd; --gray-500: #9e9e9e; --gray-600: #757575; --gray-700: #616161; --gray-800: #424242; --gray-900: #212121; }
@@ -62,15 +66,12 @@ export const QuotePDF = React.forwardRef<HTMLDivElement, QuotePDFProps>(({ quote
                         <div className="logo-section"><h1>Sua Empresa</h1><div className="tagline">Seu Slogan</div></div>
                         <div className="proposal-info">
                             <div className="proposal-number">Proposta Nº {quote.number}</div>
-                            <div className="proposal-date">{new Date(quote.createdAt).toLocaleDateString()}</div>
+                            <div className="proposal-date">{formatDate(quote.createdAt)}</div>
                         </div>
                     </div>
                     <div className="header-title"><h2>Proposta Comercial</h2><p>Proposta para {quote.customerName}</p></div>
                 </div>
                 <div className="content">
-                    <div className="section">
-                        <h3 className="section-title">Informações de Contato</h3>
-                    </div>
                     <div className="section">
                         <h3 className="section-title">Itens e Valores</h3>
                         <table className="items-table">
@@ -104,7 +105,7 @@ export const QuotePDF = React.forwardRef<HTMLDivElement, QuotePDFProps>(({ quote
                         <h3 className="section-title">Termos e Condições</h3>
                         <div className="contract-terms" style={{ whiteSpace: 'pre-wrap' }}>{quote.notes}</div>
                     </div>
-                    <div className="validity">Esta proposta tem validade até {new Date(quote.validUntil).toLocaleDateString()}</div>
+                    <div className="validity">Esta proposta tem validade até {formatDate(quote.validUntil)}</div>
                 </div>
             </div>
         </div>

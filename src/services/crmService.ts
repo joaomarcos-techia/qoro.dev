@@ -310,10 +310,7 @@ export const listQuotes = async (actorUid: string): Promise<QuoteProfile[]> => {
             customerName: customerInfo.name,
         });
         
-        return {
-            ...parsedData,
-            validUntil: parsedData.validUntil.toISOString()
-        };
+        return parsedData;
     });
 
     return quotes;

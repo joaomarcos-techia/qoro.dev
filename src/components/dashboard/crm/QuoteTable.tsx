@@ -60,48 +60,56 @@ export function QuoteTable() {
   const [error, setError] = React.useState<string | null>(null);
   const [currentUser, setCurrentUser] = React.useState<FirebaseUser | null>(null);
   const pdfRef = React.useRef<HTMLDivElement>(null);
+  const [selectedQuoteForPdf, setSelectedQuoteForPdf] = React.useState<QuoteProfile | null>(null);
+
 
   const handleExportPDF = async (quote: QuoteProfile) => {
-    const pdfContainer = document.createElement('div');
-    pdfContainer.style.position = 'absolute';
-    pdfContainer.style.left = '-9999px';
-    document.body.appendChild(pdfContainer);
-
-    const tempDiv = document.createElement('div');
-    pdfContainer.appendChild(tempDiv);
-    
-    // This is a bit of a hack to render the component to get its HTML
-    const ReactDOM = await import('react-dom');
-    ReactDOM.render(<QuotePDF quote={quote} ref={pdfRef}/>, tempDiv, async () => {
-        const input = tempDiv.children[0] as HTMLElement;
-        if (input) {
-            const canvas = await html2canvas(input, { scale: 2 });
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
-            const ratio = canvasWidth / pdfWidth;
-            const height = canvasHeight / ratio;
-
-            let position = 0;
-            let remainingHeight = height;
-            
-            while(remainingHeight > 0) {
-              pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, height);
-              remainingHeight -= pdfHeight;
-              if (remainingHeight > 0) {
-                pdf.addPage();
-                position -= pdfHeight;
-              }
-            }
-            
-            pdf.save(`proposta-${quote.number}.pdf`);
-        }
-        document.body.removeChild(pdfContainer);
-    });
+    setSelectedQuoteForPdf(quote);
   };
+  
+  React.useEffect(() => {
+    if (!selectedQuoteForPdf || !pdfRef.current) return;
+  
+    const exportPdf = async () => {
+      const input = pdfRef.current;
+      if (input) {
+        try {
+          const canvas = await html2canvas(input, { scale: 2 });
+          const imgData = canvas.toDataURL('image/png');
+          const pdf = new jsPDF('p', 'mm', 'a4');
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = pdf.internal.pageSize.getHeight();
+          const canvasWidth = canvas.width;
+          const canvasHeight = canvas.height;
+          const ratio = canvasWidth / pdfWidth;
+          const height = canvasHeight / ratio;
+  
+          let position = 0;
+          let remainingHeight = height;
+  
+          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, height);
+          remainingHeight -= pdfHeight;
+  
+          while (remainingHeight > 0) {
+            pdf.addPage();
+            position -= pdfHeight;
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, height);
+            remainingHeight -= pdfHeight;
+          }
+  
+          pdf.save(`proposta-${selectedQuoteForPdf.number}.pdf`);
+        } catch (error) {
+            console.error("Error generating PDF:", error)
+        }
+      }
+      setSelectedQuoteForPdf(null); 
+    };
+  
+    // Use a timeout to ensure the component has rendered with the new data
+    const timer = setTimeout(exportPdf, 100); 
+  
+    return () => clearTimeout(timer);
+  }, [selectedQuoteForPdf]);
 
   const columns: ColumnDef<QuoteProfile>[] = [
     {
@@ -136,9 +144,10 @@ export function QuoteTable() {
       accessorKey: 'validUntil',
       header: 'Válido Até',
       cell: ({ row }) => {
-          const date = row.getValue('validUntil') as string | null;
+          const date = row.getValue('validUntil') as string | Date | null;
           if (!date) return '-';
-          return format(parseISO(date), "dd/MM/yyyy");
+          const dateObj = typeof date === 'string' ? parseISO(date) : date;
+          return format(dateObj, "dd/MM/yyyy");
       },
     },
     {
@@ -232,73 +241,80 @@ export function QuoteTable() {
   }
 
   return (
-    <div>
-       <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-black">Seus Orçamentos</h2>
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input
-                placeholder="Buscar por cliente ou número..."
-                value={(table.getColumn('customerName')?.getFilterValue() as string) ?? ''}
-                onChange={(event) =>
-                    table.getColumn('customerName')?.setFilterValue(event.target.value)
-                }
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"
-                />
-            </div>
-      </div>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
+    <>
+       {/* Hidden component for PDF generation */}
+       <div style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '794px', height: 'auto' }}>
+         {selectedQuoteForPdf && <QuotePDF quote={selectedQuoteForPdf} ref={pdfRef}/>}
+       </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-black">Seus Orçamentos</h2>
+              <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Input
+                  placeholder="Buscar por cliente ou número..."
+                  value={(table.getColumn('customerName')?.getFilterValue() as string) ?? ''}
+                  onChange={(event) =>
+                      table.getColumn('customerName')?.setFilterValue(event.target.value)
+                  }
+                  className="w-full pl-10 pr-4 py-2 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"
+                  />
+              </div>
+        </div>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  Nenhum resultado encontrado.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    Nenhum resultado encontrado.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex items-center justify-end space-x-2 py-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Anterior
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Próximo
+          </Button>
+        </div>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Anterior
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Próximo
-        </Button>
-      </div>
-    </div>
+    </>
   );
 }
