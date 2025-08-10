@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -21,15 +22,23 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, ArrowUpDown, Search, Loader2, FileText, Download } from 'lucide-react';
+import { MoreHorizontal, ArrowUpDown, Search, Loader2, FileText, Download, Eye, Edit } from 'lucide-react';
 import { listQuotes } from '@/ai/flows/crm-management';
 import type { QuoteProfile } from '@/ai/schemas';
 import { auth } from '@/lib/firebase';
@@ -38,6 +47,7 @@ import { format, parseISO } from 'date-fns';
 import { QuotePDF } from './QuotePDF';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { QuoteForm } from './QuoteForm';
 
 const formatCurrency = (value: number | null | undefined) => {
     if (value === null || value === undefined) return '-';
@@ -59,57 +69,62 @@ export function QuoteTable() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [currentUser, setCurrentUser] = React.useState<FirebaseUser | null>(null);
+  
   const pdfRef = React.useRef<HTMLDivElement>(null);
-  const [selectedQuoteForPdf, setSelectedQuoteForPdf] = React.useState<QuoteProfile | null>(null);
+  const [quoteForPdf, setQuoteForPdf] = React.useState<{quote: QuoteProfile, action: 'download' | 'view'} | null>(null);
+  
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [selectedQuote, setSelectedQuote] = React.useState<QuoteProfile | null>(null);
+  const [refreshCounter, setRefreshCounter] = React.useState(0);
+  
+  const triggerRefresh = () => setRefreshCounter(prev => prev + 1);
 
+  const handleEdit = (quote: QuoteProfile) => {
+    setSelectedQuote(quote);
+    setIsModalOpen(true);
+  };
+  
+  const handleModalAction = () => {
+    setIsModalOpen(false);
+    setSelectedQuote(null);
+    triggerRefresh();
+  }
 
-  const handleExportPDF = async (quote: QuoteProfile) => {
-    setSelectedQuoteForPdf(quote);
+  const handlePdfAction = async (quote: QuoteProfile, action: 'download' | 'view') => {
+    setQuoteForPdf({ quote, action });
   };
   
   React.useEffect(() => {
-    if (!selectedQuoteForPdf || !pdfRef.current) return;
+    if (!quoteForPdf || !pdfRef.current) return;
   
-    const exportPdf = async () => {
+    const generateAndHandlePdf = async () => {
       const input = pdfRef.current;
       if (input) {
         try {
           const canvas = await html2canvas(input, { scale: 2 });
           const imgData = canvas.toDataURL('image/png');
-          const pdf = new jsPDF('p', 'mm', 'a4');
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = pdf.internal.pageSize.getHeight();
-          const canvasWidth = canvas.width;
-          const canvasHeight = canvas.height;
-          const ratio = canvasWidth / pdfWidth;
-          const height = canvasHeight / ratio;
-  
-          let position = 0;
-          let remainingHeight = height;
-  
-          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, height);
-          remainingHeight -= pdfHeight;
-  
-          while (remainingHeight > 0) {
-            pdf.addPage();
-            position -= pdfHeight;
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, height);
-            remainingHeight -= pdfHeight;
+          
+          if (quoteForPdf.action === 'download') {
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`proposta-${quoteForPdf.quote.number}.pdf`);
+          } else if (quoteForPdf.action === 'view') {
+             const newWindow = window.open();
+             newWindow?.document.write(`<iframe width='100%' height='100%' src='${imgData}'></iframe>`);
           }
-  
-          pdf.save(`proposta-${selectedQuoteForPdf.number}.pdf`);
+
         } catch (error) {
             console.error("Error generating PDF:", error)
         }
       }
-      setSelectedQuoteForPdf(null); 
+      setQuoteForPdf(null); 
     };
   
-    // Use a timeout to ensure the component has rendered with the new data
-    const timer = setTimeout(exportPdf, 100); 
-  
+    const timer = setTimeout(generateAndHandlePdf, 100); 
     return () => clearTimeout(timer);
-  }, [selectedQuoteForPdf]);
+  }, [quoteForPdf]);
 
   const columns: ColumnDef<QuoteProfile>[] = [
     {
@@ -164,11 +179,19 @@ export function QuoteTable() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Ações</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => handleExportPDF(quote)}>
+              <DropdownMenuItem onClick={() => handlePdfAction(quote, 'view')}>
+                <Eye className="mr-2 h-4 w-4" />
+                Visualizar
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handlePdfAction(quote, 'download')}>
                 <Download className="mr-2 h-4 w-4" />
                 Exportar PDF
               </DropdownMenuItem>
-              <DropdownMenuItem>Editar</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleEdit(quote)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem className="text-red-600">Excluir</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -200,7 +223,7 @@ export function QuoteTable() {
       }
     }
     fetchData();
-  }, [currentUser]);
+  }, [currentUser, refreshCounter]);
 
   const table = useReactTable({
     data,
@@ -244,8 +267,21 @@ export function QuoteTable() {
     <>
        {/* Hidden component for PDF generation */}
        <div style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '794px', height: 'auto' }}>
-         {selectedQuoteForPdf && <QuotePDF quote={selectedQuoteForPdf} ref={pdfRef}/>}
+         {quoteForPdf && <QuotePDF quote={quoteForPdf.quote} ref={pdfRef}/>}
        </div>
+       
+       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="sm:max-w-[800px]">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-black">{selectedQuote ? 'Editar Orçamento' : 'Criar Novo Orçamento'}</DialogTitle>
+              <DialogDescription>
+                {selectedQuote ? 'Altere as informações abaixo.' : 'Selecione o cliente, adicione os itens e defina os termos.'}
+              </DialogDescription>
+            </DialogHeader>
+            <QuoteForm quote={selectedQuote} onQuoteAction={handleModalAction} />
+          </DialogContent>
+        </Dialog>
+
 
       <div>
         <div className="flex items-center justify-between mb-4">

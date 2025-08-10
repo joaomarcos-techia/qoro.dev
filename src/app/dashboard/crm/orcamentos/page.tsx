@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -18,7 +19,7 @@ export default function OrcamentosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [refreshCounter, setRefreshCounter] = useState(0);
 
-  const handleQuoteCreated = () => {
+  const handleQuoteAction = () => {
     setIsModalOpen(false);
     setRefreshCounter(prev => prev + 1);
   };
@@ -35,6 +36,7 @@ export default function OrcamentosPage() {
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
             <Button 
+              onClick={() => setIsModalOpen(true)}
               className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold"
             >
               <PlusCircle className="mr-2 w-5 h-5" />
@@ -48,7 +50,7 @@ export default function OrcamentosPage() {
                 Selecione o cliente, adicione os itens e defina os termos.
               </DialogDescription>
             </DialogHeader>
-            <QuoteForm onQuoteCreated={handleQuoteCreated} />
+            <QuoteForm onQuoteAction={handleQuoteAction} />
           </DialogContent>
         </Dialog>
       </div>

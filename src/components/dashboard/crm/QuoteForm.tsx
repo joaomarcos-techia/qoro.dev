@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,21 +13,30 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createQuote, listCustomers, listProducts } from '@/ai/flows/crm-management';
-import { QuoteSchema, CustomerProfile, ProductProfile } from '@/ai/schemas';
+import { QuoteSchema, CustomerProfile, ProductProfile, QuoteProfileSchema, QuoteProfile } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { Loader2, AlertCircle, CalendarIcon, PlusCircle, Trash2, Search, Package, Wrench } from 'lucide-react';
+import { Loader2, AlertCircle, CalendarIcon, PlusCircle, Trash2, Package, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { QuotePDF } from './QuotePDF';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 type QuoteFormProps = {
-  onQuoteCreated: () => void;
+  onQuoteAction: () => void;
+  quote?: QuoteProfile | null;
 };
 
 type ItemType = 'product' | 'service';
 
-export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
+const FormSchema = QuoteSchema.extend({
+  validUntil: z.date(),
+});
+type FormValues = z.infer<typeof FormSchema>;
+
+export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +52,11 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
   const [isCustomerPopoverOpen, setIsCustomerPopoverOpen] = useState(false);
   const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
 
+  const pdfRef = useRef<HTMLDivElement>(null);
+  const [quoteForPdf, setQuoteForPdf] = useState<QuoteProfile | null>(null);
+
+  const isEditMode = !!quote;
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -50,40 +64,16 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (currentUser) {
-        const fetchData = async () => {
-            try {
-                const [customersData, allItems] = await Promise.all([
-                    listCustomers({ actor: currentUser.uid }),
-                    listProducts({ actor: currentUser.uid })
-                ]);
-                setCustomers(customersData);
-                
-                // Distinguish between products and services
-                const productsList = allItems.filter(item => item.pricingModel !== 'per_hour');
-                const servicesList = allItems.filter(item => item.pricingModel === 'per_hour');
-                setProducts(productsList);
-                setServices(servicesList);
-
-            } catch (err) {
-                 console.error("Failed to load customers or products", err);
-                 setError("Não foi possível carregar os dados necessários. Tente novamente.");
-            }
-        };
-        fetchData();
-    }
-  }, [currentUser]);
-
   const {
     register,
     handleSubmit,
     control,
     watch,
     setValue,
+    reset,
     formState: { errors },
-  } = useForm<z.infer<typeof QuoteSchema>>({
-    resolver: zodResolver(QuoteSchema),
+  } = useForm<FormValues>({
+    resolver: zodResolver(FormSchema),
     defaultValues: {
       status: 'draft',
       items: [],
@@ -95,10 +85,42 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
     },
   });
 
-  const { fields, append, remove, update } = useFieldArray({
-    control,
-    name: "items",
-  });
+  const fetchDependencies = useCallback(async (user: FirebaseUser) => {
+    try {
+        const [customersData, allItems] = await Promise.all([
+            listCustomers({ actor: user.uid }),
+            listProducts({ actor: user.uid })
+        ]);
+        setCustomers(customersData);
+        setProducts(allItems.filter(item => item.pricingModel !== 'per_hour'));
+        setServices(allItems.filter(item => item.pricingModel === 'per_hour'));
+    } catch (err) {
+         console.error("Failed to load dependencies", err);
+         setError("Não foi possível carregar os dados necessários. Tente novamente.");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+        fetchDependencies(currentUser);
+    }
+    if (quote) {
+      const validUntilDate = quote.validUntil ? new Date(quote.validUntil) : new Date();
+      reset({ ...quote, validUntil: validUntilDate });
+    } else {
+      reset({
+        customerId: '',
+        status: 'draft',
+        items: [],
+        subtotal: 0,
+        total: 0,
+        discount: 0,
+        tax: 0,
+        validUntil: new Date(),
+        notes: '',
+      });
+    }
+  }, [currentUser, quote, reset, fetchDependencies]);
 
   const watchItems = watch("items");
   const watchDiscount = watch("discount");
@@ -112,6 +134,43 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
     setValue('subtotal', subtotal);
     setValue('total', total);
   }, [watchItems, watchDiscount, watchTax, setValue]);
+
+  const handleExportPDF = async (quoteData: QuoteProfile) => {
+    setQuoteForPdf(quoteData);
+    // Callback useEffect will handle the PDF generation
+  };
+
+  useEffect(() => {
+    if (!quoteForPdf || !pdfRef.current) return;
+  
+    const exportPdf = async () => {
+      const input = pdfRef.current;
+      if (input) {
+        try {
+          const canvas = await html2canvas(input, { scale: 2 });
+          const imgData = canvas.toDataURL('image/png');
+          const pdf = new jsPDF('p', 'mm', 'a4');
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = pdf.internal.pageSize.getHeight();
+          const canvasWidth = canvas.width;
+          const canvasHeight = canvas.height;
+          const ratio = canvasWidth / pdfWidth;
+          const height = canvasHeight / ratio;
+  
+          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, height);
+          pdf.save(`proposta-${quoteForPdf.number}.pdf`);
+
+        } catch (error) {
+            console.error("Error generating PDF:", error)
+        }
+      }
+      setQuoteForPdf(null); 
+    };
+  
+    const timer = setTimeout(exportPdf, 100); 
+    return () => clearTimeout(timer);
+  }, [quoteForPdf]);
+
 
   const addItemToQuote = (item: ProductProfile) => {
     append({
@@ -127,21 +186,35 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
     setItemSearch('');
   }
 
-  const onSubmit = async (data: z.infer<typeof QuoteSchema>) => {
+  const onSubmit = async (data: FormValues) => {
     if (!currentUser) {
       setError('Você precisa estar autenticado para criar um orçamento.');
       return;
     }
     setIsLoading(true);
     setError(null);
-    const quoteNumber = `QT-${Date.now().toString().slice(-6)}`;
     
     try {
-      await createQuote({ ...data, number: quoteNumber, actor: currentUser.uid });
-      onQuoteCreated();
+        if(isEditMode && quote?.id) {
+            // Update logic here if implemented
+        } else {
+            const quoteNumber = `QT-${Date.now().toString().slice(-6)}`;
+            const submissionData = { ...data, number: quoteNumber, actor: currentUser.uid };
+            const result = await createQuote(submissionData);
+            
+            const newQuoteForPdf: QuoteProfile = {
+                ...submissionData,
+                id: result.id,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                customerName: customers.find(c => c.id === data.customerId)?.name || '',
+            };
+            handleExportPDF(newQuoteForPdf);
+        }
+      onQuoteAction();
     } catch (err) {
       console.error(err);
-      setError('Falha ao criar o orçamento. Tente novamente.');
+      setError(`Falha ao ${isEditMode ? 'atualizar' : 'criar'} o orçamento. Tente novamente.`);
     } finally {
       setIsLoading(false);
     }
@@ -155,7 +228,11 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
+    <>
+      <div style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '794px', height: 'auto' }}>
+          {quoteForPdf && <QuotePDF quote={quoteForPdf} ref={pdfRef}/>}
+      </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
         {/* Customer and Dates */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -220,9 +297,9 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
                 {fields.map((item, index) => (
                     <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
                         <div className="col-span-5"><Input value={item.name} disabled className="bg-white" /></div>
-                        <div className="col-span-2"><Input type="number" value={item.quantity} onChange={(e) => update(index, {...item, quantity: Number(e.target.value), total: Number(e.target.value) * item.unitPrice })} /></div>
-                        <div className="col-span-2"><Input type="number" step="0.01" value={item.unitPrice} onChange={(e) => update(index, {...item, unitPrice: Number(e.target.value), total: item.quantity * Number(e.target.value)})} /></div>
-                        <div className="col-span-2"><Input value={(item.total).toFixed(2)} disabled className="bg-white" /></div>
+                        <div className="col-span-2"><Input type="number" value={item.quantity} onChange={(e) => setValue(`items.${index}.quantity`, Number(e.target.value), { shouldValidate: true })} /></div>
+                        <div className="col-span-2"><Input type="number" step="0.01" value={item.unitPrice} onChange={(e) => setValue(`items.${index}.unitPrice`, Number(e.target.value), { shouldValidate: true })} /></div>
+                        <div className="col-span-2"><Input value={(item.quantity * item.unitPrice).toFixed(2)} disabled className="bg-white" /></div>
                         <div className="col-span-1"><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="w-4 h-4 text-red-500"/></Button></div>
                     </div>
                 ))}
@@ -265,10 +342,10 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
                 <Textarea {...register('notes')} placeholder="Termos de pagamento, observações, etc." />
             </div>
             <div className="space-y-4">
-                <div className="flex justify-between items-center"><Label>Subtotal</Label><span>{(watch('subtotal') || 0).toFixed(2)}</span></div>
+                <div className="flex justify-between items-center"><Label>Subtotal</Label><span>{watch('subtotal').toFixed(2)}</span></div>
                 <div className="flex justify-between items-center"><Label>Desconto (R$)</Label><Input type="number" step="0.01" className="w-24 h-8" {...register('discount', {valueAsNumber: true})}/></div>
                 <div className="flex justify-between items-center"><Label>Impostos (R$)</Label><Input type="number" step="0.01" className="w-24 h-8" {...register('tax', {valueAsNumber: true})}/></div>
-                <div className="flex justify-between items-center text-lg font-bold"><Label>Total</Label><span>R$ {(watch('total') || 0).toFixed(2)}</span></div>
+                <div className="flex justify-between items-center text-lg font-bold"><Label>Total</Label><span>R$ {watch('total').toFixed(2)}</span></div>
             </div>
              <div className="space-y-2">
                 <Label>Status</Label>
@@ -296,11 +373,10 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
       <div className="flex justify-end pt-4">
         <Button type="submit" disabled={isLoading} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
           {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
-          {isLoading ? 'Salvando...' : 'Salvar Orçamento'}
+          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : 'Salvar e Exportar PDF')}
         </Button>
       </div>
     </form>
+    </>
   );
 }
-
-    
