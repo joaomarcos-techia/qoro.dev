@@ -19,6 +19,7 @@ import { auth } from '@/lib/firebase';
 import { Loader2, AlertCircle, CalendarIcon, PlusCircle, Trash2, Search, Package, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 type QuoteFormProps = {
   onQuoteCreated: () => void;
@@ -60,7 +61,7 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
                 setCustomers(customersData);
                 
                 // Distinguish between products and services
-                const productsList = allItems.filter(item => item.pricingModel === 'fixed');
+                const productsList = allItems.filter(item => item.pricingModel !== 'per_hour');
                 const servicesList = allItems.filter(item => item.pricingModel === 'per_hour');
                 setProducts(productsList);
                 setServices(servicesList);
@@ -202,7 +203,7 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
                             <PopoverTrigger asChild>
                             <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? format(field.value, "PPP", { locale: require('date-fns/locale/pt-BR') }) : <span>Escolha uma data</span>}
+                                {field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}
                             </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus /></PopoverContent>
@@ -301,5 +302,3 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
     </form>
   );
 }
-
-    
