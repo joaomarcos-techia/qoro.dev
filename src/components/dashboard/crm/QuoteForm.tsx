@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -47,6 +48,8 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
     defaultValues: {
       status: 'draft',
       items: [],
+      subtotal: 0,
+      total: 0,
       discount: 0,
       tax: 0,
       validUntil: new Date(),
@@ -59,41 +62,17 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
   });
 
   const watchItems = watch("items");
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const fetchData = useCallback(async () => {
-    if (!currentUser) return;
-    try {
-        const [customerData, productData] = await Promise.all([
-            listCustomers({ actor: currentUser.uid }),
-            listProducts({ actor: currentUser.uid })
-        ]);
-        setCustomers(customerData);
-        setProducts(productData);
-    } catch (err) {
-        console.error("Failed to fetch data for quote form", err);
-        setError("Não foi possível carregar clientes e produtos.");
-    }
-  }, [currentUser]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const watchDiscount = watch("discount");
+  const watchTax = watch("tax");
 
   useEffect(() => {
     const subtotal = watchItems.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
-    const discount = watch('discount') || 0;
-    const tax = watch('tax') || 0;
+    const discount = watchDiscount || 0;
+    const tax = watchTax || 0;
     const total = subtotal - discount + tax;
     setValue('subtotal', subtotal);
     setValue('total', total);
-  }, [watchItems, watch, setValue]);
+  }, [watchItems, watchDiscount, watchTax, setValue]);
 
   const addProductItem = (product: ProductProfile) => {
     append({
@@ -236,10 +215,10 @@ export function QuoteForm({ onQuoteCreated }: QuoteFormProps) {
                 <Textarea {...register('notes')} placeholder="Termos de pagamento, observações, etc." />
             </div>
             <div className="space-y-4">
-                <div className="flex justify-between items-center"><Label>Subtotal</Label><span>{watch('subtotal').toFixed(2)}</span></div>
+                <div className="flex justify-between items-center"><Label>Subtotal</Label><span>{(watch('subtotal') || 0).toFixed(2)}</span></div>
                 <div className="flex justify-between items-center"><Label>Desconto (R$)</Label><Input type="number" step="0.01" className="w-24 h-8" {...register('discount', {valueAsNumber: true})}/></div>
                 <div className="flex justify-between items-center"><Label>Impostos (R$)</Label><Input type="number" step="0.01" className="w-24 h-8" {...register('tax', {valueAsNumber: true})}/></div>
-                <div className="flex justify-between items-center text-lg font-bold"><Label>Total</Label><span>R$ {watch('total').toFixed(2)}</span></div>
+                <div className="flex justify-between items-center text-lg font-bold"><Label>Total</Label><span>R$ {(watch('total') || 0).toFixed(2)}</span></div>
             </div>
              <div className="space-y-2">
                 <Label>Status</Label>
