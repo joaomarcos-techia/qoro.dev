@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,7 +13,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createTask } from '@/ai/flows/task-management';
-import { TaskSchema } from '@/ai/schemas';
+import { listUsers } from '@/ai/flows/user-management';
+import { TaskSchema, UserProfile } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Loader2, AlertCircle, CalendarIcon } from 'lucide-react';
@@ -28,10 +30,18 @@ export function TaskForm({ onTaskCreated }: TaskFormProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [users, setUsers] = useState<UserProfile[]>([]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+      if (user) {
+        setCurrentUser(user);
+        listUsers({ actor: user.uid })
+          .then(setUsers)
+          .catch(err => console.error("Failed to fetch users:", err));
+      } else {
+        setCurrentUser(null);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -47,6 +57,7 @@ export function TaskForm({ onTaskCreated }: TaskFormProps) {
       status: 'todo',
       priority: 'medium',
       description: '',
+      responsibleUserId: '',
     },
   });
 
@@ -58,7 +69,11 @@ export function TaskForm({ onTaskCreated }: TaskFormProps) {
     setIsLoading(true);
     setError(null);
     try {
-      await createTask({ ...data, actor: currentUser.uid });
+      const submissionData = {
+        ...data,
+        responsibleUserId: data.responsibleUserId || undefined,
+      };
+      await createTask({ ...submissionData, actor: currentUser.uid });
       onTaskCreated();
     } catch (err) {
       console.error(err);
@@ -79,7 +94,7 @@ export function TaskForm({ onTaskCreated }: TaskFormProps) {
         <Label htmlFor="description">Descrição</Label>
         <Textarea id="description" {...register('description')} placeholder="Adicione mais detalhes sobre a tarefa..." />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Status</Label>
           <Controller
@@ -119,6 +134,26 @@ export function TaskForm({ onTaskCreated }: TaskFormProps) {
                 </Select>
             )}
            />
+        </div>
+         <div className="space-y-2">
+          <Label>Responsável</Label>
+          <Controller
+            name="responsibleUserId"
+            control={control}
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um responsável" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Ninguém</SelectItem>
+                  {users.map(user => (
+                    <SelectItem key={user.uid} value={user.uid}>{user.name || user.email}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
         </div>
         <div className="space-y-2">
            <Label>Data de Vencimento</Label>

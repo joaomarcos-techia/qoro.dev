@@ -16,7 +16,7 @@ export const createTask = async (input: z.infer<typeof TaskSchema>, actorUid: st
 
     const newTaskData = {
         ...input,
-        userId: actorUid,
+        creatorId: actorUid,
         companyId: organizationId,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
@@ -30,8 +30,6 @@ export const createTask = async (input: z.infer<typeof TaskSchema>, actorUid: st
 export const listTasks = async (actorUid: string): Promise<z.infer<typeof TaskProfileSchema>[]> => {
     const { organizationId } = await getAdminAndOrg(actorUid);
     
-    // Query for all tasks in the organization, for now.
-    // Can be refined to query only for tasks assigned to the user (actorUid).
     const tasksSnapshot = await adminDb.collection('tasks')
                                      .where('companyId', '==', organizationId)
                                      .orderBy('createdAt', 'desc')
@@ -40,17 +38,30 @@ export const listTasks = async (actorUid: string): Promise<z.infer<typeof TaskPr
     if (tasksSnapshot.empty) {
         return [];
     }
+
+    const userIds = [...new Set(tasksSnapshot.docs.map(doc => doc.data().responsibleUserId).filter(Boolean))];
+    const users: Record<string, { name?: string }> = {};
+
+    if (userIds.length > 0) {
+        const usersSnapshot = await adminDb.collection('users').where('__name__', 'in', userIds).get();
+        usersSnapshot.forEach(doc => {
+            users[doc.id] = { name: doc.data().name };
+        });
+    }
     
     const tasks: z.infer<typeof TaskProfileSchema>[] = tasksSnapshot.docs.map(doc => {
         const data = doc.data();
         const dueDate = data.dueDate ? data.dueDate.toDate() : null;
-        
+        const responsibleUserInfo = data.responsibleUserId ? users[data.responsibleUserId] : {};
+
         return TaskProfileSchema.parse({
             id: doc.id,
             ...data,
             dueDate,
+            creatorId: data.creatorId,
             createdAt: data.createdAt.toDate().toISOString(),
             updatedAt: data.updatedAt.toDate().toISOString(),
+            responsibleUserName: responsibleUserInfo?.name,
         });
     });
     

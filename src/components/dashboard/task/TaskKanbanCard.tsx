@@ -1,3 +1,4 @@
+
 'use client';
 
 import { TaskProfile } from '@/ai/schemas';
@@ -33,6 +34,12 @@ export function TaskKanbanCard({ task }: TaskKanbanCardProps) {
                 <span className="text-xs">
                     {format(parseISO(task.dueDate.toString()), "dd 'de' MMM, yyyy", { locale: ptBR })}
                 </span>
+            </div>
+        )}
+        {task.responsibleUserName && (
+            <div className="flex items-center">
+                <User className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
+                <span className="text-xs font-medium">{task.responsibleUserName}</span>
             </div>
         )}
       </div>

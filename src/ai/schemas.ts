@@ -90,7 +90,8 @@ export const UpdateCustomerSchema = CustomerSchema.extend({
 
 export const CustomerProfileSchema = CustomerSchema.extend({
     id: z.string(),
-    createdAt: z.string(), // Using string for simplicity on the client
+    createdAt: z.string(),
+    birthDate: z.string().datetime().optional().nullable(),
 });
 export type CustomerProfile = z.infer<typeof CustomerProfileSchema>;
 
@@ -107,8 +108,8 @@ export const SaleLeadProfileSchema = SaleLeadSchema.extend({
     id: z.string(),
     createdAt: z.string(),
     updatedAt: z.string(),
-    customerName: z.string().optional(), // Denormalized for easy display
-    customerEmail: z.string().email().optional(), // Denormalized for easy display
+    customerName: z.string().optional(), 
+    customerEmail: z.string().email().optional(), 
 });
 export type SaleLeadProfile = z.infer<typeof SaleLeadProfileSchema>;
 
@@ -146,7 +147,6 @@ export const QuoteItemSchema = z.object({
 
 export const QuoteSchema = z.object({
     customerId: z.string().min(1, "É necessário selecionar um cliente."),
-    number: z.string().optional(),
     items: z.array(QuoteItemSchema).min(1, "O orçamento deve ter pelo menos um item."),
     subtotal: z.number(),
     discount: z.number().optional(),
@@ -161,7 +161,7 @@ export const UpdateQuoteSchema = QuoteSchema.extend({
 
 export const QuoteProfileSchema = QuoteSchema.extend({
     id: z.string(),
-    number: z.string(), // Number is required in the profile
+    number: z.string(), 
     createdAt: z.string(),
     updatedAt: z.string(),
     customerName: z.string().optional(),
@@ -178,13 +178,15 @@ export const TaskSchema = z.object({
   status: z.enum(['todo', 'in_progress', 'review', 'done']).default('todo'),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
   dueDate: z.date().optional().nullable(),
+  responsibleUserId: z.string().optional(),
 });
 
 export const TaskProfileSchema = TaskSchema.extend({
     id: z.string(),
     createdAt: z.string(),
     updatedAt: z.string(),
-    userId: z.string(),
+    creatorId: z.string(),
+    responsibleUserName: z.string().optional(),
 });
 export type TaskProfile = z.infer<typeof TaskProfileSchema>;
 
