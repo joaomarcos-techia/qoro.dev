@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 const FormSchema = TaskSchema.extend({
-    dueDate: z.date().optional().nullable(),
+    dueDate: z.union([z.string().datetime(), z.date(), z.null()]).optional(),
 });
 type FormValues = z.infer<typeof FormSchema>;
 
@@ -62,7 +62,7 @@ export function TaskForm({ onTaskCreated }: TaskFormProps) {
       status: 'todo',
       priority: 'medium',
       description: '',
-      responsibleUserId: '',
+      responsibleUserId: undefined,
       dueDate: null,
     },
   });
@@ -77,14 +77,14 @@ export function TaskForm({ onTaskCreated }: TaskFormProps) {
     try {
       const submissionData = {
         ...data,
-        dueDate: data.dueDate ? data.dueDate.toISOString() : null,
+        dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
         responsibleUserId: data.responsibleUserId || undefined,
       };
       await createTask({ ...submissionData, actor: currentUser.uid });
       onTaskCreated();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError('Falha ao criar a tarefa. Tente novamente.');
+      setError(err.message || 'Falha ao criar a tarefa. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -177,13 +177,13 @@ export function TaskForm({ onTaskCreated }: TaskFormProps) {
                             )}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, "PPP") : <span>Escolha uma data</span>}
+                            {field.value ? format(new Date(field.value), "PPP") : <span>Escolha uma data</span>}
                         </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
                         <Calendar
                             mode="single"
-                            selected={field.value ?? undefined}
+                            selected={field.value ? new Date(field.value) : undefined}
                             onSelect={field.onChange}
                             initialFocus
                         />
