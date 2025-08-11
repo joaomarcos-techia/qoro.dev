@@ -1,4 +1,3 @@
-
 'use client';
 
 import { TaskProfile } from '@/ai/schemas';
