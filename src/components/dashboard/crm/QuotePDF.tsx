@@ -21,7 +21,6 @@ export const QuotePDF = React.forwardRef<HTMLDivElement, QuotePDFProps>(({ quote
                 .pdf-container { font-family: 'Inter', sans-serif; font-size: 11px; line-height: 1.6; color: #374151; background-color: #fff; padding: 15mm; }
                 .pdf-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f3f4f6; padding-bottom: 1rem; margin-bottom: 1.5rem; }
                 .pdf-header .logo h1 { font-size: 1.8rem; font-weight: 700; color: #111827; margin: 0; }
-                .pdf-header .logo p { font-size: 0.8rem; color: #6b7280; margin: 0; }
                 .pdf-header .quote-details { text-align: right; }
                 .pdf-header .quote-details h2 { font-size: 1.5rem; color: #8B5CF6; margin: 0 0 0.25rem 0; font-weight: 600; }
                 .pdf-header .quote-details p { margin: 0; color: #4b5563; }
@@ -49,8 +48,7 @@ export const QuotePDF = React.forwardRef<HTMLDivElement, QuotePDFProps>(({ quote
             <div className="pdf-container">
                 <header className="pdf-header">
                     <div className="logo">
-                        <h1>Sua Empresa</h1>
-                        <p>Seu Slogan ou Endereço</p>
+                        <h1>{quote.organizationName || 'Sua Empresa'}</h1>
                     </div>
                     <div className="quote-details">
                         <h2>Orçamento</h2>
@@ -96,10 +94,6 @@ export const QuotePDF = React.forwardRef<HTMLDivElement, QuotePDFProps>(({ quote
                                 <td className="label">Desconto:</td>
                                 <td className="value">{formatCurrency(quote.discount || 0)}</td>
                             </tr>
-                             <tr>
-                                <td className="label">Impostos:</td>
-                                <td className="value">{formatCurrency(quote.tax || 0)}</td>
-                            </tr>
                             <tr className="grand-total">
                                 <td className="label">TOTAL:</td>
                                 <td className="value">{formatCurrency(quote.total)}</td>
@@ -114,7 +108,7 @@ export const QuotePDF = React.forwardRef<HTMLDivElement, QuotePDFProps>(({ quote
                     </section>
                 )}
                 <footer className="pdf-footer">
-                    Obrigado pela sua preferência! | contato@suaempresa.com
+                    Obrigado pela preferência!
                 </footer>
             </div>
         </div>

@@ -192,6 +192,15 @@ export const getDashboardMetrics = async (actorUid: string): Promise<{ customers
     };
 };
 
+export const getOrganizationDetails = async (actorUid: string) => {
+    const { organizationId } = await getAdminAndOrg(actorUid);
+    const orgDoc = await adminDb.collection('organizations').doc(organizationId).get();
+    if (!orgDoc.exists) {
+        throw new Error('Organização não encontrada.');
+    }
+    return { id: orgDoc.id, ...orgDoc.data() };
+}
+
 export const createProduct = async (input: z.infer<typeof ProductSchema>, actorUid: string) => {
     const { organizationId } = await getAdminAndOrg(actorUid);
     const newProductData = {
@@ -270,6 +279,7 @@ export const createQuote = async (input: z.infer<typeof QuoteSchema>, actorUid: 
     const newQuoteData = {
         ...input,
         number: quoteNumber,
+        status: 'draft',
         companyId: organizationId,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
@@ -279,7 +289,7 @@ export const createQuote = async (input: z.infer<typeof QuoteSchema>, actorUid: 
 };
 
 export const listQuotes = async (actorUid: string): Promise<QuoteProfile[]> => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
+    const { organizationId, organizationName } = await getAdminAndOrg(actorUid);
 
     const quotesSnapshot = await adminDb.collection('quotes')
         .where('companyId', '==', organizationId)
@@ -303,17 +313,16 @@ export const listQuotes = async (actorUid: string): Promise<QuoteProfile[]> => {
     const quotes: QuoteProfile[] = quotesSnapshot.docs.map(doc => {
         const data = doc.data();
         const customerInfo = customers[data.customerId] || {};
-        // Firestore timestamps can be tricky. This ensures we handle both Timestamp objects and ISO strings if they exist.
         const validUntilDate = data.validUntil ? new Date(data.validUntil.seconds ? data.validUntil.toDate() : data.validUntil) : new Date();
 
         const parsedData = QuoteProfileSchema.parse({
             id: doc.id,
             ...data,
-            // Ensure the data being passed to the schema is a string, as expected.
             validUntil: validUntilDate.toISOString(), 
             createdAt: data.createdAt.toDate().toISOString(),
             updatedAt: data.updatedAt.toDate().toISOString(),
             customerName: customerInfo.name,
+            organizationName
         });
         
         return parsedData;

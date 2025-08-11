@@ -15,19 +15,19 @@ export const getAdminAndOrg = async (actorUid: string) => {
     
     const userData = userDoc.data()!;
     const organizationId = userData.organizationId;
-    const userRole = userData.role || 'member'; // Default to 'member' if role is not set
+    const userRole = userData.role || 'member'; 
     
     if (!organizationId) {
         throw new Error('User does not belong to an organization.');
     }
     
-    // The user's role is now available to be used in the services that call this function.
-    // This allows for more granular permission checks, e.g., restricting certain actions to 'admin' users.
-    // Example in a service:
-    // const { organizationId, userRole } = await getAdminAndOrg(actorUid);
-    // if (userRole !== 'admin') {
-    //   throw new Error("You do not have permission to perform this action.");
-    // }
+    const orgDocRef = adminDb.collection('organizations').doc(organizationId);
+    const orgDoc = await orgDocRef.get();
+    if (!orgDoc.exists) {
+        throw new Error('Organization not found.');
+    }
+    const organizationName = orgDoc.data()?.name;
 
-    return { userDocRef, userData, organizationId, userRole, actorUid };
+
+    return { userDocRef, userData, organizationId, organizationName, userRole, actorUid };
 };

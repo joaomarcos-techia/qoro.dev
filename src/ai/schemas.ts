@@ -150,9 +150,7 @@ export const QuoteSchema = z.object({
     items: z.array(QuoteItemSchema).min(1, "O orçamento deve ter pelo menos um item."),
     subtotal: z.number(),
     discount: z.number().optional(),
-    tax: z.number().optional(),
     total: z.number(),
-    status: z.enum(['draft', 'sent', 'accepted', 'rejected', 'expired']),
     validUntil: z.string().datetime(),
     notes: z.string().optional(),
 });
@@ -167,6 +165,8 @@ export const QuoteProfileSchema = QuoteSchema.extend({
     createdAt: z.string(),
     updatedAt: z.string(),
     customerName: z.string().optional(),
+    organizationName: z.string().optional(),
+    status: z.enum(['draft', 'sent', 'accepted', 'rejected', 'expired']),
 });
 export type QuoteProfile = z.infer<typeof QuoteProfileSchema>;
 

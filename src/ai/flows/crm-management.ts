@@ -17,10 +17,11 @@
  * - updateCustomerStatus - Updates the status of a customer.
  * - deleteCustomer - Deletes a customer.
  * - updateCustomer - Updates a customer's profile.
+ * - getOrganizationDetails - Fetches details for the user's organization.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { CustomerSchema, CustomerProfileSchema, SaleLeadSchema, SaleLeadProfileSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema } from '@/ai/schemas';
+import { CustomerSchema, CustomerProfileSchema, SaleLeadSchema, SaleLeadProfileSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema, OrganizationProfileSchema } from '@/ai/schemas';
 import * as crmService from '@/services/crmService';
 
 const ActorSchema = z.object({ actor: z.string() });
@@ -89,6 +90,19 @@ const getDashboardMetricsFlow = ai.defineFlow(
     },
     async ({ actor }) => crmService.getDashboardMetrics(actor)
 );
+
+const getOrganizationDetailsFlow = ai.defineFlow(
+    {
+        name: 'getOrganizationDetailsFlow',
+        inputSchema: ActorSchema,
+        outputSchema: OrganizationProfileSchema
+    },
+    async ({ actor }) => {
+        const orgData = await crmService.getOrganizationDetails(actor);
+        return OrganizationProfileSchema.parse(orgData);
+    }
+);
+
 
 const createProductFlow = ai.defineFlow(
     {
@@ -201,6 +215,10 @@ export async function listSaleLeads(input: z.infer<typeof ActorSchema>): Promise
 
 export async function getDashboardMetrics(input: z.infer<typeof ActorSchema>): Promise<z.infer<typeof DashboardMetricsOutputSchema>> {
     return getDashboardMetricsFlow(input);
+}
+
+export async function getOrganizationDetails(input: z.infer<typeof ActorSchema>): Promise<z.infer<typeof OrganizationProfileSchema>> {
+    return getOrganizationDetailsFlow(input);
 }
 
 export async function createProduct(input: z.infer<typeof ProductSchema> & z.infer<typeof ActorSchema>): Promise<{ id: string; }> {

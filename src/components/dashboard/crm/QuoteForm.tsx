@@ -11,9 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { createQuote, listCustomers, listProducts, updateQuote } from '@/ai/flows/crm-management';
-import { QuoteSchema, CustomerProfile, ProductProfile, QuoteProfile, UpdateQuoteSchema } from '@/ai/schemas';
+import { createQuote, listCustomers, listProducts, updateQuote, getOrganizationDetails } from '@/ai/flows/crm-management';
+import { QuoteSchema, CustomerProfile, ProductProfile, QuoteProfile, UpdateQuoteSchema, OrganizationProfile } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Loader2, AlertCircle, CalendarIcon, PlusCircle, Trash2, Package, Wrench, Download, Eye } from 'lucide-react';
@@ -44,6 +43,7 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
   const [customers, setCustomers] = useState<CustomerProfile[]>([]);
   const [products, setProducts] = useState<ProductProfile[]>([]);
   const [services, setServices] = useState<ProductProfile[]>([]);
+  const [organization, setOrganization] = useState<OrganizationProfile | null>(null);
   
   const [customerSearch, setCustomerSearch] = useState('');
   const [itemSearch, setItemSearch] = useState('');
@@ -69,12 +69,10 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
   } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      status: 'draft',
       items: [],
       subtotal: 0,
       total: 0,
       discount: 0,
-      tax: 0,
     },
   });
 
@@ -85,13 +83,15 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
 
   const fetchDependencies = useCallback(async (user: FirebaseUser) => {
     try {
-        const [customersData, allItems] = await Promise.all([
+        const [customersData, allItems, orgData] = await Promise.all([
             listCustomers({ actor: user.uid }),
-            listProducts({ actor: user.uid })
+            listProducts({ actor: user.uid }),
+            getOrganizationDetails({actor: user.uid})
         ]);
         setCustomers(customersData);
         setProducts(allItems.filter(item => item.pricingModel !== 'per_hour'));
         setServices(allItems.filter(item => item.pricingModel === 'per_hour'));
+        setOrganization(orgData);
     } catch (err) {
          console.error("Failed to load dependencies", err);
          setError("Não foi possível carregar os dados necessários. Tente novamente.");
@@ -118,12 +118,10 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
       reset({
         customerId: '',
         number: '',
-        status: 'draft',
         items: [],
         subtotal: 0,
         total: 0,
         discount: 0,
-        tax: 0,
         validUntil: new Date(),
         notes: '',
       });
@@ -132,21 +130,18 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
 
   const watchItems = watch("items");
   const watchDiscount = watch("discount");
-  const watchTax = watch("tax");
 
   useEffect(() => {
     const subtotal = watchItems.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
     const discount = watchDiscount || 0;
-    const tax = watchTax || 0;
-    const total = subtotal - discount + tax;
+    const total = subtotal - discount;
     setValue('subtotal', subtotal);
     setValue('total', total);
-  }, [watchItems, watchDiscount, watchTax, setValue]);
+  }, [watchItems, watchDiscount, setValue]);
   
   const generatePdf = async (quoteData: QuoteProfile, action: 'download' | 'view') => {
     setQuoteForPdf({ quoteData, action });
   
-    // Wait for the state to update and the component to render
     await new Promise(resolve => setTimeout(resolve, 100));
   
     const input = pdfRef.current;
@@ -189,6 +184,8 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
         updatedAt: new Date().toISOString(),
         customerName: customer?.name || 'Cliente não encontrado',
         validUntil: formValues.validUntil.toISOString(),
+        organizationName: organization?.name,
+        status: quote?.status || 'draft',
     };
   };
 
@@ -357,31 +354,15 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
         </div>
 
         {/* Totals Section */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-            <div className="md:col-span-2 space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+            <div className="space-y-2">
                 <Label>Notas</Label>
                 <Textarea {...register('notes')} placeholder="Termos de pagamento, observações, etc." />
             </div>
             <div className="space-y-4">
                 <div className="flex justify-between items-center"><Label>Subtotal</Label><span>{watch('subtotal').toFixed(2)}</span></div>
                 <div className="flex justify-between items-center"><Label>Desconto (R$)</Label><Input type="number" step="0.01" className="w-24 h-8" {...register('discount', {valueAsNumber: true})}/></div>
-                <div className="flex justify-between items-center"><Label>Impostos (R$)</Label><Input type="number" step="0.01" className="w-24 h-8" {...register('tax', {valueAsNumber: true})}/></div>
                 <div className="flex justify-between items-center text-lg font-bold"><Label>Total</Label><span>R$ {watch('total').toFixed(2)}</span></div>
-            </div>
-             <div className="space-y-2">
-                <Label>Status</Label>
-                <Controller name="status" control={control} render={({ field }) => (
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <SelectTrigger><SelectValue/></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="draft">Rascunho</SelectItem>
-                            <SelectItem value="sent">Enviado</SelectItem>
-                            <SelectItem value="accepted">Aceito</SelectItem>
-                             <SelectItem value="rejected">Rejeitado</SelectItem>
-                            <SelectItem value="expired">Expirado</SelectItem>
-                        </SelectContent>
-                    </Select>
-                )}/>
             </div>
         </div>
 
