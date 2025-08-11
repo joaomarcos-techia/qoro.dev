@@ -313,19 +313,19 @@ export const listQuotes = async (actorUid: string): Promise<QuoteProfile[]> => {
     const quotes: QuoteProfile[] = quotesSnapshot.docs.map(doc => {
         const data = doc.data();
         const customerInfo = customers[data.customerId] || {};
-        const validUntilDate = data.validUntil ? new Date(data.validUntil.seconds ? data.validUntil.toDate() : data.validUntil) : new Date();
-
-        const parsedData = QuoteProfileSchema.parse({
+        
+        // Ensure data from firestore is converted to string before parsing
+        const parsedData = {
             id: doc.id,
             ...data,
-            validUntil: validUntilDate.toISOString(), 
+            validUntil: data.validUntil?.toDate().toISOString(), 
             createdAt: data.createdAt.toDate().toISOString(),
             updatedAt: data.updatedAt.toDate().toISOString(),
             customerName: customerInfo.name,
             organizationName
-        });
+        };
         
-        return parsedData;
+        return QuoteProfileSchema.parse(parsedData);
     });
 
     return quotes;

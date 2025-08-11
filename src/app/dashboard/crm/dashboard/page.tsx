@@ -11,7 +11,7 @@ import CustomYAxis from '@/components/utils/CustomYAxis';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { LineChart, Users, TrendingUp, Percent, DollarSign, Loader2, ServerCrash } from 'lucide-react';
-import { subMonths, format, startOfMonth } from 'date-fns';
+import { subMonths, format, startOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface CrmMetrics {
@@ -20,7 +20,8 @@ interface CrmMetrics {
   conversionRate: number;
   totalRevenueWon: number;
   leadStages: {
-    prospect: number;
+    new: number;
+    initial_contact: number;
     qualified: number;
     proposal: number;
     negotiation: number;
@@ -72,14 +73,14 @@ export default function DashboardCrmPage() {
     const totalCustomers = customers.length;
     
     let totalRevenueWon = 0;
-    let closedWonCount = 0;
-    const leadStages = { prospect: 0, qualified: 0, proposal: 0, negotiation: 0 };
+    let wonLeadsCount = 0;
+    const leadStages = { new: 0, initial_contact: 0, qualified: 0, proposal: 0, negotiation: 0 };
     
     leads.forEach(lead => {
-        if(lead.stage === 'closed_won') {
+        if(lead.stage === 'won') {
             totalRevenueWon += lead.value || 0;
-            closedWonCount++;
-        } else if (lead.stage !== 'closed_lost') {
+            wonLeadsCount++;
+        } else if (lead.stage !== 'lost') {
             if (lead.stage in leadStages) {
                 leadStages[lead.stage as keyof typeof leadStages]++;
             }
@@ -87,8 +88,8 @@ export default function DashboardCrmPage() {
     });
 
     const totalLeads = Object.values(leadStages).reduce((a, b) => a + b, 0);
-    const totalClosedDeals = closedWonCount + leads.filter(l => l.stage === 'closed_lost').length;
-    const conversionRate = totalClosedDeals > 0 ? parseFloat(((closedWonCount / totalClosedDeals) * 100).toFixed(1)) : 0;
+    const totalClosedDeals = wonLeadsCount + leads.filter(l => l.stage === 'lost').length;
+    const conversionRate = totalClosedDeals > 0 ? parseFloat(((wonLeadsCount / totalClosedDeals) * 100).toFixed(1)) : 0;
 
     const now = new Date();
     const monthlyCounts: { [key: string]: number } = {};
@@ -99,7 +100,7 @@ export default function DashboardCrmPage() {
     }
 
     customers.forEach(customer => {
-        const createdAt = new Date(customer.createdAt);
+        const createdAt = parseISO(customer.createdAt);
         if (createdAt >= startOfMonth(subMonths(now, 5))) {
             const monthKey = format(createdAt, 'yyyy-MM');
             if (monthlyCounts.hasOwnProperty(monthKey)) {
@@ -160,7 +161,8 @@ export default function DashboardCrmPage() {
   const formatPercentage = (value: number) => `${value}%`;
   
   const funnelChartData = metrics ? [
-    { stage: 'Prospect', leads: metrics.leadStages.prospect, fill: "var(--color-leads)" },
+    { stage: 'Novo', leads: metrics.leadStages.new, fill: "var(--color-leads)" },
+    { stage: 'Contato', leads: metrics.leadStages.initial_contact, fill: "var(--color-leads)" },
     { stage: 'Qualificado', leads: metrics.leadStages.qualified, fill: "var(--color-leads)" },
     { stage: 'Proposta', leads: metrics.leadStages.proposal, fill: "var(--color-leads)" },
     { stage: 'Negociação', leads: metrics.leadStages.negotiation, fill: "var(--color-leads)" },
