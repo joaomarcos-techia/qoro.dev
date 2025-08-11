@@ -124,4 +124,25 @@ body {
   }
 }
 
-    
+/* FullCalendar Customization */
+.fc {
+  @apply text-sm;
+}
+.fc .fc-toolbar-title {
+  @apply text-lg font-bold text-black;
+}
+.fc .fc-button {
+    @apply bg-primary text-white border-0 shadow-neumorphism hover:shadow-neumorphism-hover hover:bg-primary/90 transition-all duration-300;
+}
+.fc .fc-button-primary:disabled {
+    @apply bg-gray-300;
+}
+.fc-daygrid-day-number {
+    @apply text-gray-700 font-medium;
+}
+.fc-day-today {
+    @apply bg-primary/10;
+}
+.fc-event {
+    @apply p-1 rounded-md text-xs font-medium cursor-pointer border-2;
+}

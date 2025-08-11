@@ -1,10 +1,12 @@
 
+'use client';
 import type { Metadata } from 'next';
-import { Calendar } from 'lucide-react';
+import { TaskCalendar } from '@/components/dashboard/task/TaskCalendar';
 
-export const metadata: Metadata = {
-  title: 'QoroTask | Calendário',
-};
+// This metadata is not used in client components but is good practice.
+// export const metadata: Metadata = {
+//   title: 'QoroTask | Calendário',
+// };
 
 export default function CalendarioPage() {
     return (
@@ -18,11 +20,7 @@ export default function CalendarioPage() {
             </div>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-200">
-            <div className="h-96 flex flex-col items-center justify-center bg-gray-50 rounded-xl border border-dashed">
-                <Calendar className="w-16 h-16 text-gray-300 mb-4" />
-                <h3 className="text-xl font-bold text-black">Visualização em Calendário em Breve</h3>
-                <p className="text-gray-500 mt-2">Acompanhe seus prazos de forma visual e integrada.</p>
-            </div>
+            <TaskCalendar />
         </div>
       </div>
     );
