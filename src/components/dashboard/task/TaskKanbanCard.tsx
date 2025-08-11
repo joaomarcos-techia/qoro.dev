@@ -1,13 +1,16 @@
+
 'use client';
 
 import { TaskProfile } from '@/ai/schemas';
 import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar, Flag, User } from 'lucide-react';
+import { Calendar, Flag, User, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface TaskKanbanCardProps {
   task: TaskProfile;
+  stageIds: string[];
+  onMove: (taskId: string, newStatus: TaskProfile['status']) => void;
 }
 
 const priorityMap: Record<TaskProfile['priority'], { text: string; color: string }> = {
@@ -17,15 +20,24 @@ const priorityMap: Record<TaskProfile['priority'], { text: string; color: string
     urgent: { text: 'Urgente', color: 'bg-red-100 text-red-800 border-red-200' },
 };
 
-export function TaskKanbanCard({ task }: TaskKanbanCardProps) {
+export function TaskKanbanCard({ task, stageIds, onMove }: TaskKanbanCardProps) {
   
   const priorityInfo = priorityMap[task.priority] || priorityMap.medium;
+  const currentStageIndex = stageIds.findIndex(id => id === task.status);
+
+  const handleMove = (direction: 'prev' | 'next') => {
+    const newIndex = direction === 'next' ? currentStageIndex + 1 : currentStageIndex - 1;
+    if (newIndex >= 0 && newIndex < stageIds.length) {
+        onMove(task.id, stageIds[newIndex] as TaskProfile['status']);
+    }
+  };
+
 
   return (
     <div className="bg-white rounded-xl p-4 shadow-neumorphism hover:shadow-neumorphism-hover transition-shadow duration-300 border border-gray-100">
       <h3 className="font-bold text-black text-base mb-3 break-words">{task.title}</h3>
       
-      <div className="space-y-2 text-sm text-gray-700">
+      <div className="space-y-2 text-sm text-gray-700 min-h-[4rem]">
         {task.description && <p className="text-xs text-gray-500 mb-2">{task.description}</p>}
         {task.dueDate && (
             <div className="flex items-center">
@@ -48,9 +60,14 @@ export function TaskKanbanCard({ task }: TaskKanbanCardProps) {
           <Flag className="w-3 h-3 mr-1.5" />
           {priorityInfo.text}
         </div>
-        <Button variant="ghost" size="sm" className="text-primary h-auto p-1 text-xs hover:bg-primary/10">
-            Detalhes
-        </Button>
+        <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMove('prev')} disabled={currentStageIndex <= 0}>
+                <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMove('next')} disabled={currentStageIndex >= stageIds.length - 1}>
+                <ChevronRight className="w-4 h-4" />
+            </Button>
+        </div>
       </div>
     </div>
   );

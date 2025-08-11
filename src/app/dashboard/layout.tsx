@@ -21,6 +21,7 @@ import {
   Receipt,
   Landmark,
   Truck,
+  List,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Header } from '@/components/dashboard/Header';
@@ -59,8 +60,9 @@ const navConfig: Record<string, NavGroup> = {
         color: 'bg-green-500',
         items: [
             { href: '/dashboard/task/dashboard', label: 'Dashboard', icon: BarChart3 },
-            { href: '/dashboard/task/tarefas', label: 'Minhas Tarefas', icon: ClipboardList },
-            { href: '/dashboard/task/projetos', label: 'Projetos', icon: LayoutGrid },
+            { href: '/dashboard/task/minha-lista', label: 'Minha Lista', icon: List },
+            { href: '/dashboard/task/tarefas', label: 'Progresso', icon: LayoutGrid },
+            { href: '/dashboard/task/projetos', label: 'Projetos', icon: ClipboardList },
             { href: '/dashboard/task/calendario', label: 'Calendário', icon: Calendar },
         ]
     },

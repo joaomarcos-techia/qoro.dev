@@ -21,6 +21,7 @@ export const createTask = async (input: z.infer<typeof TaskSchema>, actorUid: st
         companyId: organizationId,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
+        completedAt: null,
     };
 
     const taskRef = await adminDb.collection('tasks').add(newTaskData);
@@ -31,10 +32,11 @@ export const createTask = async (input: z.infer<typeof TaskSchema>, actorUid: st
 export const listTasks = async (actorUid: string): Promise<z.infer<typeof TaskProfileSchema>[]> => {
     const { organizationId } = await getAdminAndOrg(actorUid);
     
-    const tasksSnapshot = await adminDb.collection('tasks')
-                                     .where('companyId', '==', organizationId)
-                                     .orderBy('createdAt', 'desc')
-                                     .get();
+    let tasksQuery = adminDb.collection('tasks')
+                             .where('companyId', '==', organizationId)
+                             .orderBy('createdAt', 'desc');
+
+    const tasksSnapshot = await tasksQuery.get();
     
     if (tasksSnapshot.empty) {
         return [];
@@ -50,24 +52,65 @@ export const listTasks = async (actorUid: string): Promise<z.infer<typeof TaskPr
         });
     }
     
-    const tasks: z.infer<typeof TaskProfileSchema>[] = tasksSnapshot.docs.map(doc => {
+    // Filter out tasks completed more than 24 hours ago
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const tasks: z.infer<typeof TaskProfileSchema>[] = tasksSnapshot.docs
+      .map(doc => {
         const data = doc.data();
+        if (data.status === 'done' && data.completedAt && data.completedAt.toDate() < twentyFourHoursAgo) {
+            return null;
+        }
+
         const dueDate = data.dueDate ? data.dueDate.toDate().toISOString() : null;
+        const completedAt = data.completedAt ? data.completedAt.toDate().toISOString() : null;
         const responsibleUserInfo = data.responsibleUserId ? users[data.responsibleUserId] : {};
 
         return TaskProfileSchema.parse({
             id: doc.id,
             ...data,
             dueDate,
+            completedAt,
             creatorId: data.creatorId,
             createdAt: data.createdAt.toDate().toISOString(),
             updatedAt: data.updatedAt.toDate().toISOString(),
             responsibleUserName: responsibleUserInfo?.name,
         });
-    });
+      })
+      .filter((task): task is z.infer<typeof TaskProfileSchema> => task !== null);
     
     return tasks;
 };
+
+export const updateTaskStatus = async (
+    taskId: string, 
+    status: z.infer<typeof TaskProfileSchema>['status'], 
+    actorUid: string
+) => {
+    const { organizationId } = await getAdminAndOrg(actorUid);
+    const taskRef = adminDb.collection('tasks').doc(taskId);
+    
+    const taskDoc = await taskRef.get();
+    if (!taskDoc.exists || taskDoc.data()?.companyId !== organizationId) {
+        throw new Error('Tarefa não encontrada ou acesso negado.');
+    }
+
+    const updateData: { status: string, completedAt?: FieldValue | null, updatedAt: FieldValue } = {
+        status: status,
+        updatedAt: FieldValue.serverTimestamp(),
+    };
+
+    if (status === 'done') {
+        updateData.completedAt = FieldValue.serverTimestamp();
+    } else {
+        updateData.completedAt = null;
+    }
+
+    await taskRef.update(updateData);
+
+    return { id: taskId, status };
+};
+
 
 export const getDashboardMetrics = async (actorUid: string): Promise<{ totalTasks: number; completedTasks: number; inProgressTasks: number; pendingTasks: number; }> => {
     const { organizationId } = await getAdminAndOrg(actorUid);

@@ -187,6 +187,7 @@ export const TaskProfileSchema = TaskSchema.extend({
     updatedAt: z.string(),
     creatorId: z.string(),
     responsibleUserName: z.string().optional(),
+    completedAt: z.string().datetime().optional().nullable(),
 });
 export type TaskProfile = z.infer<typeof TaskProfileSchema>;
 
