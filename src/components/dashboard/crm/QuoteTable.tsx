@@ -75,9 +75,9 @@ export function QuoteTable() {
   
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedQuote, setSelectedQuote] = React.useState<QuoteProfile | null>(null);
-  const [refreshCounter, setRefreshCounter] = React.useState(0);
+  const [refreshKey, setRefreshKey] = React.useState(0);
   
-  const triggerRefresh = () => setRefreshCounter(prev => prev + 1);
+  const triggerRefresh = () => setRefreshKey(prev => prev + 1);
 
   const handleEdit = (quote: QuoteProfile) => {
     setSelectedQuote(quote);
@@ -107,12 +107,13 @@ export function QuoteTable() {
           if (quoteForPdf.action === 'download') {
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgProps = pdf.getImageProperties(imgData);
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             pdf.save(`proposta-${quoteForPdf.quote.number}.pdf`);
           } else if (quoteForPdf.action === 'view') {
              const newWindow = window.open();
-             newWindow?.document.write(`<iframe width='100%' height='100%' src='${imgData}'></iframe>`);
+             newWindow?.document.write(`<img src="${imgData}" style="width:100%;" />`);
           }
 
         } catch (error) {
@@ -122,6 +123,7 @@ export function QuoteTable() {
       setQuoteForPdf(null); 
     };
   
+    // Use a short timeout to ensure the component has rendered with the new state
     const timer = setTimeout(generateAndHandlePdf, 100); 
     return () => clearTimeout(timer);
   }, [quoteForPdf]);
@@ -223,7 +225,7 @@ export function QuoteTable() {
       }
     }
     fetchData();
-  }, [currentUser, refreshCounter]);
+  }, [currentUser, refreshKey]);
 
   const table = useReactTable({
     data,
@@ -266,7 +268,7 @@ export function QuoteTable() {
   return (
     <>
        {/* Hidden component for PDF generation */}
-       <div style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '794px', height: 'auto' }}>
+       <div style={{ position: 'fixed', left: '-9999px', top: 0, width: '794px', height: 'auto' }}>
          {quoteForPdf && <QuotePDF quote={quoteForPdf.quote} ref={pdfRef}/>}
        </div>
        

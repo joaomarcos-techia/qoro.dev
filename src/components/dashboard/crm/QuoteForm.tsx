@@ -82,7 +82,6 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
       total: 0,
       discount: 0,
       tax: 0,
-      validUntil: new Date(),
     },
   });
 
@@ -119,6 +118,7 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
     } else {
       reset({
         customerId: '',
+        number: '',
         status: 'draft',
         items: [],
         subtotal: 0,
@@ -143,61 +143,54 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
     setValue('subtotal', subtotal);
     setValue('total', total);
   }, [watchItems, watchDiscount, watchTax, setValue]);
-
-  const handlePdfAction = (action: 'download' | 'view') => {
-    const values = getValues();
-    const customer = customers.find(c => c.id === values.customerId);
-    
-    // Ensure all data is valid before creating the PDF data object
-    const quoteDataForPdf: QuoteProfile = {
-        ...values,
-        id: quote?.id || 'N/A',
-        number: quote?.number || `QT-${Date.now().toString().slice(-6)}`,
-        createdAt: quote?.createdAt || new Date().toISOString(),
-        updatedAt: quote?.updatedAt || new Date().toISOString(),
-        customerName: customer?.name || 'Cliente não selecionado',
-        validUntil: values.validUntil.toISOString(),
-    };
-    setQuoteForPdf({ quoteData: quoteDataForPdf, action });
+  
+  const generatePdf = async (quoteData: QuoteProfile, action: 'download' | 'view') => {
+    setQuoteForPdf({ quoteData, action });
+  
+    // Wait for the state to update and the component to render
+    await new Promise(resolve => setTimeout(resolve, 100));
+  
+    const input = pdfRef.current;
+    if (!input) {
+      setError("Falha ao encontrar o template do PDF.");
+      setQuoteForPdf(null);
+      return;
+    }
+  
+    try {
+      const canvas = await html2canvas(input, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      
+      if (action === 'download') {
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`proposta-${quoteData.number}.pdf`);
+      } else {
+        const newWindow = window.open();
+        newWindow?.document.write(`<img src="${imgData}" style="width:100%;" />`);
+      }
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      setError("Ocorreu um erro ao gerar o PDF.");
+    } finally {
+      setQuoteForPdf(null);
+    }
   };
   
-
-  useEffect(() => {
-    if (!quoteForPdf || !pdfRef.current) return;
-  
-    const exportPdf = async () => {
-      const input = pdfRef.current;
-      if (input) {
-        try {
-          const canvas = await html2canvas(input, { scale: 2 });
-          const imgData = canvas.toDataURL('image/png');
-          const pdf = new jsPDF('p', 'mm', 'a4');
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = pdf.internal.pageSize.getHeight();
-          const canvasWidth = canvas.width;
-          const canvasHeight = canvas.height;
-          const ratio = canvasWidth / pdfWidth;
-          const height = canvasHeight / ratio;
-  
-          if (quoteForPdf.action === 'download') {
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, height);
-            pdf.save(`proposta-${quoteForPdf.quoteData.number}.pdf`);
-          } else {
-            const newWindow = window.open();
-            newWindow?.document.write(`<img src="${imgData}" style="width:100%;" />`);
-          }
-
-        } catch (error) {
-            console.error("Error generating PDF:", error)
-        }
-      }
-      setQuoteForPdf(null); 
+  const createFullQuoteProfile = (formValues: FormValues): QuoteProfile => {
+    const customer = customers.find(c => c.id === formValues.customerId);
+    return {
+        ...formValues,
+        id: quote?.id || 'new',
+        createdAt: quote?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        customerName: customer?.name || 'Cliente não encontrado',
+        validUntil: formValues.validUntil.toISOString(),
     };
-  
-    const timer = setTimeout(exportPdf, 100); 
-    return () => clearTimeout(timer);
-  }, [quoteForPdf]);
-
+  };
 
   const addItemToQuote = (item: ProductProfile) => {
     append({
@@ -222,15 +215,30 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
     setError(null);
     
     try {
-        if(isEditMode && quote?.id) {
+        let savedQuoteId: string | undefined;
+        let finalData: FormValues;
+
+        if (isEditMode && quote?.id) {
             const updateData: z.infer<typeof UpdateQuoteSchema> = { ...data, id: quote.id };
-            await updateQuote({ ...updateData, actor: currentUser.uid });
+            const result = await updateQuote({ ...updateData, actor: currentUser.uid });
+            savedQuoteId = result.id;
+            finalData = data;
         } else {
             const quoteNumber = `QT-${Date.now().toString().slice(-6)}`;
-            const submissionData = { ...data, number: quoteNumber, actor: currentUser.uid };
-            await createQuote(submissionData);
+            const submissionData = { ...data, number: quoteNumber };
+            const result = await createQuote({ ...submissionData, actor: currentUser.uid });
+            savedQuoteId = result.id;
+            finalData = submissionData;
         }
-      onQuoteAction();
+
+        onQuoteAction();
+
+        if (savedQuoteId) {
+            const profileForPdf = createFullQuoteProfile(finalData);
+            profileForPdf.id = savedQuoteId; // Ensure the ID is the saved one
+            await generatePdf(profileForPdf, 'download');
+        }
+
     } catch (err) {
       console.error(err);
       setError(`Falha ao ${isEditMode ? 'atualizar' : 'criar'} o orçamento. Tente novamente.`);
@@ -248,7 +256,7 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
 
   return (
     <>
-      <div style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '794px', height: 'auto' }}>
+      <div style={{ position: 'fixed', left: '-9999px', top: 0 }}>
           {quoteForPdf && <QuotePDF quote={quoteForPdf.quoteData} ref={pdfRef}/>}
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
@@ -391,12 +399,12 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
         )}
       <div className="flex justify-between items-center pt-4">
         <div>
-            {isEditMode && (
+            {(isEditMode) && (
                 <div className="flex gap-2">
-                    <Button type="button" variant="outline" onClick={() => handlePdfAction('view')}>
+                    <Button type="button" variant="outline" onClick={() => generatePdf(createFullQuoteProfile(getValues()), 'view')}>
                         <Eye className="mr-2 w-4 h-4"/> Visualizar PDF
                     </Button>
-                     <Button type="button" variant="outline" onClick={() => handlePdfAction('download')}>
+                     <Button type="button" variant="outline" onClick={() => generatePdf(createFullQuoteProfile(getValues()), 'download')}>
                         <Download className="mr-2 w-4 h-4"/> Baixar PDF
                     </Button>
                 </div>
@@ -411,5 +419,3 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
     </>
   );
 }
-
-    
