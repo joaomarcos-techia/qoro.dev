@@ -19,15 +19,12 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isClient, setIsClient] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const fetchUserProfile = useCallback(async (user: FirebaseUser) => {
     setIsLoading(true);
+    setError(null);
     try {
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
@@ -55,8 +52,9 @@ export function Header() {
             organizationName: orgDoc.data()?.name || 'Organização',
         });
 
-    } catch (error) {
-        console.error("Falha ao buscar perfil do usuário:", error);
+    } catch (err) {
+        console.error("Falha ao buscar perfil do usuário:", err);
+        setError("Não foi possível carregar os dados do perfil.");
         setUserProfile(null); 
     } finally {
         setIsLoading(false);
@@ -97,6 +95,61 @@ export function Header() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+  
+  const renderDropdownContent = () => {
+    if (isLoading) {
+      return <div className="p-4 text-center text-sm text-gray-500">Carregando...</div>;
+    }
+  
+    if (error) {
+      return (
+        <div className="p-4 text-center">
+            <p className="text-sm text-red-700 mb-2 font-semibold">{error}</p>
+            <p className="text-xs text-gray-600 mb-3">Isso pode ser um problema de rede temporário.</p>
+            <button
+                onClick={handleSignOut}
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center rounded-md"
+                >
+                <LogOut className="w-4 h-4 mr-3" />
+                Sair e tentar novamente
+            </button>
+        </div>
+      );
+    }
+  
+    if (userProfile) {
+      return (
+        <>
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex items-center">
+              <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
+                <User className="w-6 h-6 text-gray-600" />
+              </div>
+              <div className="ml-3 overflow-hidden">
+                <p className="font-medium text-gray-900 truncate">
+                  {userProfile.name}
+                </p>
+                <p className="text-sm text-gray-600 truncate">
+                  {userProfile.organizationName}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="py-2">
+            <button
+              onClick={handleSignOut}
+              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+            >
+              <LogOut className="w-4 h-4 mr-3" />
+              Sair da Conta
+            </button>
+          </div>
+        </>
+      );
+    }
+  
+    return null; // Should not happen if logic is correct
+  };
 
   return (
     <header className="bg-white shadow-neumorphism border-b border-gray-200 sticky top-0 z-40">
@@ -133,49 +186,9 @@ export function Header() {
                 <ChevronDown className="w-4 h-4 ml-1" />
               </button>
 
-              {isClient && menuOpen && (
+              {menuOpen && (
                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-neumorphism border border-gray-200 z-50">
-                    {isLoading ? (
-                        <div className="p-4 text-center text-sm text-gray-500">Carregando...</div>
-                    ) : userProfile ? (
-                        <>
-                            <div className="p-4 border-b border-gray-200">
-                                <div className="flex items-center">
-                                <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
-                                    <User className="w-6 h-6 text-gray-600" />
-                                </div>
-                                <div className="ml-3 overflow-hidden">
-                                    <p className="font-medium text-gray-900 truncate">
-                                    {userProfile.name}
-                                    </p>
-                                    <p className="text-sm text-gray-600 truncate">
-                                    {userProfile.organizationName}
-                                    </p>
-                                </div>
-                                </div>
-                            </div>
-                            <div className="py-2">
-                                <button
-                                onClick={handleSignOut}
-                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
-                                >
-                                <LogOut className="w-4 h-4 mr-3" />
-                                Sair da Conta
-                                </button>
-                            </div>
-                        </>
-                    ) : (
-                         <div className="p-4 text-center">
-                            <p className="text-sm text-gray-700 mb-2">Não foi possível carregar o perfil.</p>
-                            <button
-                                onClick={handleSignOut}
-                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
-                                >
-                                <LogOut className="w-4 h-4 mr-3" />
-                                Sair e tentar novamente
-                            </button>
-                         </div>
-                    )}
+                    {renderDropdownContent()}
                 </div>
               )}
             </div>
