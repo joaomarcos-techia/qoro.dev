@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, ArrowUpDown, Search, Loader2, Receipt, Download, Eye } from 'lucide-react';
+import { MoreHorizontal, ArrowUpDown, Search, Loader2, Receipt, Download, Eye, ServerCrash } from 'lucide-react';
 import { listInvoices } from '@/ai/flows/finance-management';
 import type { InvoiceProfile } from '@/ai/schemas';
 import { auth } from '@/lib/firebase';
@@ -218,7 +218,13 @@ export function InvoiceTable() {
   }
 
   if (error) {
-    return <div className="text-red-500 text-center min-h-[400px]">{error}</div>;
+    return (
+        <div className="flex flex-col items-center justify-center text-center min-h-[400px] bg-red-50 rounded-lg p-8">
+            <ServerCrash className="w-16 h-16 text-red-500 mb-4" />
+            <h3 className="text-xl font-bold text-red-700">Ocorreu um erro ao carregar as faturas</h3>
+            <p className="text-gray-600 mt-2 max-w-md">{error}</p>
+        </div>
+    )
   }
   
   if (data.length === 0) {
