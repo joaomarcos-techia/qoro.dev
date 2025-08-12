@@ -166,37 +166,45 @@ export const createInvoiceFromQuote = async (quoteId: string, actorUid: string) 
 export const listInvoices = async (actorUid: string): Promise<z.infer<typeof InvoiceProfileSchema>[]> => {
     const { organizationId } = await getAdminAndOrg(actorUid);
 
-    const invoicesSnapshot = await adminDb.collection('invoices')
-                                     .where('companyId', '==', organizationId)
-                                     .orderBy('createdAt', 'desc')
-                                     .get();
-    
-    if (invoicesSnapshot.empty) {
-        return [];
-    }
+    try {
+        const invoicesSnapshot = await adminDb.collection('invoices')
+                                         .where('companyId', '==', organizationId)
+                                         .orderBy('createdAt', 'desc')
+                                         .get();
+        
+        if (invoicesSnapshot.empty) {
+            return [];
+        }
 
-    const customerIds = [...new Set(invoicesSnapshot.docs.map(doc => doc.data().customerId).filter(id => id))];
-    const customers: Record<string, { name?: string }> = {};
+        const customerIds = [...new Set(invoicesSnapshot.docs.map(doc => doc.data().customerId).filter(id => id))];
+        const customers: Record<string, { name?: string }> = {};
 
-    if (customerIds.length > 0) {
-        const customersSnapshot = await adminDb.collection('customers').where('__name__', 'in', customerIds).get();
-        customersSnapshot.forEach(doc => {
-            customers[doc.id] = { name: doc.data().name };
+        if (customerIds.length > 0) {
+            const customersSnapshot = await adminDb.collection('customers').where('__name__', 'in', customerIds).get();
+            customersSnapshot.forEach(doc => {
+                customers[doc.id] = { name: doc.data().name };
+            });
+        }
+        
+        const invoices: z.infer<typeof InvoiceProfileSchema>[] = invoicesSnapshot.docs.map(doc => {
+            const data = doc.data();
+            const customerInfo = customers[data.customerId] || {};
+            const parsedData = {
+                id: doc.id,
+                ...data,
+                createdAt: data.createdAt.toDate().toISOString(),
+                updatedAt: data.updatedAt.toDate().toISOString(),
+                customerName: customerInfo.name,
+            };
+            return InvoiceProfileSchema.parse(parsedData);
         });
+        
+        return invoices;
+    } catch (error: any) {
+        console.error('[financeService.listInvoices] Erro ao buscar faturas:', error);
+        if (error.code === 9) { // FAILED_PRECONDITION code for missing index
+             throw new Error('O índice do banco de dados para faturas ainda está sendo criado. Por favor, aguarde alguns minutos e recarregue a página.');
+        }
+        throw new Error('Ocorreu um erro inesperado ao carregar as faturas.');
     }
-    
-    const invoices: z.infer<typeof InvoiceProfileSchema>[] = invoicesSnapshot.docs.map(doc => {
-        const data = doc.data();
-        const customerInfo = customers[data.customerId] || {};
-        const parsedData = {
-            id: doc.id,
-            ...data,
-            createdAt: data.createdAt.toDate().toISOString(),
-            updatedAt: data.updatedAt.toDate().toISOString(),
-            customerName: customerInfo.name,
-        };
-        return InvoiceProfileSchema.parse(parsedData);
-    });
-    
-    return invoices;
 };
