@@ -23,6 +23,7 @@ import {
   Truck,
   List,
   GitCompareArrows,
+  ShoppingBag,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Header } from '@/components/dashboard/Header';
