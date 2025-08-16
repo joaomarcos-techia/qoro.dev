@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -105,15 +104,15 @@ export default function DashboardLayout({
     const { group, icon: GroupIcon, color, items } = navData;
     
     return (
-        <aside className="w-64 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col shadow-neumorphism-right">
-            <div className="p-4 border-b border-gray-200 space-y-4">
+        <aside className="w-64 flex-shrink-0 bg-card border-r border-border flex flex-col">
+            <div className="p-4 border-b border-border space-y-4">
                 <div className="flex items-center">
-                    <div className={`p-3 rounded-xl text-white mr-4 shadow-neumorphism ${color}`}>
+                    <div className={`p-3 rounded-xl text-white mr-4 shadow-lg ${color}`}>
                         <GroupIcon className="w-6 h-6" />
                     </div>
-                    <h2 className="text-xl font-bold text-black">{group}</h2>
+                    <h2 className="text-xl font-bold text-foreground">{group}</h2>
                 </div>
-                <Link href="/dashboard" className="flex items-center text-gray-600 hover:text-primary transition-colors text-sm font-medium">
+                <Link href="/dashboard" className="flex items-center text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
                     <ChevronLeft className="w-4 h-4 mr-2" />
                     <span>Voltar ao Dashboard</span>
                 </Link>
@@ -126,8 +125,8 @@ export default function DashboardLayout({
                         href={item.href}
                         className={`flex items-center px-4 py-3 my-1 rounded-xl text-sm font-medium transition-all duration-200 ${
                             pathname.startsWith(item.href)
-                            ? 'bg-primary text-white shadow-neumorphism-inset'
-                            : 'text-gray-700 hover:bg-gray-100 hover:shadow-neumorphism'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                         }`}
                         >
                         <item.icon className="w-5 h-5 mr-3" />
@@ -142,7 +141,7 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-background text-foreground">
       <Header />
       <div className="flex h-[calc(100vh-64px)]">
          {currentModule !== 'home' && renderSidebarContent()}

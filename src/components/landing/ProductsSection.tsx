@@ -6,8 +6,7 @@ type Product = {
   title: string;
   description: string;
   features: string[];
-  colorClass: string;
-  bulletColorClass: string;
+  gradientClass: string;
 };
 
 const products: Product[] = [
@@ -20,8 +19,7 @@ const products: Product[] = [
       'Histórico completo de interações',
       'Follow-ups automáticos para não perder negócios',
     ],
-    colorClass: 'bg-blue-500 text-white',
-    bulletColorClass: 'bg-blue-500',
+    gradientClass: 'from-blue-500 to-purple-600',
   },
   {
     icon: Activity,
@@ -32,8 +30,7 @@ const products: Product[] = [
       'Identificação de gargalos e oportunidades',
       'Sugestões inteligentes para otimização',
     ],
-    colorClass: 'bg-purple-500 text-white',
-    bulletColorClass: 'bg-purple-500',
+    gradientClass: 'from-green-500 to-teal-600',
   },
   {
     icon: CheckSquare,
@@ -41,11 +38,10 @@ const products: Product[] = [
     description: 'Organize o trabalho da sua equipe e entregue projetos no prazo.',
     features: [
       'Quadros Kanban para gestão visual',
-      'Tarefas com prazos, responsáveis e subtarefas',
+      'Tarefas com prazos e responsáveis',
       'Notificações para manter todos alinhados',
     ],
-    colorClass: 'bg-green-500 text-white',
-    bulletColorClass: 'bg-green-500',
+    gradientClass: 'from-orange-500 to-red-600',
   },
   {
     icon: DollarSign,
@@ -56,38 +52,38 @@ const products: Product[] = [
       'Controle de contas a pagar e receber',
       'Registro rápido de transações',
     ],
-    colorClass: 'bg-orange-500 text-white',
-    bulletColorClass: 'bg-orange-500',
+    gradientClass: 'from-purple-500 to-pink-600',
   },
 ];
 
 const ProductCard = ({ product }: { product: Product }) => (
-  <div className="group bg-white p-8 rounded-3xl shadow-neumorphism hover:shadow-neumorphism-hover transition-all duration-300 hover:-translate-y-2">
-    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-neumorphism ${product.colorClass}`}>
+  <div className="bg-white/5 border border-white/10 hover:border-white/20 rounded-3xl p-8 backdrop-blur-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/10">
+    <div className={`bg-gradient-to-br ${product.gradientClass} text-white w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-lg`}>
       <product.icon className="w-7 h-7" />
     </div>
-    <h3 className="text-2xl font-bold text-black mb-3">{product.title}</h3>
-    <p className="text-gray-600 mb-6 leading-relaxed">{product.description}</p>
-    <ul className="space-y-2 mb-6">
-      {product.features.map((feature, index) => (
-        <li key={index} className="flex items-center text-sm text-gray-700">
-          <div className={`w-1.5 h-1.5 rounded-full mr-3 ${product.bulletColorClass}`}></div>
-          {feature}
-        </li>
-      ))}
+    <h3 className="text-2xl font-bold text-white mb-3">{product.title}</h3>
+    <p className="text-white/70 mb-6 leading-relaxed">{product.description}</p>
+    <ul className="space-y-3">
+        {product.features.map((feature, index) => (
+            <li key={index} className="flex items-start text-sm text-white/60">
+                <div className={`w-1.5 h-1.5 bg-blue-400 rounded-full mr-3 mt-1.5 flex-shrink-0`}></div>
+                {feature}
+            </li>
+        ))}
     </ul>
   </div>
 );
 
 export function ProductsSection() {
   return (
-    <section id="produtos" className="py-20">
+    <section id="produtos" className="py-20 bg-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold text-black mb-4">
+          <div className="text-sm font-medium text-blue-400 mb-4 tracking-wider uppercase">Soluções</div>
+          <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
             Uma plataforma, controle total.
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-lg text-white/70 max-w-3xl mx-auto">
             Centralize suas operações e ganhe clareza para focar no que realmente importa: o crescimento do seu negócio.
           </p>
         </div>
@@ -100,5 +96,3 @@ export function ProductsSection() {
     </section>
   );
 }
-
-    

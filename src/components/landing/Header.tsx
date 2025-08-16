@@ -1,11 +1,12 @@
-
 "use client";
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 export function Header() {
   const pathname = usePathname();
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const navLinks = [
     { href: '/#home', label: 'Início' },
@@ -22,45 +23,49 @@ export function Header() {
         const targetElement = document.getElementById(targetId);
         if (targetElement) {
             window.scrollTo({
-                top: targetElement.offsetTop - 100, // Adjust for header height and spacing
+                top: targetElement.offsetTop - 100,
                 behavior: 'smooth'
             });
         }
     }
   };
 
-  // Only render this header for the landing page
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   if (pathname !== '/') {
     return null;
   }
 
   return (
-    <header 
-      className="fixed w-full top-5 left-0 z-50 flex justify-center"
-    >
-      <div 
-        className="bg-[#18191B] rounded-full py-3 px-8 flex items-center justify-between shadow-2xl border border-[#24262D] w-full"
-        style={{ maxWidth: '700px' }}
-      >
-        <div className="flex items-center">
-          <Link href="/#home" onClick={(e) => handleLinkClick(e, '/#home')} className="text-xl font-bold text-white">
-            Qoro
+    <header className="fixed w-full top-0 left-0 z-50 transition-all duration-300 ease-in-out py-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className={`bg-[#18191B]/80 backdrop-blur-lg rounded-full py-3 px-6 flex items-center justify-between shadow-lg border border-[#24262D] transition-all duration-300 ease-in-out`}>
+          <div className="flex items-center">
+            <Link href="/#home" onClick={(e) => handleLinkClick(e, '/#home')} className="text-xl font-bold text-white">
+              Qoro
+            </Link>
+          </div>
+          
+          <nav className="hidden md:flex space-x-8">
+            {navLinks.map(link => (
+              <Link key={link.href} href={link.href} onClick={(e) => handleLinkClick(e, link.href)} className="text-gray-300 hover:text-white text-sm transition-colors">
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
+          <Link href="/login">
+              <div className="hidden md:block bg-blue-600 text-white px-5 py-2 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/20 hover:scale-105">
+                  Entrar
+              </div>
           </Link>
         </div>
-        
-        <nav className="hidden md:flex space-x-6">
-          {navLinks.map(link => (
-            <Link key={link.href} href={link.href} onClick={(e) => handleLinkClick(e, link.href)} className="text-gray-300 hover:text-white text-sm transition-colors">
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        <Link href="/login">
-            <div className="hidden md:block bg-primary text-white px-5 py-2 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:bg-primary/80 hover:shadow-lg hover:scale-105">
-                Entrar
-            </div>
-        </Link>
       </div>
     </header>
   );
