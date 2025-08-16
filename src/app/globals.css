@@ -39,6 +39,16 @@ body {
   background: linear-gradient(135deg, #444, #666);
 }
 
+.carousel-container .keen-slider__slide {
+  opacity: 0.3;
+  transition: opacity 0.5s;
+}
+
+.carousel-container .keen-slider__slide.active {
+  opacity: 1;
+}
+
+
 @layer base {
   :root {
     --background: 0 0% 3.9%; /* #0A0A0A */
