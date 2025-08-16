@@ -19,6 +19,12 @@ const features = [
     description: 'Equipe especializada disponível para garantir o sucesso da sua operação.',
     colorClass: 'bg-purple-600',
   },
+  {
+    icon: Star,
+    title: 'Experiência Premium',
+    description: 'Design moderno e intuitivo pensado para facilitar o seu dia a dia e otimizar o seu tempo.',
+    colorClass: 'bg-yellow-500',
+  }
 ];
 
 export function AboutSection() {
@@ -35,7 +41,7 @@ export function AboutSection() {
           com suporte humano excepcional.
         </p>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {features.map((feature, index) => (
             <div key={index} className="flex flex-col items-center text-center p-6 bg-secondary/30 rounded-2xl border border-border transition-all duration-300 hover:border-primary/50 hover:bg-secondary/60">
               <div className={`text-white w-16 h-16 rounded-2xl flex items-center justify-center mb-5 flex-shrink-0 shadow-lg transition-transform duration-300 ${feature.colorClass}`}>
