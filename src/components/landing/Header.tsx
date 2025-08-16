@@ -1,22 +1,11 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export function Header() {
-  const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      // Show header when scrolled down a bit
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const navLinks = [
     { href: '/#home', label: 'Início' },
@@ -47,7 +36,7 @@ export function Header() {
 
   return (
     <header 
-      className={`fixed w-full top-0 left-0 z-50 flex justify-center transition-all duration-500 ease-in-out ${isScrolled ? 'top-5 opacity-100' : '-top-20 opacity-0'}`}
+      className="fixed w-full top-5 left-0 z-50 flex justify-center"
     >
       <div 
         className="bg-[#18191B] rounded-full py-3 px-8 flex items-center justify-between shadow-2xl border border-[#24262D] w-full"
@@ -69,7 +58,7 @@ export function Header() {
 
         <Link href="/login">
             <div className="hidden md:block bg-primary text-white px-5 py-2 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:bg-primary/80 hover:shadow-lg hover:scale-105">
-                Comece agora
+                Entrar
             </div>
         </Link>
       </div>
