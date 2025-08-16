@@ -11,16 +11,10 @@ const services = [
     colorClass: 'from-purple-500 to-pink-500',
   },
   {
-    icon: DatabaseZap,
-    title: 'Integrações e Sistemas',
-    description: 'Conectamos a Qoro aos seus sistemas existentes (ERPs, etc.) ou desenvolvemos novos módulos sob medida para sua necessidade.',
-     colorClass: 'from-blue-500 to-cyan-500',
-  },
-  {
     icon: Code,
-    title: 'Dashboards e Relatórios',
-    description: 'Desenvolvemos painéis de Business Intelligence (BI) com métricas e KPIs específicos para a sua gestão.',
-     colorClass: 'from-green-500 to-teal-500',
+    title: 'Desenvolvimento de SaaS',
+    description: 'Desenvolvemos plataformas de software como serviço (SaaS) completas e sob medida para atender às suas necessidades de negócio.',
+    colorClass: 'from-blue-500 to-cyan-500',
   },
 ];
 
