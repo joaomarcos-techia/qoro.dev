@@ -107,8 +107,8 @@ export function PulseSidebarContent() {
                     className={cn(
                         "group flex items-center justify-between w-full text-left p-3 rounded-xl cursor-pointer transition-all duration-200",
                         convo.id === conversationId 
-                        ? 'bg-primary text-white shadow-neumorphism-inset' 
-                        : 'text-gray-700 hover:bg-gray-100 hover:shadow-neumorphism'
+                        ? 'bg-primary text-white' 
+                        : 'text-gray-700 hover:bg-gray-100'
                     )}
                 >
                     <span className="text-sm font-medium truncate flex items-center">
@@ -143,7 +143,7 @@ export function PulseSidebarContent() {
     <>
         <div className="p-4 border-b border-gray-200">
              <Link href="/dashboard/pulse/new">
-                <Button className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold">
+                <Button className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
                     <PlusCircle className="mr-2 w-5 h-5"/>
                     Nova Conversa
                 </Button>

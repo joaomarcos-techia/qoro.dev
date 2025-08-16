@@ -7,10 +7,10 @@ import { PulseSidebarContent } from './SidebarContent';
 
 export function PulseSidebar() {
   return (
-    <aside className="w-64 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col shadow-neumorphism-right">
+    <aside className="w-64 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-4 border-b border-gray-200 space-y-4">
             <div className="flex items-center">
-                <div className="p-3 rounded-xl text-white mr-4 shadow-neumorphism bg-purple-500">
+                <div className="p-3 rounded-xl text-white mr-4 bg-purple-500">
                     <Activity className="w-6 h-6" />
                 </div>
                 <h2 className="text-xl font-bold text-black">QoroPulse</h2>

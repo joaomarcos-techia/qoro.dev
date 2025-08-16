@@ -144,7 +144,7 @@ export default function FunilPage() {
       <div className="flex-shrink-0">
         <div className="flex justify-between items-center mb-6">
             <div>
-            <h1 className="text-3xl font-bold text-black">Funil de Clientes</h1>
+            <h1 className="text-4xl font-bold text-black">Funil de Clientes</h1>
             <p className="text-gray-600">
                 Visualize e gerencie a jornada dos seus clientes pelas fases de negociação.
             </p>

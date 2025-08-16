@@ -139,7 +139,7 @@ export default function PulsePage({ params }: { params: { conversationId: string
                 <button 
                     key={i}
                     onClick={() => handleSuggestionClick(q)}
-                    className="bg-white hover:bg-gray-100 p-4 rounded-xl text-left text-sm font-medium shadow-neumorphism hover:shadow-neumorphism-hover transition-all duration-300 border border-gray-100"
+                    className="bg-white hover:bg-gray-100 p-4 rounded-xl text-left text-sm font-medium border border-gray-200 hover:border-gray-300 transition-all duration-300"
                 >
                 {q}
                 </button>
@@ -149,7 +149,7 @@ export default function PulsePage({ params }: { params: { conversationId: string
   );
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto bg-white rounded-2xl shadow-neumorphism border border-gray-200">
+    <div className="flex flex-col h-full max-w-4xl mx-auto bg-white rounded-2xl border border-gray-200">
         <div 
             ref={scrollAreaRef}
             className="flex-1 overflow-y-auto p-6 space-y-6"
@@ -167,12 +167,12 @@ export default function PulsePage({ params }: { params: { conversationId: string
                     className={`flex items-start gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}
                 >
                     {message.role === 'assistant' && (
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shadow-md">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
                             <BrainCircuit size={18} />
                         </div>
                     )}
                     <div
-                    className={`max-w-xl px-5 py-3 rounded-2xl shadow-sm ${
+                    className={`max-w-xl px-5 py-3 rounded-2xl ${
                         message.role === 'user'
                         ? 'bg-primary/90 text-white rounded-br-none'
                         : 'bg-gray-100 text-black rounded-bl-none'
@@ -181,7 +181,7 @@ export default function PulsePage({ params }: { params: { conversationId: string
                     <p className="whitespace-pre-wrap">{message.content}</p>
                     </div>
                     {message.role === 'user' && (
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center shadow-md font-semibold">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-semibold">
                             {currentUser?.email?.[0].toUpperCase() ?? 'U'}
                         </div>
                     )}
@@ -190,10 +190,10 @@ export default function PulsePage({ params }: { params: { conversationId: string
             )}
             {isLoading && (
             <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shadow-md">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
                     <BrainCircuit size={18} />
                 </div>
-                <div className="max-w-lg px-5 py-3 rounded-2xl shadow-sm bg-gray-100 text-black rounded-bl-none flex items-center">
+                <div className="max-w-lg px-5 py-3 rounded-2xl bg-gray-100 text-black rounded-bl-none flex items-center">
                     <Loader className="w-5 h-5 animate-spin text-gray-500" />
                 </div>
             </div>
@@ -217,7 +217,7 @@ export default function PulsePage({ params }: { params: { conversationId: string
                 }
                 }}
                 placeholder="Pergunte qualquer coisa sobre seu negócio..."
-                className="w-full pr-20 py-3 pl-4 bg-white rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary border border-gray-200"
+                className="w-full pr-20 py-3 pl-4 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary"
                 rows={1}
                 disabled={isLoading}
             />
@@ -229,7 +229,7 @@ export default function PulsePage({ params }: { params: { conversationId: string
                     type="submit"
                     size="icon"
                     disabled={isLoading || !input.trim()}
-                    className="w-10 h-10 bg-primary text-white rounded-lg shadow-neumorphism hover:shadow-neumorphism-hover disabled:bg-gray-300"
+                    className="w-10 h-10 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:bg-gray-300"
                 >
                     <Send size={20} />
                 </Button>

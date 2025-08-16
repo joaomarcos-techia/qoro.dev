@@ -26,8 +26,8 @@ const chartConfig = {
 };
 
 const MetricCard = ({ title, value, icon: Icon, isLoading, color, format }: { title: string, value: number, icon: React.ElementType, isLoading: boolean, color: string, format?: (value: number) => string }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100 flex items-center">
-    <div className={`p-3 rounded-xl text-white mr-4 shadow-neumorphism ${color}`}>
+  <div className="bg-white p-6 rounded-2xl border border-gray-100 flex items-center">
+    <div className={`p-3 rounded-xl text-white mr-4 ${color}`}>
       <Icon className="w-6 h-6" />
     </div>
     <div>
@@ -140,7 +140,7 @@ export default function VisaoGeralPage() {
                 
                 {/* Charts Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                    <Card className="lg:col-span-3 bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100">
+                    <Card className="lg:col-span-3 bg-white p-6 rounded-2xl border border-gray-100">
                         <CardHeader>
                             <CardTitle>Fluxo de Caixa Mensal</CardTitle>
                             <CardDescription>Receitas vs. Despesas nos últimos meses.</CardDescription>
@@ -158,7 +158,7 @@ export default function VisaoGeralPage() {
                             </ChartContainer>
                         </CardContent>
                     </Card>
-                    <Card className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100">
+                    <Card className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100">
                         <CardHeader>
                         <CardTitle>Composição de Despesas</CardTitle>
                         <CardDescription>Categorias de despesas no mês atual.</CardDescription>
@@ -184,7 +184,7 @@ export default function VisaoGeralPage() {
     return (
       <div>
         <div className="mb-8">
-            <h1 className="text-3xl font-bold text-black">Visão Geral Financeira</h1>
+            <h1 className="text-4xl font-bold text-black">Visão Geral Financeira</h1>
             <p className="text-gray-600">
                 Acompanhe as métricas e a saúde financeira do seu negócio em tempo real.
             </p>

@@ -10,18 +10,18 @@ export default function ConciliacaoPage() {
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-black">Conciliação Bancária</h1>
+          <h1 className="text-4xl font-bold text-black">Conciliação Bancária</h1>
           <p className="text-gray-600">
             Compare suas transações com o extrato bancário para garantir que tudo esteja correto.
           </p>
         </div>
-        <Button className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold">
+        <Button className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
             <Upload className="mr-2 w-5 h-5" />
             Importar Extrato (OFX)
         </Button>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-200">
+      <div className="bg-white p-6 rounded-2xl border border-gray-200">
         <div className="flex flex-col items-center justify-center text-center min-h-[400px]">
             <GitCompareArrows className="w-16 h-16 text-gray-300 mb-4" />
             <h3 className="text-xl font-bold text-black">Pronto para conciliar?</h3>

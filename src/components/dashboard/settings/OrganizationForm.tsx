@@ -81,9 +81,9 @@ export function OrganizationForm() {
     }
 
     return (
-        <div className="bg-white p-8 rounded-2xl shadow-neumorphism border border-gray-200 max-w-2xl mx-auto">
+        <div className="bg-white p-8 rounded-2xl border border-gray-200 max-w-2xl mx-auto">
             <div className="flex items-center mb-6">
-                <div className="p-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white mr-4 shadow-neumorphism">
+                <div className="p-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white mr-4">
                     <Building className="w-6 h-6" />
                 </div>
                 <h3 className="text-xl font-bold text-black">Dados da Organização</h3>
@@ -135,7 +135,7 @@ export function OrganizationForm() {
                      <Button 
                         type="submit" 
                         disabled={isLoading.form} 
-                        className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed"
+                        className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed"
                     >
                         {isLoading.form && <Loader2 className="mr-2 w-5 h-5 animate-spin" />}
                         {isLoading.form ? 'Salvando...' : 'Salvar Alterações'}

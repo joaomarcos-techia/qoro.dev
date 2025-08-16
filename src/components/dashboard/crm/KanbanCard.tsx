@@ -39,7 +39,7 @@ export function KanbanCard({ customer, stageIds, onMove, onArchive }: KanbanCard
   }
 
   return (
-    <div className="bg-white rounded-xl p-4 shadow-neumorphism hover:shadow-neumorphism-hover transition-shadow duration-300 border border-gray-100">
+    <div className="bg-white rounded-xl p-4 transition-shadow duration-300 border border-gray-200 hover:border-gray-300">
       <h3 className="font-bold text-black text-base mb-3 break-words">{customer.name}</h3>
       
       <div className="space-y-2 text-sm text-gray-700">

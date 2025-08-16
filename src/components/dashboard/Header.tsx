@@ -152,7 +152,7 @@ export function Header() {
   };
 
   return (
-    <header className="bg-white shadow-neumorphism border-b border-gray-200 sticky top-0 z-40">
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
@@ -163,21 +163,21 @@ export function Header() {
 
           <div className="flex items-center space-x-4">
             <button
-              className="text-gray-500 hover:text-gray-700 p-2 rounded-xl hover:shadow-neumorphism-inset transition-all duration-300"
+              className="text-gray-500 hover:text-gray-700 p-2 rounded-xl hover:bg-gray-100 transition-all duration-300"
               title="Recarregar página"
               onClick={() => window.location.reload()}
             >
               <RefreshCw className="w-5 h-5" />
             </button>
             
-            <Link href="/dashboard/settings" className="text-gray-500 hover:text-gray-700 p-2 rounded-xl hover:shadow-neumorphism-inset transition-all duration-300" title="Configurações">
+            <Link href="/dashboard/settings" className="text-gray-500 hover:text-gray-700 p-2 rounded-xl hover:bg-gray-100 transition-all duration-300" title="Configurações">
                 <Settings className="w-5 h-5" />
             </Link>
 
             <div className="relative" ref={menuRef}>
               <button
                 onClick={toggleMenu}
-                className="flex items-center text-gray-500 hover:text-gray-700 p-2 rounded-xl hover:shadow-neumorphism-inset transition-all duration-300"
+                className="flex items-center text-gray-500 hover:text-gray-700 p-2 rounded-xl hover:bg-gray-100 transition-all duration-300"
                 title="Menu do usuário"
               >
                 <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
@@ -187,7 +187,7 @@ export function Header() {
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-neumorphism border border-gray-200 z-50">
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl border border-gray-200 z-50">
                     {renderDropdownContent()}
                 </div>
               )}

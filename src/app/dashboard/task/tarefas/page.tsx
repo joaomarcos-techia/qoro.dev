@@ -136,7 +136,7 @@ export default function ProgressoPage() {
       <div className="flex-shrink-0">
         <div className="flex justify-between items-center mb-6">
             <div>
-            <h1 className="text-3xl font-bold text-black">Progresso das Tarefas</h1>
+            <h1 className="text-4xl font-bold text-black">Progresso das Tarefas</h1>
             <p className="text-gray-600">
                 Visualize e mova suas tarefas entre as fases do fluxo de trabalho.
             </p>
@@ -144,7 +144,7 @@ export default function ProgressoPage() {
              {isPending && <Loader2 className="w-6 h-6 text-primary animate-spin" />}
         </div>
         {feedback && (
-            <div className={`mb-4 p-3 rounded-lg flex items-center text-sm shadow-sm ${feedback.type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
+            <div className={`mb-4 p-3 rounded-lg flex items-center text-sm ${feedback.type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
                 {feedback.type === 'success' ? <CheckCircle className="w-5 h-5 mr-3" /> : <AlertCircle className="w-5 h-5 mr-3" />}
                 <span>{feedback.message}</span>
             </div>

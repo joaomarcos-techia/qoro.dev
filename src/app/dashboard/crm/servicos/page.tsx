@@ -28,14 +28,14 @@ export default function ServicosPage() {
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-black">Serviços</h1>
+          <h1 className="text-4xl font-bold text-black">Serviços</h1>
           <p className="text-gray-600">
             Cadastre e gerencie os serviços que sua empresa oferece.
           </p>
         </div>
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold">
+            <Button className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
               <PlusCircle className="mr-2 w-5 h-5" />
               Adicionar Serviço
             </Button>
@@ -52,7 +52,7 @@ export default function ServicosPage() {
         </Dialog>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-200">
+      <div className="bg-white p-6 rounded-2xl border border-gray-200">
         <ServiceTable key={refreshCounter} />
       </div>
     </div>
