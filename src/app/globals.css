@@ -167,3 +167,7 @@ body {
 .recharts-cartesian-axis-tick-value {
     fill: hsl(var(--muted-foreground));
 }
+
+.keen-slider {
+  overflow: visible !important;
+}
