@@ -42,11 +42,12 @@ export function AboutSection() {
         
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
           {features.map((feature, index) => (
-            <div key={index} className="flex flex-col items-center text-center p-6 bg-secondary/30 rounded-2xl border border-border transition-all duration-300 hover:border-primary/50 hover:bg-secondary/60 hover:-translate-y-1">
+            <div key={index} className="relative group flex flex-col items-center text-center p-6 bg-secondary/30 rounded-2xl border border-border transition-all duration-300 hover:bg-secondary/60 hover:-translate-y-1 overflow-hidden">
+               <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/10 via-transparent to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className={`text-black w-16 h-16 rounded-2xl flex items-center justify-center mb-5 flex-shrink-0 shadow-lg transition-transform duration-300 ${feature.colorClass}`}>
                 <feature.icon className="w-7 h-7" />
               </div>
-              <div>
+              <div className="relative z-10">
                 <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
                 <p className="text-white/70 text-sm">{feature.description}</p>
               </div>
