@@ -36,7 +36,7 @@ export function HeroSection() {
         </div>
         
         <div className="mt-20 max-w-5xl mx-auto">
-            <div className="relative rounded-2xl p-2 bg-gradient-to-b from-white/10 to-transparent border border-white/10 shadow-2xl shadow-primary/20">
+            <div className="relative rounded-2xl p-2 bg-gradient-to-b from-white/10 to-transparent shadow-2xl shadow-primary/20">
                 <DashboardMockup />
             </div>
         </div>

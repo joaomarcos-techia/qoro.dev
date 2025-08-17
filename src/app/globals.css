@@ -14,7 +14,7 @@ body {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #00F0FF, #9D4EDD, #39FF14);
+  background: linear-gradient(135deg, hsl(var(--finance-primary)), hsl(var(--pulse-primary)), hsl(var(--crm-primary)));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
