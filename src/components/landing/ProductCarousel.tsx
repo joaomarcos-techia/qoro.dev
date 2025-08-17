@@ -53,7 +53,7 @@ export function ProductCarousel({ products }: ProductCarouselProps) {
             <div
               key={product.title}
               className={cn(
-                'absolute transition-all duration-500 ease-in-out',
+                'absolute transition-all duration-200 ease-in-out',
                 {
                   'opacity-100 transform scale-100 z-10': slideState === 'active',
                   'opacity-40 transform scale-90 -translate-x-full z-0': slideState === 'prev',
@@ -79,7 +79,7 @@ export function ProductCarousel({ products }: ProductCarouselProps) {
                     onClick={() => setCurrentIndex(index)}
                     className={cn(
                         "w-2.5 h-2.5 rounded-full transition-all duration-300",
-                        currentIndex === index ? 'bg-blue-500 scale-125' : 'bg-gray-600 hover:bg-gray-400'
+                        currentIndex === index ? 'bg-primary scale-125' : 'bg-gray-600 hover:bg-gray-400'
                     )}
                 />
             ))}
@@ -95,7 +95,7 @@ export function ProductCarousel({ products }: ProductCarouselProps) {
 const ProductCard = ({ product, isActive }: { product: Product, isActive: boolean }) => {
     const Icon = iconMap[product.iconName];
     return (
-        <div className={cn("bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-sm transition-all duration-500 w-[340px]", { 'border-blue-500/50 shadow-2xl shadow-blue-900/40': isActive })}>
+        <div className={cn("bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-sm transition-all duration-200 w-[340px]", { 'border-primary/50 shadow-2xl shadow-primary/20': isActive })}>
             <div className={`bg-gradient-to-br ${product.gradientClass} text-white w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-lg`}>
             <Icon className="w-7 h-7" />
             </div>
@@ -104,7 +104,7 @@ const ProductCard = ({ product, isActive }: { product: Product, isActive: boolea
             <ul className="space-y-3">
                 {product.features.map((feature, index) => (
                     <li key={index} className="flex items-start text-sm text-white/60">
-                        <div className={`w-1.5 h-1.5 bg-blue-400 rounded-full mr-3 mt-1.5 flex-shrink-0`}></div>
+                        <div className={`w-1.5 h-1.5 bg-primary rounded-full mr-3 mt-1.5 flex-shrink-0`}></div>
                         {feature}
                     </li>
                 ))}

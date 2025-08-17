@@ -123,7 +123,7 @@ export default function SettingsPage() {
                     <p className="text-gray-600">Gerencie sua conta, organização e convide novos membros.</p>
                 </div>
                 <Link href="/dashboard">
-                    <div className="bg-white text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold">
+                    <div className="bg-white text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-gray-200 flex items-center justify-center font-semibold">
                         <ArrowLeft className="mr-2 w-5 h-5" />
                         Voltar ao Dashboard
                     </div>
@@ -145,9 +145,9 @@ export default function SettingsPage() {
             {/* Content Area */}
             <div>
                 {activeTab === 'account' && (
-                    <div className="bg-white p-8 rounded-2xl shadow-neumorphism border border-gray-200 max-w-lg mx-auto">
+                    <div className="bg-white p-8 rounded-2xl border border-gray-200 max-w-lg mx-auto">
                         <div className="flex items-center mb-6">
-                            <div className="p-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white mr-4 shadow-neumorphism">
+                            <div className="p-3 rounded-xl bg-primary text-white mr-4">
                                 <User className="w-6 h-6" />
                             </div>
                             <h3 className="text-xl font-bold text-black">Minha Conta</h3>
@@ -155,11 +155,11 @@ export default function SettingsPage() {
                          <div className="space-y-4">
                              <div className="relative">
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                <input type="email" value={currentUser?.email || 'Carregando...'} disabled className="w-full pl-12 pr-4 py-3 bg-gray-100 rounded-xl shadow-neumorphism-inset cursor-not-allowed"/>
+                                <input type="email" value={currentUser?.email || 'Carregando...'} disabled className="w-full pl-12 pr-4 py-3 bg-gray-100 rounded-xl border border-gray-200 cursor-not-allowed"/>
                             </div>
                              <div className="relative">
                                 <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                <input type="password" placeholder="Nova Senha" className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"/>
+                                <input type="password" placeholder="Nova Senha" className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary transition-all duration-200"/>
                             </div>
                          </div>
                     </div>
@@ -167,9 +167,9 @@ export default function SettingsPage() {
                 {activeTab === 'users' && (
                     <div>
                         {/* Invite User Section */}
-                        <div className="bg-white p-8 rounded-2xl shadow-neumorphism border border-gray-200 mb-8">
+                        <div className="bg-white p-8 rounded-2xl border border-gray-200 mb-8">
                             <div className="flex items-start">
-                                <div className="p-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white mr-6 shadow-neumorphism">
+                                <div className="p-3 rounded-xl bg-primary text-white mr-6">
                                     <UserPlus className="w-6 h-6" />
                                 </div>
                                 <div className="flex-grow">
@@ -184,13 +184,13 @@ export default function SettingsPage() {
                                                 value={inviteEmail}
                                                 onChange={(e) => {setInviteEmail(e.target.value); clearFeedback('invite');}}
                                                 required
-                                                className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl shadow-neumorphism-inset focus:ring-2 focus:ring-primary transition-all duration-300"
+                                                className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary transition-all duration-200"
                                             />
                                         </div>
                                         <button
                                             type="submit"
                                             disabled={isLoading.invite}
-                                            className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed"
+                                            className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-200 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed"
                                         >
                                             <Send className="mr-2 w-5 h-5" />
                                             {isLoading.invite ? 'Enviando...' : 'Enviar Convite'}
@@ -207,7 +207,7 @@ export default function SettingsPage() {
                         </div>
 
                         {/* User List Section */}
-                        <div className="bg-white p-8 rounded-2xl shadow-neumorphism border border-gray-200">
+                        <div className="bg-white p-8 rounded-2xl border border-gray-200">
                              <h3 className="text-xl font-bold text-black mb-6">Usuários da Organização</h3>
                              {isLoading.users ? (
                                  <div className="flex justify-center items-center py-8">
@@ -217,7 +217,7 @@ export default function SettingsPage() {
                              ) : (
                                 <div className="space-y-4">
                                     {users.map(user => (
-                                        <div key={user.uid} className="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border border-gray-100 shadow-neumorphism-inset">
+                                        <div key={user.uid} className="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border border-gray-200 bg-gray-50/50">
                                             <div>
                                                 <p className="font-bold text-black">{user.name || user.email}</p>
                                                 <p className="text-sm text-gray-500">{user.email}</p>

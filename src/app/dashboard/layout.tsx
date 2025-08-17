@@ -114,15 +114,15 @@ export default function DashboardLayout({
     const activeBgColor = `bg-${currentModule}-primary`;
     
     return (
-        <aside className="w-64 flex-shrink-0 bg-black border-r border-[#2C2C2C] flex flex-col">
-            <div className="p-4 border-b border-[#2C2C2C] space-y-4">
+        <aside className="w-64 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
+            <div className="p-4 border-b border-gray-200 space-y-4">
                 <div className="flex items-center">
-                    <div className={`p-3 rounded-xl text-black mr-4 shadow-lg ${color} shadow-primary/20`}>
+                    <div className={`p-3 rounded-xl text-white mr-4 ${color}`}>
                         <GroupIcon className="w-6 h-6" />
                     </div>
-                    <h2 className={`text-xl font-bold text-primary`}>{group}</h2>
+                    <h2 className={`text-xl font-bold text-black`}>{group}</h2>
                 </div>
-                <Link href="/dashboard" className="flex items-center text-muted-foreground hover:text-white transition-colors text-sm font-medium">
+                <Link href="/dashboard" className="flex items-center text-gray-600 hover:text-primary transition-colors text-sm font-medium">
                     <ChevronLeft className="w-4 h-4 mr-2" />
                     <span>Voltar ao Dashboard</span>
                 </Link>
@@ -136,10 +136,10 @@ export default function DashboardLayout({
                         className={`flex items-center px-4 py-3 my-1 rounded-xl text-sm font-medium transition-all duration-200 group ${
                             pathname.startsWith(item.href)
                             ? `${activeBgColor} text-primary-foreground shadow-lg shadow-primary/30`
-                            : 'text-muted-foreground hover:bg-secondary hover:text-white'
+                            : 'text-gray-700 hover:bg-gray-100'
                         }`}
                         >
-                        <item.icon className={`w-5 h-5 mr-3 transition-colors ${pathname.startsWith(item.href) ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-white'}`} />
+                        <item.icon className={`w-5 h-5 mr-3 transition-colors ${pathname.startsWith(item.href) ? 'text-primary-foreground' : 'text-gray-500 group-hover:text-gray-800'}`} />
                         {item.label}
                         </Link>
                     </li>
@@ -151,7 +151,7 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-gray-50 text-black">
       <Header />
       <div className="flex h-[calc(100vh-64px)]">
          {currentModule !== 'home' && renderSidebarContent()}
@@ -164,4 +164,3 @@ export default function DashboardLayout({
     </div>
   );
 }
-```
