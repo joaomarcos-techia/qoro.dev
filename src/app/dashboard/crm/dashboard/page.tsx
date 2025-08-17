@@ -32,25 +32,25 @@ interface CrmMetrics {
 const chartConfig = {
   leads: {
     label: "Leads",
-    color: "hsl(var(--chart-1))",
+    color: "hsl(var(--crm-primary))",
   },
   customers: {
     label: "Novos Clientes",
-    color: "hsl(var(--chart-2))",
+    color: "hsl(var(--crm-cta))",
   },
 };
 
-const MetricCard = ({ title, value, icon: Icon, isLoading, color, format }: { title: string, value: number, icon: React.ElementType, isLoading: boolean, color: string, format?: (value: number) => string }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100 flex items-center">
-    <div className={`p-3 rounded-xl text-white mr-4 shadow-neumorphism ${color}`}>
+const MetricCard = ({ title, value, icon: Icon, isLoading, format }: { title: string, value: number, icon: React.ElementType, isLoading: boolean, format?: (value: number) => string }) => (
+  <div className="bg-card p-6 rounded-2xl border border-border flex items-center">
+    <div className='p-3 rounded-xl bg-crm-primary text-black mr-4 shadow-lg shadow-crm-primary/30'>
       <Icon className="w-6 h-6" />
     </div>
     <div>
-      <p className="text-gray-600 text-sm font-medium">{title}</p>
+      <p className="text-muted-foreground text-sm font-medium">{title}</p>
       {isLoading ? (
-        <Loader2 className="w-6 h-6 text-gray-400 animate-spin mt-1" />
+        <Loader2 className="w-6 h-6 text-muted-foreground animate-spin mt-1" />
       ) : (
-        <p className="text-3xl font-bold text-black">{format ? format(value) : value}</p>
+        <p className="text-3xl font-bold text-foreground">{format ? format(value) : value}</p>
       )}
     </div>
   </div>
@@ -174,53 +174,52 @@ export default function DashboardCrmPage() {
   const renderContent = () => {
     if (error) {
       return (
-        <div className="flex flex-col items-center justify-center h-96 bg-red-50 rounded-lg p-8 text-center">
-          <ServerCrash className="w-16 h-16 text-red-500 mb-4" />
-          <h3 className="text-xl font-bold text-red-700">Ocorreu um erro</h3>
-          <p className="text-gray-600 mt-2">{error}</p>
+        <div className="flex flex-col items-center justify-center h-96 bg-red-900/20 rounded-lg p-8 text-center border border-destructive">
+          <ServerCrash className="w-16 h-16 text-destructive mb-4" />
+          <h3 className="text-xl font-bold text-red-400">Ocorreu um erro</h3>
+          <p className="text-muted-foreground mt-2">{error}</p>
         </div>
       );
     }
     
     return (
         <div className="space-y-8">
-            {/* Métricas */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <MetricCard title="Total de Clientes" value={metrics?.totalCustomers ?? 0} icon={Users} isLoading={isLoading} color="bg-blue-500" />
-            <MetricCard title="Leads Ativos" value={metrics?.totalLeads ?? 0} icon={TrendingUp} isLoading={isLoading} color="bg-purple-500" />
-            <MetricCard title="Taxa de Conversão" value={metrics?.conversionRate ?? 0} icon={Percent} isLoading={isLoading} color="bg-green-500" format={formatPercentage} />
-            <MetricCard title="Receita Gerada" value={metrics?.totalRevenueWon ?? 0} icon={DollarSign} isLoading={isLoading} color="bg-yellow-500" format={formatCurrency} />
+            <MetricCard title="Total de Clientes" value={metrics?.totalCustomers ?? 0} icon={Users} isLoading={isLoading} />
+            <MetricCard title="Leads Ativos" value={metrics?.totalLeads ?? 0} icon={TrendingUp} isLoading={isLoading} />
+            <MetricCard title="Taxa de Conversão" value={metrics?.conversionRate ?? 0} icon={Percent} isLoading={isLoading} format={formatPercentage} />
+            <MetricCard title="Receita Gerada" value={metrics?.totalRevenueWon ?? 0} icon={DollarSign} isLoading={isLoading} format={formatCurrency} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <Card className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100">
+                <Card className="bg-card p-6 rounded-2xl border-border">
                     <CardHeader>
-                        <CardTitle className="flex items-center"><TrendingUp className="w-5 h-5 mr-3 text-primary"/>Funil de Vendas</CardTitle>
+                        <CardTitle className="flex items-center"><TrendingUp className="w-5 h-5 mr-3 text-crm-primary"/>Funil de Vendas</CardTitle>
                         <CardDescription>Distribuição de leads ativos por estágio.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
                             <BarChartPrimitive data={funnelChartData} >
-                                <CartesianGrid vertical={false} />
-                                <CustomXAxis dataKey="stage" tickMargin={10} />
-                                <CustomYAxis />
+                                <CartesianGrid vertical={false} stroke="hsl(var(--border))" />
+                                <CustomXAxis dataKey="stage" tickMargin={10} stroke="hsl(var(--muted-foreground))" />
+                                <CustomYAxis stroke="hsl(var(--muted-foreground))"/>
                                 <ChartTooltip content={<ChartTooltipContent />} />
-                                <Bar dataKey="leads" radius={8} />
+                                <Bar dataKey="leads" radius={8} fill="var(--color-leads)" />
                             </BarChartPrimitive>
                         </ChartContainer>
                     </CardContent>
                 </Card>
-                <Card className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100">
+                <Card className="bg-card p-6 rounded-2xl border-border">
                     <CardHeader>
-                        <CardTitle className="flex items-center"><LineChart className="w-5 h-5 mr-3 text-primary"/>Novos Clientes por Mês</CardTitle>
+                        <CardTitle className="flex items-center"><LineChart className="w-5 h-5 mr-3 text-crm-primary"/>Novos Clientes por Mês</CardTitle>
                         <CardDescription>Crescimento da base de clientes nos últimos 6 meses.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
                             <BarChartPrimitive data={newCustomersChartData} >
-                                <CartesianGrid vertical={false} />
-                                <CustomXAxis dataKey="month" tickMargin={10} />
-                                <CustomYAxis />
+                                <CartesianGrid vertical={false} stroke="hsl(var(--border))" />
+                                <CustomXAxis dataKey="month" tickMargin={10} stroke="hsl(var(--muted-foreground))" />
+                                <CustomYAxis stroke="hsl(var(--muted-foreground))" />
                                 <ChartTooltip content={<ChartTooltipContent />} />
                                 <Bar dataKey="customers" name="Novos Clientes" radius={8} fill="var(--color-customers)" />
                             </BarChartPrimitive>
@@ -235,8 +234,8 @@ export default function DashboardCrmPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-black">Dashboard do CRM</h1>
-        <p className="text-gray-600">
+        <h1 className="text-4xl font-bold text-foreground">Dashboard do CRM</h1>
+        <p className="text-muted-foreground">
           Analise a saúde do seu relacionamento com clientes e o desempenho de vendas.
         </p>
       </div>
