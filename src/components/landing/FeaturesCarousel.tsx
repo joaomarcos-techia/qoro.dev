@@ -3,7 +3,7 @@
 
 import { useKeenSlider } from 'keen-slider/react';
 import 'keen-slider/keen-slider.min.css';
-import { Eye, BrainCircuit, Rocket, ShieldCheck } from 'lucide-react';
+import { Eye, BrainCircuit, Rocket, ShieldCheck, Link, Scaling } from 'lucide-react';
 
 const features = [
   {
@@ -29,6 +29,18 @@ const features = [
     title: 'Segurança de Ponta',
     description: 'Construído sobre a infraestrutura do Google, seus dados estão sempre seguros e disponíveis.',
     colorClass: 'bg-finance-primary',
+  },
+  {
+    icon: Link,
+    title: 'Tudo Conectado',
+    description: 'Sistemas que conversam entre si para que você não perca nenhuma informação importante.',
+    colorClass: 'bg-teal-500',
+  },
+  {
+    icon: Scaling,
+    title: 'Cresça Sem Limites',
+    description: 'Nossa infraestrutura na nuvem escala com seu negócio, do primeiro ao milionésimo cliente.',
+    colorClass: 'bg-pink-500',
   },
 ];
 
