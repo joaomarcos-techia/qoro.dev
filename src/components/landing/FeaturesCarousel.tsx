@@ -70,7 +70,7 @@ export function FeaturesCarousel() {
     <div ref={sliderRef} className="keen-slider" style={{ maxWidth: "100vw" }}>
       {[...features, ...features].map((feature, index) => (
          <div key={index} className="keen-slider__slide" style={{ minWidth: 250, maxWidth: 250 }}>
-            <div className="relative group flex flex-col items-center text-center p-6 bg-secondary/30 rounded-2xl border border-border transition-all duration-300 hover:bg-secondary/60 hover:-translate-y-1 overflow-hidden h-full">
+            <div className="relative group flex flex-col items-center text-center p-6 bg-secondary/30 rounded-2xl border border-border transition-all duration-300 hover:bg-secondary/60 overflow-hidden h-full">
                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/10 via-transparent to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className={`text-black w-16 h-16 rounded-2xl flex items-center justify-center mb-5 flex-shrink-0 shadow-lg transition-transform duration-300 ${feature.colorClass}`}>
                 <feature.icon className="w-7 h-7" />
