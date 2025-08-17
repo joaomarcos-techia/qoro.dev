@@ -1,3 +1,4 @@
+
 'use client';
 
 import { ArrowRight, Code, DatabaseZap, Bot } from 'lucide-react';
@@ -31,12 +32,12 @@ export function ServicesSection() {
             <p className="text-xl text-white/70 mb-8 leading-relaxed">
               Além da plataforma Qoro, nossa equipe de especialistas está pronta para desenvolver soluções personalizadas que se integram perfeitamente ao seu fluxo de trabalho e resolvem desafios específicos do seu negócio.
             </p>
-             <Link href="#contato">
+             <a href="http://bit.ly/41Emn3C" target="_blank" rel="noopener noreferrer">
                 <div className="inline-flex items-center text-lg font-semibold bg-primary text-primary-foreground px-8 py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-primary/40 hover:-translate-y-1 group">
                     Fale com um especialista
                     <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </div>
-            </Link>
+            </a>
           </div>
           
           <div className="space-y-8">

@@ -13,7 +13,7 @@ export function Header() {
     { href: '/#sobre', label: 'Sobre' },
     { href: '/#precos', label: 'Planos' },
     { href: '/#contato', label: 'Contato' },
-    { href: 'http://bit.ly/41Emn3C', label: 'Serviços' },
+    { href: '/#servicos', label: 'Serviços' },
   ];
   
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>, href: string) => {
