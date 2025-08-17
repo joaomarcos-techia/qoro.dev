@@ -1,50 +1,49 @@
-import { Zap, Shield, Gift, Star, Headphones } from 'lucide-react';
+
+import { Eye, BrainCircuit, Rocket, ShieldCheck } from 'lucide-react';
 
 const features = [
   {
-    icon: Zap,
-    title: 'Integração Total',
-    description: 'Todos os módulos trabalham em perfeita sincronia, eliminando silos de informação.',
-    colorClass: 'bg-blue-600',
+    icon: Eye,
+    title: 'Visão 360°',
+    description: 'Tenha todos os dados importantes do seu negócio — do cliente ao financeiro — em uma única tela.',
+    colorClass: 'bg-crm-primary',
   },
   {
-    icon: Shield,
-    title: 'Segurança Avançada',
-    description: 'Confie na infraestrutura robusta do Google Firebase para proteger seus dados mais valiosos.',
-    colorClass: 'bg-green-600',
+    icon: BrainCircuit,
+    title: 'Decisões Inteligentes',
+    description: 'Use a IA do QoroPulse para identificar tendências, prever resultados e guiar suas estratégias.',
+    colorClass: 'bg-pulse-primary',
   },
   {
-    icon: Headphones,
-    title: 'Suporte Premium',
-    description: 'Equipe especializada disponível para garantir o sucesso da sua operação.',
-    colorClass: 'bg-purple-600',
+    icon: Rocket,
+    title: 'Produtividade Máxima',
+    description: 'Automatize tarefas, organize projetos e libere sua equipe para focar no que realmente importa.',
+    colorClass: 'bg-task-primary',
   },
   {
-    icon: Star,
-    title: 'Experiência Premium',
-    description: 'Design moderno e intuitivo pensado para facilitar o seu dia a dia e otimizar o seu tempo.',
-    colorClass: 'bg-yellow-500',
+    icon: ShieldCheck,
+    title: 'Segurança de Ponta',
+    description: 'Construído sobre a infraestrutura do Google, seus dados estão sempre seguros e disponíveis.',
+    colorClass: 'bg-finance-primary',
   }
 ];
 
 export function AboutSection() {
   return (
     <section id="sobre" className="py-20 bg-black">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <div className="text-sm font-medium text-blue-400 mb-4 tracking-wider uppercase">SOBRE</div>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="text-sm font-medium text-primary mb-4 tracking-wider uppercase">Construído para Empreendedores como Você</div>
         <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
-          Por que escolher a Qoro?
+          Menos tempo gerenciando, mais tempo crescendo.
         </h2>
-        <p className="text-xl text-white/70 mb-12 leading-relaxed max-w-3xl mx-auto">
-          Somos mais que uma plataforma de software. Somos parceiros estratégicos 
-          na transformação digital do seu negócio, oferecendo tecnologia de ponta 
-          com suporte humano excepcional.
+        <p className="text-xl text-white/70 mb-16 leading-relaxed max-w-3xl mx-auto">
+          A Qoro não é apenas uma ferramenta, é o seu copiloto estratégico. Nós centralizamos a complexidade para que você possa focar em expandir seu negócio com clareza e confiança.
         </p>
         
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
           {features.map((feature, index) => (
-            <div key={index} className="flex flex-col items-center text-center p-6 bg-secondary/30 rounded-2xl border border-border transition-all duration-300 hover:border-primary/50 hover:bg-secondary/60">
-              <div className={`text-white w-16 h-16 rounded-2xl flex items-center justify-center mb-5 flex-shrink-0 shadow-lg transition-transform duration-300 ${feature.colorClass}`}>
+            <div key={index} className="flex flex-col items-center text-center p-6 bg-secondary/30 rounded-2xl border border-border transition-all duration-300 hover:border-primary/50 hover:bg-secondary/60 hover:-translate-y-1">
+              <div className={`text-black w-16 h-16 rounded-2xl flex items-center justify-center mb-5 flex-shrink-0 shadow-lg transition-transform duration-300 ${feature.colorClass}`}>
                 <feature.icon className="w-7 h-7" />
               </div>
               <div>
