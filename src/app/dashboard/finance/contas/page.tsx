@@ -27,8 +27,8 @@ export default function ContasPage() {
       <div>
         <div className="flex justify-between items-center mb-8">
             <div>
-                 <h1 className="text-4xl font-bold text-black">Contas Financeiras</h1>
-                <p className="text-gray-600">
+                 <h1 className="text-4xl font-bold text-foreground">Contas Financeiras</h1>
+                <p className="text-muted-foreground">
                 Gerencie suas contas bancárias, caixas e cartões de crédito.
                 </p>
             </div>
@@ -43,7 +43,7 @@ export default function ContasPage() {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold text-black">Adicionar Nova Conta</DialogTitle>
+                        <DialogTitle className="text-2xl font-bold text-foreground">Adicionar Nova Conta</DialogTitle>
                         <DialogDescription>
                             Preencha as informações para cadastrar uma nova conta financeira.
                         </DialogDescription>
@@ -53,7 +53,7 @@ export default function ContasPage() {
             </Dialog>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-gray-200">
+        <div className="bg-card p-6 rounded-2xl border-border">
             <AccountTable key={refreshCounter} />
         </div>
       </div>

@@ -31,16 +31,16 @@ const chartConfig = {
 };
 
 const MetricCard = ({ title, value, icon: Icon, isLoading, format }: { title: string, value: string | number, icon: React.ElementType, isLoading: boolean, format?: (value: number) => string }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100 flex items-center">
-    <div className="p-3 rounded-xl bg-primary text-white mr-4 shadow-neumorphism">
+  <div className="bg-card p-6 rounded-2xl border border-border flex items-center">
+    <div className="p-3 rounded-xl bg-crm-primary text-black mr-4 shadow-lg shadow-crm-primary/30">
       <Icon className="w-6 h-6" />
     </div>
     <div>
-      <p className="text-gray-600 text-sm font-medium">{title}</p>
+      <p className="text-muted-foreground text-sm font-medium">{title}</p>
       {isLoading ? (
-        <Loader2 className="w-6 h-6 text-gray-400 animate-spin mt-1" />
+        <Loader2 className="w-6 h-6 text-muted-foreground animate-spin mt-1" />
       ) : (
-        <p className="text-3xl font-bold text-black">{typeof value === 'number' && format ? format(value) : value}</p>
+        <p className="text-3xl font-bold text-foreground">{typeof value === 'number' && format ? format(value) : value}</p>
       )}
     </div>
   </div>
@@ -132,16 +132,16 @@ export default function RelatoriosPage() {
         return (
           <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)]">
             <Loader2 className="w-12 h-12 text-primary animate-spin" />
-            <p className="mt-4 text-gray-600">Gerando relatórios...</p>
+            <p className="mt-4 text-muted-foreground">Gerando relatórios...</p>
           </div>
         );
     }  
     if (error) {
       return (
-        <div className="flex flex-col items-center justify-center h-96 bg-red-50 rounded-lg p-8 text-center">
-          <ServerCrash className="w-16 h-16 text-red-500 mb-4" />
-          <h3 className="text-xl font-bold text-red-700">Ocorreu um erro</h3>
-          <p className="text-gray-600 mt-2">{error}</p>
+        <div className="flex flex-col items-center justify-center h-96 bg-destructive/10 rounded-lg p-8 text-center border border-destructive">
+          <ServerCrash className="w-16 h-16 text-destructive mb-4" />
+          <h3 className="text-xl font-bold text-destructive">Ocorreu um erro</h3>
+          <p className="text-muted-foreground mt-2">{error}</p>
         </div>
       );
     }
@@ -156,7 +156,7 @@ export default function RelatoriosPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                <Card className="lg:col-span-3 bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100">
+                <Card className="lg:col-span-3 bg-card p-6 rounded-2xl border-border">
                     <CardHeader>
                         <CardTitle>Receita por Mês</CardTitle>
                         <CardDescription>Receita de negócios ganhos nos últimos meses.</CardDescription>
@@ -173,7 +173,7 @@ export default function RelatoriosPage() {
                         </ChartContainer>
                     </CardContent>
                 </Card>
-                <Card className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100">
+                <Card className="lg:col-span-2 bg-card p-6 rounded-2xl border-border">
                     <CardHeader>
                         <CardTitle>Origem dos Clientes</CardTitle>
                         <CardDescription>Distribuição de clientes por canal de aquisição.</CardDescription>
@@ -200,8 +200,8 @@ export default function RelatoriosPage() {
     <div>
         <div className="flex justify-between items-center mb-8">
             <div>
-                <h1 className="text-3xl font-bold text-black">Relatórios do CRM</h1>
-                <p className="text-gray-600">
+                <h1 className="text-3xl font-bold text-foreground">Relatórios do CRM</h1>
+                <p className="text-muted-foreground">
                 Analise o desempenho de suas vendas, clientes e atividades.
                 </p>
             </div>

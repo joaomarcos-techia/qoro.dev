@@ -14,16 +14,16 @@ interface TaskMetrics {
 }
 
 const MetricCard = ({ title, value, icon: Icon, isLoading, color }: { title: string, value: number, icon: React.ElementType, isLoading: boolean, color: string }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100 flex items-center">
-    <div className={`p-3 rounded-xl text-white mr-4 shadow-neumorphism ${color}`}>
+  <div className="bg-card p-6 rounded-2xl border border-border flex items-center">
+    <div className={`p-3 rounded-xl text-black mr-4 shadow-lg ${color}`}>
       <Icon className="w-6 h-6" />
     </div>
     <div>
-      <p className="text-gray-600 text-sm font-medium">{title}</p>
+      <p className="text-muted-foreground text-sm font-medium">{title}</p>
       {isLoading ? (
-        <Loader2 className="w-6 h-6 text-gray-400 animate-spin mt-1" />
+        <Loader2 className="w-6 h-6 text-muted-foreground animate-spin mt-1" />
       ) : (
-        <p className="text-3xl font-bold text-black">{value}</p>
+        <p className="text-3xl font-bold text-foreground">{value}</p>
       )}
     </div>
   </div>
@@ -59,10 +59,10 @@ export default function DashboardTaskPage() {
   const renderContent = () => {
     if (error) {
       return (
-        <div className="flex flex-col items-center justify-center h-96 bg-red-50 rounded-lg p-8 text-center">
-          <ServerCrash className="w-16 h-16 text-red-500 mb-4" />
-          <h3 className="text-xl font-bold text-red-700">Ocorreu um erro</h3>
-          <p className="text-gray-600 mt-2">{error}</p>
+        <div className="flex flex-col items-center justify-center h-96 bg-destructive/10 rounded-lg p-8 text-center border border-destructive">
+          <ServerCrash className="w-16 h-16 text-destructive mb-4" />
+          <h3 className="text-xl font-bold text-destructive">Ocorreu um erro</h3>
+          <p className="text-muted-foreground mt-2">{error}</p>
         </div>
       );
     }
@@ -79,18 +79,18 @@ export default function DashboardTaskPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             {/* Gráfico de Tarefas */}
-            <div className="lg:col-span-3 bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100">
-                <h3 className="text-lg font-bold text-black mb-4 flex items-center"><BarChart className="w-5 h-5 mr-3 text-primary"/>Distribuição de Tarefas por Status</h3>
-                <div className="h-80 flex items-center justify-center bg-gray-50 rounded-xl">
-                    <p className="text-gray-400">Componente de Gráfico - Em breve</p>
+            <div className="lg:col-span-3 bg-card p-6 rounded-2xl border-border">
+                <h3 className="text-lg font-bold text-foreground mb-4 flex items-center"><BarChart className="w-5 h-5 mr-3 text-primary"/>Distribuição de Tarefas por Status</h3>
+                <div className="h-80 flex items-center justify-center bg-secondary/30 rounded-xl">
+                    <p className="text-muted-foreground">Componente de Gráfico - Em breve</p>
                 </div>
             </div>
 
             {/* Atividades Recentes */}
-            <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-neumorphism border border-gray-100">
-                <h3 className="text-lg font-bold text-black mb-4">Atividades Recentes</h3>
-                 <div className="h-80 flex items-center justify-center bg-gray-50 rounded-xl">
-                    <p className="text-gray-400">Feed de Atividades - Em breve</p>
+            <div className="lg:col-span-2 bg-card p-6 rounded-2xl border-border">
+                <h3 className="text-lg font-bold text-foreground mb-4">Atividades Recentes</h3>
+                 <div className="h-80 flex items-center justify-center bg-secondary/30 rounded-xl">
+                    <p className="text-muted-foreground">Feed de Atividades - Em breve</p>
                 </div>
             </div>
         </div>
@@ -101,8 +101,8 @@ export default function DashboardTaskPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-black">Dashboard de Tarefas</h1>
-        <p className="text-gray-600">
+        <h1 className="text-3xl font-bold text-foreground">Dashboard de Tarefas</h1>
+        <p className="text-muted-foreground">
           Acompanhe a produtividade da sua equipe e o andamento dos projetos.
         </p>
       </div>

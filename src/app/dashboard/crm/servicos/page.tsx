@@ -28,8 +28,8 @@ export default function ServicosPage() {
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-bold text-black">Serviços</h1>
-          <p className="text-gray-600">
+          <h1 className="text-4xl font-bold text-foreground">Serviços</h1>
+          <p className="text-muted-foreground">
             Cadastre e gerencie os serviços que sua empresa oferece.
           </p>
         </div>
@@ -42,7 +42,7 @@ export default function ServicosPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-black">Adicionar Novo Serviço</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-foreground">Adicionar Novo Serviço</DialogTitle>
               <DialogDescription>
                 Preencha as informações abaixo para cadastrar um novo serviço no sistema.
               </DialogDescription>
@@ -52,7 +52,7 @@ export default function ServicosPage() {
         </Dialog>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl border border-gray-200">
+      <div className="bg-card p-6 rounded-2xl border-border">
         <ServiceTable key={refreshCounter} />
       </div>
     </div>

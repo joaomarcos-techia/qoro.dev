@@ -28,8 +28,8 @@ export default function FornecedoresPage() {
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-bold text-black">Fornecedores</h1>
-          <p className="text-gray-600">
+          <h1 className="text-4xl font-bold text-foreground">Fornecedores</h1>
+          <p className="text-muted-foreground">
             Gerencie sua base de fornecedores e parceiros de negócio.
           </p>
         </div>
@@ -44,7 +44,7 @@ export default function FornecedoresPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[700px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-black">Adicionar Novo Fornecedor</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-foreground">Adicionar Novo Fornecedor</DialogTitle>
               <DialogDescription>
                 Preencha as informações para cadastrar um novo fornecedor.
               </DialogDescription>
@@ -54,7 +54,7 @@ export default function FornecedoresPage() {
         </Dialog>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl border border-gray-200">
+      <div className="bg-card p-6 rounded-2xl border-border">
         <SupplierTable key={refreshCounter} />
       </div>
     </div>

@@ -10,8 +10,8 @@ export default function ContasAPagarPage() {
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-bold text-black">Contas a Pagar e Receber</h1>
-          <p className="text-gray-600">
+          <h1 className="text-4xl font-bold text-foreground">Contas a Pagar e Receber</h1>
+          <p className="text-muted-foreground">
             Gerencie seus recebimentos e pagamentos futuros para nunca perder um prazo.
           </p>
         </div>
@@ -21,11 +21,11 @@ export default function ContasAPagarPage() {
         </Button>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl border border-gray-200">
+      <div className="bg-card p-6 rounded-2xl border-border">
         <div className="flex flex-col items-center justify-center text-center min-h-[400px]">
-            <Receipt className="w-16 h-16 text-gray-300 mb-4" />
-            <h3 className="text-xl font-bold text-black">Nenhuma conta futura registrada</h3>
-            <p className="text-gray-500 mt-2 max-w-md">
+            <Receipt className="w-16 h-16 text-muted-foreground/30 mb-4" />
+            <h3 className="text-xl font-bold text-foreground">Nenhuma conta futura registrada</h3>
+            <p className="text-muted-foreground mt-2 max-w-md">
                 Clique em "Lançar Conta" para registrar seus próximos pagamentos e recebimentos e manter seu fluxo de caixa sob controle.
             </p>
         </div>

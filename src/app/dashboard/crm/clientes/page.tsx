@@ -32,8 +32,8 @@ export default function ClientesPage() {
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-bold text-black">Clientes</h1>
-          <p className="text-gray-600">
+          <h1 className="text-4xl font-bold text-foreground">Clientes</h1>
+          <p className="text-muted-foreground">
             Gerencie sua base de contatos e clientes.
           </p>
         </div>
@@ -46,7 +46,7 @@ export default function ClientesPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[750px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-black">Adicionar Novo Cliente</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-foreground">Adicionar Novo Cliente</DialogTitle>
               <DialogDescription>
                 Preencha as informações abaixo para cadastrar um novo cliente no sistema.
               </DialogDescription>
@@ -56,7 +56,7 @@ export default function ClientesPage() {
         </Dialog>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl border border-gray-200">
+      <div className="bg-card p-6 rounded-2xl border-border">
         <CustomerTable key={refreshCounter} />
       </div>
     </div>

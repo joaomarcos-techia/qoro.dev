@@ -65,8 +65,8 @@ export default function MinhaListaPage() {
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-bold text-black">Minha Lista de Tarefas</h1>
-          <p className="text-gray-600">
+          <h1 className="text-4xl font-bold text-foreground">Minha Lista de Tarefas</h1>
+          <p className="text-muted-foreground">
             Adicione, gerencie e acompanhe todas as suas atividades.
           </p>
         </div>
@@ -79,7 +79,7 @@ export default function MinhaListaPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-black">Criar Nova Tarefa</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-foreground">Criar Nova Tarefa</DialogTitle>
               <DialogDescription>
                 Preencha as informações abaixo para adicionar uma nova tarefa.
               </DialogDescription>
@@ -89,7 +89,7 @@ export default function MinhaListaPage() {
         </Dialog>
       </div>
 
-       <div className="bg-white p-6 rounded-2xl border border-gray-200">
+       <div className="bg-card p-6 rounded-2xl border-border">
             <TaskTable data={tasks} isLoading={isLoading} error={error} onRefresh={fetchTasks} />
         </div>
     </div>

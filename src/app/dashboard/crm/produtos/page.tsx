@@ -50,8 +50,8 @@ export default function ProdutosPage() {
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-bold text-black">Produtos</h1>
-          <p className="text-gray-600">
+          <h1 className="text-4xl font-bold text-foreground">Produtos</h1>
+          <p className="text-muted-foreground">
             Cadastre e gerencie os produtos que sua empresa vende.
           </p>
         </div>
@@ -66,7 +66,7 @@ export default function ProdutosPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-black">{selectedProduct ? 'Editar Produto' : 'Adicionar Novo Produto'}</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-foreground">{selectedProduct ? 'Editar Produto' : 'Adicionar Novo Produto'}</DialogTitle>
               <DialogDescription>
                 {selectedProduct ? 'Altere as informações do produto abaixo.' : 'Preencha as informações abaixo para cadastrar um novo produto no sistema.'}
               </DialogDescription>
@@ -76,7 +76,7 @@ export default function ProdutosPage() {
         </Dialog>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl border border-gray-200">
+      <div className="bg-card p-6 rounded-2xl border-border">
         <ProductTable key={refreshCounter} onEdit={handleEdit} onRefresh={triggerRefresh} />
       </div>
     </div>

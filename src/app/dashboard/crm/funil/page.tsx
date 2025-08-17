@@ -121,17 +121,17 @@ export default function FunilPage() {
       return (
         <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)]">
           <Loader2 className="w-12 h-12 text-primary animate-spin" />
-          <p className="mt-4 text-gray-600">Carregando funil de clientes...</p>
+          <p className="mt-4 text-muted-foreground">Carregando funil de clientes...</p>
         </div>
       );
     }
 
     if (error) {
       return (
-        <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] bg-red-50 rounded-lg p-8 text-center">
-          <ServerCrash className="w-16 h-16 text-red-500 mb-4" />
-          <h3 className="text-xl font-bold text-red-700">Ocorreu um erro</h3>
-          <p className="text-gray-600 mt-2">{error}</p>
+        <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] bg-destructive/10 rounded-lg p-8 text-center border border-destructive">
+          <ServerCrash className="w-16 h-16 text-destructive mb-4" />
+          <h3 className="text-xl font-bold text-destructive">Ocorreu um erro</h3>
+          <p className="text-muted-foreground mt-2">{error}</p>
         </div>
       );
     }
@@ -144,15 +144,15 @@ export default function FunilPage() {
       <div className="flex-shrink-0">
         <div className="flex justify-between items-center mb-6">
             <div>
-            <h1 className="text-4xl font-bold text-black">Funil de Clientes</h1>
-            <p className="text-gray-600">
+            <h1 className="text-4xl font-bold text-foreground">Funil de Clientes</h1>
+            <p className="text-muted-foreground">
                 Visualize e gerencie a jornada dos seus clientes pelas fases de negociação.
             </p>
             </div>
              {isPending && <Loader2 className="w-6 h-6 text-primary animate-spin" />}
         </div>
          {feedback && (
-            <div className={`mb-4 p-3 rounded-lg flex items-center text-sm ${feedback.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'}`}>
+            <div className={`mb-4 p-3 rounded-lg flex items-center text-sm ${feedback.type === 'success' ? 'bg-green-800/20 text-green-300 border border-green-500/30' : 'bg-red-800/20 text-red-300 border border-red-500/30'}`}>
                 <AlertCircle className="w-5 h-5 mr-3" />
                 <span>{feedback.message}</span>
             </div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -163,7 +164,7 @@ export default function DashboardLayout({
       <Header />
       <div className="flex h-[calc(100vh-64px)]">
          {currentModule !== 'home' && renderSidebarContent()}
-         <main className="flex-1 overflow-y-auto bg-background">
+         <main className="flex-1 overflow-y-auto">
             <div className="p-8">
               {children}
             </div>

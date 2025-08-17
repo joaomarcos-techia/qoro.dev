@@ -174,9 +174,9 @@ export default function DashboardCrmPage() {
   const renderContent = () => {
     if (error) {
       return (
-        <div className="flex flex-col items-center justify-center h-96 bg-red-900/20 rounded-lg p-8 text-center border border-destructive">
+        <div className="flex flex-col items-center justify-center h-96 bg-destructive/10 rounded-lg p-8 text-center border border-destructive">
           <ServerCrash className="w-16 h-16 text-destructive mb-4" />
-          <h3 className="text-xl font-bold text-red-400">Ocorreu um erro</h3>
+          <h3 className="text-xl font-bold text-destructive">Ocorreu um erro</h3>
           <p className="text-muted-foreground mt-2">{error}</p>
         </div>
       );
@@ -201,8 +201,8 @@ export default function DashboardCrmPage() {
                         <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
                             <BarChartPrimitive data={funnelChartData} >
                                 <CartesianGrid vertical={false} stroke="hsl(var(--border))" />
-                                <CustomXAxis dataKey="stage" tickMargin={10} stroke="hsl(var(--muted-foreground))" />
-                                <CustomYAxis stroke="hsl(var(--muted-foreground))"/>
+                                <CustomXAxis dataKey="stage" tickMargin={10} />
+                                <CustomYAxis />
                                 <ChartTooltip content={<ChartTooltipContent />} />
                                 <Bar dataKey="leads" radius={8} fill="var(--color-leads)" />
                             </BarChartPrimitive>
@@ -218,8 +218,8 @@ export default function DashboardCrmPage() {
                         <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
                             <BarChartPrimitive data={newCustomersChartData} >
                                 <CartesianGrid vertical={false} stroke="hsl(var(--border))" />
-                                <CustomXAxis dataKey="month" tickMargin={10} stroke="hsl(var(--muted-foreground))" />
-                                <CustomYAxis stroke="hsl(var(--muted-foreground))" />
+                                <CustomXAxis dataKey="month" tickMargin={10} />
+                                <CustomYAxis />
                                 <ChartTooltip content={<ChartTooltipContent />} />
                                 <Bar dataKey="customers" name="Novos Clientes" radius={8} fill="var(--color-customers)" />
                             </BarChartPrimitive>

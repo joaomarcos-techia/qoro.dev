@@ -159,3 +159,8 @@ body {
 .fc-event {
     @apply p-1 rounded-md text-xs font-medium cursor-pointer border-2;
 }
+
+/* Chart axis color for dark theme */
+.recharts-cartesian-axis-tick-value {
+    fill: hsl(var(--muted-foreground));
+}

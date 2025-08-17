@@ -10,8 +10,8 @@ export default function ConciliacaoPage() {
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-bold text-black">Conciliação Bancária</h1>
-          <p className="text-gray-600">
+          <h1 className="text-4xl font-bold text-foreground">Conciliação Bancária</h1>
+          <p className="text-muted-foreground">
             Compare suas transações com o extrato bancário para garantir que tudo esteja correto.
           </p>
         </div>
@@ -21,11 +21,11 @@ export default function ConciliacaoPage() {
         </Button>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl border border-gray-200">
+      <div className="bg-card p-6 rounded-2xl border-border">
         <div className="flex flex-col items-center justify-center text-center min-h-[400px]">
-            <GitCompareArrows className="w-16 h-16 text-gray-300 mb-4" />
-            <h3 className="text-xl font-bold text-black">Pronto para conciliar?</h3>
-            <p className="text-gray-500 mt-2 max-w-md">
+            <GitCompareArrows className="w-16 h-16 text-muted-foreground/30 mb-4" />
+            <h3 className="text-xl font-bold text-foreground">Pronto para conciliar?</h3>
+            <p className="text-muted-foreground mt-2 max-w-md">
                 Importe seu extrato bancário no formato OFX para começar a conciliar suas transações registradas com as movimentações do banco.
             </p>
         </div>

@@ -28,8 +28,8 @@ export default function OrcamentosPage() {
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-bold text-black">Orçamentos</h1>
-          <p className="text-gray-600">
+          <h1 className="text-4xl font-bold text-foreground">Orçamentos</h1>
+          <p className="text-muted-foreground">
             Crie, envie e gerencie propostas comerciais para seus clientes.
           </p>
         </div>
@@ -45,7 +45,7 @@ export default function OrcamentosPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[800px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-black">Criar Novo Orçamento</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-foreground">Criar Novo Orçamento</DialogTitle>
               <DialogDescription>
                 Selecione o cliente, adicione os itens e defina os termos.
               </DialogDescription>
@@ -55,7 +55,7 @@ export default function OrcamentosPage() {
         </Dialog>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl border border-gray-200">
+      <div className="bg-card p-6 rounded-2xl border-border">
         <QuoteTable key={refreshCounter} />
       </div>
     </div>

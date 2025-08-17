@@ -49,16 +49,16 @@ const formatCurrency = (value: number) => {
 };
 
 const MetricCard = ({ title, value, icon: Icon, isLoading, error, colorClass = 'bg-primary' }: { title: string, value: string, icon: React.ElementType, isLoading: boolean, error?: boolean, colorClass?: string }) => (
-    <div className="bg-white p-6 rounded-2xl border border-gray-200 flex items-center transition-all duration-300 hover:border-gray-300 hover:-translate-y-1">
-        <div className={`p-3 rounded-xl ${error ? 'bg-yellow-500' : colorClass} text-white mr-4 shadow-lg`}>
+    <div className="bg-card p-6 rounded-2xl border border-border flex items-center transition-all duration-200 hover:border-primary/50 hover:-translate-y-1">
+        <div className={`p-3 rounded-xl ${error ? 'bg-yellow-500' : colorClass} text-black mr-4 shadow-lg`}>
             {error ? <AlertTriangle className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
         </div>
         <div>
-            <p className="text-gray-600 text-sm font-medium">{title}</p>
+            <p className="text-muted-foreground text-sm font-medium">{title}</p>
             {isLoading ? (
-                 <Loader2 className="w-6 h-6 text-gray-400 animate-spin mt-1" />
+                 <Loader2 className="w-6 h-6 text-muted-foreground animate-spin mt-1" />
             ) : (
-                <p className="text-2xl font-bold text-black">{error ? 'Erro' : value}</p>
+                <p className="text-2xl font-bold text-foreground">{error ? 'Erro' : value}</p>
             )}
         </div>
     </div>
@@ -66,13 +66,13 @@ const MetricCard = ({ title, value, icon: Icon, isLoading, error, colorClass = '
 
 function DashboardErrorFallback({ error, resetErrorBoundary }: { error: Error, resetErrorBoundary: () => void }) {
     return (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg" role="alert">
+        <div className="bg-destructive/10 border-l-4 border-destructive text-destructive-foreground p-4 rounded-lg" role="alert">
             <h3 className="font-bold">Ocorreu um Erro no Dashboard</h3>
             <p className="mt-2">Não foi possível carregar alguns dados do dashboard. Isso pode ser temporário.</p>
             <p className="text-xs mt-1 opacity-70">Detalhe: {error.message}</p>
             <button
                 onClick={resetErrorBoundary}
-                className="mt-4 bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="mt-4 bg-destructive text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-destructive/90 focus:outline-none focus:ring-2 focus:ring-destructive"
             >
                 Tentar Novamente
             </button>
@@ -193,17 +193,17 @@ function DashboardContent() {
       className="app-content active max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
     >
       <div className="mb-10">
-        <h2 className="text-3xl font-bold text-black mb-2">
+        <h2 className="text-3xl font-bold text-foreground mb-2">
           Bem-vindo à Qoro!
         </h2>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Gerencie toda a sua empresa em uma única plataforma integrada
         </p>
       </div>
       
       <ErrorBoundary FallbackComponent={DashboardErrorFallback}>
        <div className="mb-12">
-            <h3 className="text-xl font-bold text-black mb-6">Métricas e Insights Rápidos</h3>
+            <h3 className="text-xl font-bold text-foreground mb-6">Métricas e Insights Rápidos</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {permissions?.qoroCrm && (
                   <>
@@ -217,7 +217,7 @@ function DashboardContent() {
                 }
             </div>
              {(errors.crm || errors.task || errors.finance) && (
-                <div className="mt-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-lg text-sm">
+                <div className="mt-4 p-4 bg-yellow-800/20 border-l-4 border-yellow-500 text-yellow-300 rounded-lg text-sm">
                    <p><span className="font-bold">Aviso:</span> Alguns dados não puderam ser carregados. Os desenvolvedores foram notificados. A funcionalidade principal continua operacional.</p>
                 </div>
             )}
@@ -226,26 +226,26 @@ function DashboardContent() {
 
       <div>
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-black">Seus Aplicativos Qoro</h3>
+          <h3 className="text-xl font-bold text-foreground">Seus Aplicativos Qoro</h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {permissions?.qoroCrm && (
             <Link href="/dashboard/crm/dashboard">
-              <div className="group bg-white rounded-2xl border border-gray-200 hover:border-crm-primary transition-all duration-200 flex flex-col h-full hover:-translate-y-1">
+              <div className="group bg-card rounded-2xl border border-border hover:border-crm-primary transition-all duration-200 flex flex-col h-full hover:-translate-y-1">
                 <div className="p-6 flex-grow flex flex-col">
                   <div className="flex items-center mb-4">
-                    <div className="p-3 rounded-xl bg-crm-primary text-white mr-4 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-crm-primary/30">
+                    <div className="p-3 rounded-xl bg-crm-primary text-black mr-4 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-crm-primary/30">
                       <Users className="w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="text-lg font-bold text-black">QoroCRM</h4>
+                      <h4 className="text-lg font-bold text-foreground">QoroCRM</h4>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-6 flex-grow">
+                  <p className="text-sm text-muted-foreground mb-6 flex-grow">
                     CRM com foco em gestão de funil de vendas e conversão para maximizar seus lucros.
                   </p>
-                  <div className="group/button w-full bg-gray-100 text-gray-800 py-2.5 px-4 rounded-full hover:bg-gray-200 transition-colors flex items-center justify-center text-sm font-medium">
+                  <div className="group/button w-full bg-secondary text-secondary-foreground py-2.5 px-4 rounded-full hover:bg-secondary/80 transition-colors flex items-center justify-center text-sm font-medium">
                     <span>Acessar</span>
                     <ArrowRight className="w-4 h-4 ml-2 transform transition-transform duration-300 group-hover/button:translate-x-1" />
                   </div>
@@ -256,20 +256,20 @@ function DashboardContent() {
 
           {permissions?.qoroPulse && (
             <Link href="/dashboard/pulse">
-              <div className="group bg-white rounded-2xl border border-gray-200 hover:border-pulse-primary transition-all duration-200 flex flex-col h-full hover:-translate-y-1">
+              <div className="group bg-card rounded-2xl border border-border hover:border-pulse-primary transition-all duration-200 flex flex-col h-full hover:-translate-y-1">
                 <div className="p-6 flex-grow flex flex-col">
                   <div className="flex items-center mb-4">
-                    <div className="p-3 rounded-xl bg-pulse-primary text-white mr-4 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-pulse-primary/30">
+                    <div className="p-3 rounded-xl bg-pulse-primary text-black mr-4 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-pulse-primary/30">
                       <Activity className="w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="text-lg font-bold text-black">QoroPulse</h4>
+                      <h4 className="text-lg font-bold text-foreground">QoroPulse</h4>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-6 flex-grow">
+                  <p className="text-sm text-muted-foreground mb-6 flex-grow">
                     O sistema nervoso central da sua operação, revelando insights para otimização automática e inteligente.
                   </p>
-                  <div className="group/button w-full bg-gray-100 text-gray-800 py-2.5 px-4 rounded-full hover:bg-gray-200 transition-colors flex items-center justify-center text-sm font-medium">
+                  <div className="group/button w-full bg-secondary text-secondary-foreground py-2.5 px-4 rounded-full hover:bg-secondary/80 transition-colors flex items-center justify-center text-sm font-medium">
                     <span>Acessar</span>
                     <ArrowRight className="w-4 h-4 ml-2 transform transition-transform duration-300 group-hover/button:translate-x-1" />
                   </div>
@@ -280,20 +280,20 @@ function DashboardContent() {
 
           {permissions?.qoroTask && (
              <Link href="/dashboard/task/tarefas">
-              <div className="group bg-white rounded-2xl border border-gray-200 hover:border-task-primary transition-all duration-200 flex flex-col h-full hover:-translate-y-1">
+              <div className="group bg-card rounded-2xl border border-border hover:border-task-primary transition-all duration-200 flex flex-col h-full hover:-translate-y-1">
                 <div className="p-6 flex-grow flex flex-col">
                   <div className="flex items-center mb-4">
-                    <div className="p-3 rounded-xl bg-task-primary text-white mr-4 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-task-primary/30">
+                    <div className="p-3 rounded-xl bg-task-primary text-black mr-4 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-task-primary/30">
                       <CheckSquare className="w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="text-lg font-bold text-black">QoroTask</h4>
+                      <h4 className="text-lg font-bold text-foreground">QoroTask</h4>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-6 flex-grow">
+                  <p className="text-sm text-muted-foreground mb-6 flex-grow">
                     Plataforma leve e poderosa de gestão de tarefas e produtividade para manter sua equipe alinhada e focada.
                   </p>
-                   <div className="group/button w-full bg-gray-100 text-gray-800 py-2.5 px-4 rounded-full hover:bg-gray-200 transition-colors flex items-center justify-center text-sm font-medium">
+                   <div className="group/button w-full bg-secondary text-secondary-foreground py-2.5 px-4 rounded-full hover:bg-secondary/80 transition-colors flex items-center justify-center text-sm font-medium">
                     <span>Acessar</span>
                     <ArrowRight className="w-4 h-4 ml-2 transform transition-transform duration-300 group-hover/button:translate-x-1" />
                   </div>
@@ -304,22 +304,22 @@ function DashboardContent() {
 
           {permissions?.qoroFinance && (
              <Link href="/dashboard/finance/visao-geral">
-              <div className="group bg-white rounded-2xl border border-gray-200 hover:border-finance-primary transition-all duration-200 flex flex-col h-full hover:-translate-y-1">
+              <div className="group bg-card rounded-2xl border border-border hover:border-finance-primary transition-all duration-200 flex flex-col h-full hover:-translate-y-1">
                 <div className="p-6 flex-grow flex flex-col">
                   <div className="flex items-center mb-4">
-                    <div className="p-3 rounded-xl bg-finance-primary text-white mr-4 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-finance-primary/30">
+                    <div className="p-3 rounded-xl bg-finance-primary text-black mr-4 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-finance-primary/30">
                       <DollarSign className="w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="text-lg font-bold text-black">
+                      <h4 className="text-lg font-bold text-foreground">
                         QoroFinance
                       </h4>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-6 flex-grow">
+                  <p className="text-sm text-muted-foreground mb-6 flex-grow">
                     Controle financeiro completo para seu negócio, com dashboards claros e relatórios simplificados.
                   </p>
-                  <div className="group/button w-full bg-gray-100 text-gray-800 py-2.5 px-4 rounded-full hover:bg-gray-200 transition-colors flex items-center justify-center text-sm font-medium">
+                  <div className="group/button w-full bg-secondary text-secondary-foreground py-2.5 px-4 rounded-full hover:bg-secondary/80 transition-colors flex items-center justify-center text-sm font-medium">
                     <span>Acessar</span>
                     <ArrowRight className="w-4 h-4 ml-2 transform transition-transform duration-300 group-hover/button:translate-x-1" />
                   </div>

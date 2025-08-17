@@ -119,25 +119,25 @@ export default function SettingsPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h2 className="text-3xl font-bold text-black mb-2">Configurações</h2>
-                    <p className="text-gray-600">Gerencie sua conta, organização e convide novos membros.</p>
+                    <h2 className="text-3xl font-bold text-foreground mb-2">Configurações</h2>
+                    <p className="text-muted-foreground">Gerencie sua conta, organização e convide novos membros.</p>
                 </div>
                 <Link href="/dashboard">
-                    <div className="bg-white text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-gray-200 flex items-center justify-center font-semibold">
+                    <div className="bg-secondary text-secondary-foreground px-4 py-2 rounded-xl hover:bg-secondary/80 transition-all duration-200 border border-border flex items-center justify-center font-semibold">
                         <ArrowLeft className="mr-2 w-5 h-5" />
                         Voltar ao Dashboard
                     </div>
                 </Link>
             </div>
 
-            <div className="flex border-b border-gray-200 mb-8">
-                <button onClick={() => handleTabChange('account')} className={`px-4 py-3 font-semibold flex items-center transition-all duration-300 ${activeTab === 'account' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-black'}`}>
+            <div className="flex border-b border-border mb-8">
+                <button onClick={() => handleTabChange('account')} className={`px-4 py-3 font-semibold flex items-center transition-all duration-300 ${activeTab === 'account' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                     <User className="mr-2 w-5 h-5"/> Minha Conta
                 </button>
-                 <button onClick={() => handleTabChange('users')} className={`px-4 py-3 font-semibold flex items-center transition-all duration-300 ${activeTab === 'users' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-black'}`}>
+                 <button onClick={() => handleTabChange('users')} className={`px-4 py-3 font-semibold flex items-center transition-all duration-300 ${activeTab === 'users' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                     <Users className="mr-2 w-5 h-5"/> Gerenciar Usuários
                 </button>
-                <button onClick={() => handleTabChange('organization')} className={`px-4 py-3 font-semibold flex items-center transition-all duration-300 ${activeTab === 'organization' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-black'}`}>
+                <button onClick={() => handleTabChange('organization')} className={`px-4 py-3 font-semibold flex items-center transition-all duration-300 ${activeTab === 'organization' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                     <Building className="mr-2 w-5 h-5"/> Organização
                 </button>
             </div>
@@ -145,21 +145,21 @@ export default function SettingsPage() {
             {/* Content Area */}
             <div>
                 {activeTab === 'account' && (
-                    <div className="bg-white p-8 rounded-2xl border border-gray-200 max-w-lg mx-auto">
+                    <div className="bg-card p-8 rounded-2xl border border-border max-w-lg mx-auto">
                         <div className="flex items-center mb-6">
-                            <div className="p-3 rounded-xl bg-primary text-white mr-4">
+                            <div className="p-3 rounded-xl bg-primary text-black mr-4">
                                 <User className="w-6 h-6" />
                             </div>
-                            <h3 className="text-xl font-bold text-black">Minha Conta</h3>
+                            <h3 className="text-xl font-bold text-foreground">Minha Conta</h3>
                         </div>
                          <div className="space-y-4">
                              <div className="relative">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                <input type="email" value={currentUser?.email || 'Carregando...'} disabled className="w-full pl-12 pr-4 py-3 bg-gray-100 rounded-xl border border-gray-200 cursor-not-allowed"/>
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                <Input type="email" value={currentUser?.email || 'Carregando...'} disabled className="w-full pl-12 pr-4 py-3 bg-secondary rounded-xl border-border cursor-not-allowed"/>
                             </div>
                              <div className="relative">
-                                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                <input type="password" placeholder="Nova Senha" className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary transition-all duration-200"/>
+                                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                <Input type="password" placeholder="Nova Senha" className="w-full pl-12 pr-4 py-3 bg-secondary rounded-xl border-border focus:ring-2 focus:ring-primary transition-all duration-200"/>
                             </div>
                          </div>
                     </div>
@@ -167,24 +167,24 @@ export default function SettingsPage() {
                 {activeTab === 'users' && (
                     <div>
                         {/* Invite User Section */}
-                        <div className="bg-white p-8 rounded-2xl border border-gray-200 mb-8">
+                        <div className="bg-card p-8 rounded-2xl border border-border mb-8">
                             <div className="flex items-start">
-                                <div className="p-3 rounded-xl bg-primary text-white mr-6">
+                                <div className="p-3 rounded-xl bg-primary text-black mr-6">
                                     <UserPlus className="w-6 h-6" />
                                 </div>
                                 <div className="flex-grow">
-                                    <h3 className="text-xl font-bold text-black mb-1">Convidar novo usuário</h3>
-                                    <p className="text-gray-600 mb-6">O membro convidado receberá um e-mail para definir sua senha e acessar a organização.</p>
+                                    <h3 className="text-xl font-bold text-foreground mb-1">Convidar novo usuário</h3>
+                                    <p className="text-muted-foreground mb-6">O membro convidado receberá um e-mail para definir sua senha e acessar a organização.</p>
                                     <form onSubmit={handleInviteUser} className="flex items-center gap-4">
                                         <div className="relative flex-grow">
-                                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                            <input
+                                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                            <Input
                                                 type="email"
                                                 placeholder="E-mail do convidado"
                                                 value={inviteEmail}
                                                 onChange={(e) => {setInviteEmail(e.target.value); clearFeedback('invite');}}
                                                 required
-                                                className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary transition-all duration-200"
+                                                className="w-full pl-12 pr-4 py-3 bg-secondary rounded-xl border-border focus:ring-2 focus:ring-primary transition-all duration-200"
                                             />
                                         </div>
                                         <button
@@ -197,7 +197,7 @@ export default function SettingsPage() {
                                         </button>
                                     </form>
                                     {feedback && feedback.context === 'invite' && (
-                                        <div className={`mt-4 p-4 rounded-lg flex items-center text-sm ${feedback.type === 'success' ? 'bg-green-100 border-l-4 border-green-500 text-green-800' : 'bg-red-100 border-l-4 border-red-500 text-red-700'}`}>
+                                        <div className={`mt-4 p-4 rounded-lg flex items-center text-sm ${feedback.type === 'success' ? 'bg-green-800/20 border-l-4 border-green-500 text-green-300' : 'bg-red-800/20 border-l-4 border-red-500 text-red-300'}`}>
                                             {feedback.type === 'success' ? <CheckCircle className="w-5 h-5 mr-3" /> : <AlertCircle className="w-5 h-5 mr-3" />}
                                             <span>{feedback.message}</span>
                                         </div>
@@ -207,21 +207,21 @@ export default function SettingsPage() {
                         </div>
 
                         {/* User List Section */}
-                        <div className="bg-white p-8 rounded-2xl border border-gray-200">
-                             <h3 className="text-xl font-bold text-black mb-6">Usuários da Organização</h3>
+                        <div className="bg-card p-8 rounded-2xl border-border">
+                             <h3 className="text-xl font-bold text-foreground mb-6">Usuários da Organização</h3>
                              {isLoading.users ? (
                                  <div className="flex justify-center items-center py-8">
                                      <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                                     <p className="ml-4 text-gray-600">Carregando usuários...</p>
+                                     <p className="ml-4 text-muted-foreground">Carregando usuários...</p>
                                  </div>
                              ) : (
                                 <div className="space-y-4">
                                     {users.map(user => (
-                                        <div key={user.uid} className="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border border-gray-200 bg-gray-50/50">
+                                        <div key={user.uid} className="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border border-border bg-secondary/50">
                                             <div>
-                                                <p className="font-bold text-black">{user.name || user.email}</p>
-                                                <p className="text-sm text-gray-500">{user.email}</p>
-                                                <p className="text-xs text-gray-400 uppercase font-semibold mt-1">{user.role}</p>
+                                                <p className="font-bold text-foreground">{user.name || user.email}</p>
+                                                <p className="text-sm text-muted-foreground">{user.email}</p>
+                                                <p className="text-xs text-primary uppercase font-semibold mt-1">{user.role}</p>
                                             </div>
                                             <div className="flex items-center gap-4 mt-4 md:mt-0 relative">
                                                 {Object.keys(appPermissionsMap).map(key => {
@@ -231,7 +231,7 @@ export default function SettingsPage() {
                                                         <label key={perm} className={`flex items-center space-x-2 text-sm ${isSelf ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                                                             <input
                                                                 type="checkbox"
-                                                                className="form-checkbox h-5 w-5 rounded text-primary focus:ring-primary border-gray-300"
+                                                                className="form-checkbox h-5 w-5 rounded text-primary focus:ring-primary border-gray-600 bg-secondary"
                                                                 checked={!!user.permissions?.[perm]}
                                                                 onChange={(e) => handlePermissionChange(user.uid, perm, e.target.checked)}
                                                                 disabled={isLoading.permissions === user.uid || isSelf}

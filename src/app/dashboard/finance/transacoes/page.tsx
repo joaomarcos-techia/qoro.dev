@@ -27,8 +27,8 @@ export default function TransacoesPage() {
       <div>
         <div className="flex justify-between items-center mb-8">
             <div>
-                 <h1 className="text-4xl font-bold text-black">Transações</h1>
-                <p className="text-gray-600">
+                 <h1 className="text-4xl font-bold text-foreground">Transações</h1>
+                <p className="text-muted-foreground">
                   Gerencie suas contas a pagar e a receber e mantenha tudo organizado.
                 </p>
             </div>
@@ -43,7 +43,7 @@ export default function TransacoesPage() {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[700px]">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold text-black">Registrar Nova Transação</DialogTitle>
+                        <DialogTitle className="text-2xl font-bold text-foreground">Registrar Nova Transação</DialogTitle>
                         <DialogDescription>
                             Preencha as informações para registrar uma nova movimentação financeira.
                         </DialogDescription>
@@ -53,7 +53,7 @@ export default function TransacoesPage() {
             </Dialog>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-gray-200">
+        <div className="bg-card p-6 rounded-2xl border-border">
             <TransactionTable key={refreshCounter} />
         </div>
       </div>
