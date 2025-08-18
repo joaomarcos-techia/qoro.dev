@@ -21,7 +21,8 @@ import { z } from 'zod';
 import { AccountSchema, AccountProfileSchema, TransactionSchema, TransactionProfileSchema, UpdateAccountSchema, UpdateTransactionSchema, BillSchema, BillProfileSchema, UpdateBillSchema } from '@/ai/schemas';
 import * as financeService from '@/services/financeService';
 import * as transactionService from '@/services/transactionService';
-import * as billService from '@/services/billService';
+import { createBill as createBillService, listBills as listBillsService, updateBill as updateBillService, deleteBill as deleteBillService } from '@/services/billService';
+
 
 const ActorSchema = z.object({ actor: z.string() });
 
@@ -137,7 +138,7 @@ const createBillFlow = ai.defineFlow(
         inputSchema: BillSchema.extend(ActorSchema.shape),
         outputSchema: z.object({ id: z.string() })
     },
-    async (input) => billService.createBill(input, input.actor)
+    async (input) => createBillService(input, input.actor)
 );
 
 const listBillsFlow = ai.defineFlow(
@@ -146,7 +147,7 @@ const listBillsFlow = ai.defineFlow(
         inputSchema: ActorSchema,
         outputSchema: z.array(BillProfileSchema)
     },
-    async ({ actor }) => billService.listBills(actor)
+    async ({ actor }) => listBillsService(actor)
 );
 
 const updateBillFlow = ai.defineFlow(
@@ -155,7 +156,7 @@ const updateBillFlow = ai.defineFlow(
         inputSchema: UpdateBillSchema.extend(ActorSchema.shape),
         outputSchema: z.object({ id: z.string() })
     },
-    async (input) => billService.updateBill(input, input.actor)
+    async (input) => updateBillService(input, input.actor)
 );
 
 const deleteBillFlow = ai.defineFlow(
@@ -164,7 +165,7 @@ const deleteBillFlow = ai.defineFlow(
         inputSchema: DeleteBillInputSchema,
         outputSchema: z.object({ id: z.string(), success: z.boolean() })
     },
-    async (input) => billService.deleteBill(input.billId, input.actor)
+    async (input) => deleteBillService(input.billId, input.actor)
 );
 
 // Exported functions (client-callable wrappers)
