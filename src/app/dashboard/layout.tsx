@@ -143,7 +143,7 @@ export default function DashboardLayout({
                         <Link
                         href={item.href}
                         className={`flex items-center px-4 py-3 my-1 rounded-xl text-sm font-medium transition-all duration-200 group ${
-                            pathname.startsWith(item.href)
+                            pathname === item.href
                             ? `${color} text-black shadow-lg ${shadowColor}`
                             : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                         }`}
