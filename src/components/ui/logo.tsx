@@ -1,4 +1,3 @@
-
 'use client';
 import Image from 'next/image';
 
@@ -6,7 +5,7 @@ interface LogoProps {
   height?: number;
 }
 
-export function Logo({ height = 32 }: LogoProps) {
+export function Logo({ height = 28 }: LogoProps) {
   // A proporção da imagem original é aproximadamente 3.75:1 (largura:altura)
   const width = height * 3.75; 
 
