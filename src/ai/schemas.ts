@@ -280,24 +280,3 @@ export const TransactionProfileSchema = TransactionSchema.extend({
     customerName: z.string().optional(), // Denormalized for display
 });
 export type TransactionProfile = z.infer<typeof TransactionProfileSchema>;
-
-export const BillSchema = z.object({
-    type: z.enum(['payable', 'receivable']),
-    description: z.string().min(1, 'A descrição é obrigatória.'),
-    amount: z.coerce.number().positive('O valor deve ser maior que zero.'),
-    dueDate: z.union([z.string().datetime(), z.date()]),
-    status: z.enum(['pending', 'paid', 'overdue']).default('pending'),
-    contactId: z.string().min(1, 'É necessário selecionar um cliente ou fornecedor.'),
-    paymentDate: z.union([z.string().datetime(), z.date()]).optional().nullable(),
-});
-
-export const UpdateBillSchema = BillSchema.extend({
-    id: z.string(),
-});
-
-export const BillProfileSchema = BillSchema.extend({
-    id: z.string(),
-    createdAt: z.string(),
-    contactName: z.string().optional(),
-});
-export type BillProfile = z.infer<typeof BillProfileSchema>;
