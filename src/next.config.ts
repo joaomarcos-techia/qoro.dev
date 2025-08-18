@@ -1,1 +1,1 @@
-// This file has been renamed to next.config.js to resolve a configuration conflict.
+// This file has been removed as part of the project feature deletion.
