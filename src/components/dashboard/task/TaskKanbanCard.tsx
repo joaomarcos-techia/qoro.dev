@@ -16,13 +16,14 @@ import {
 } from "@/components/ui/alert-dialog"
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar, Flag, User, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Calendar, Flag, User, ChevronLeft, ChevronRight, Trash2, Edit } from 'lucide-react';
 
 interface TaskKanbanCardProps {
   task: TaskProfile;
   stageIds: string[];
   onMove: (taskId: string, newStatus: TaskProfile['status']) => void;
   onDelete: (taskId: string) => void;
+  onEdit: (task: TaskProfile) => void;
 }
 
 const priorityMap: Record<TaskProfile['priority'], { text: string; color: string }> = {
@@ -32,7 +33,7 @@ const priorityMap: Record<TaskProfile['priority'], { text: string; color: string
     urgent: { text: 'Urgente', color: 'bg-red-500/20 text-red-300 border-red-500/30' },
 };
 
-export function TaskKanbanCard({ task, stageIds, onMove, onDelete }: TaskKanbanCardProps) {
+export function TaskKanbanCard({ task, stageIds, onMove, onDelete, onEdit }: TaskKanbanCardProps) {
   
   const priorityInfo = priorityMap[task.priority] || priorityMap.medium;
   const currentStageIndex = stageIds.findIndex(id => id === task.status);
@@ -71,6 +72,9 @@ export function TaskKanbanCard({ task, stageIds, onMove, onDelete }: TaskKanbanC
         <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMove('prev')} disabled={currentStageIndex <= 0}>
                 <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:bg-secondary/80 hover:text-foreground" title="Editar Tarefa" onClick={() => onEdit(task)}>
+                <Edit className="w-4 h-4" />
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>

@@ -25,6 +25,7 @@ export default function MinhaListaPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<TaskProfile | null>(null);
   
   const fetchTasks = useCallback(() => {
     if (currentUser) {
@@ -55,11 +56,27 @@ export default function MinhaListaPage() {
     }
   }, [currentUser, fetchTasks]);
 
+  const handleModalOpenChange = (open: boolean) => {
+    setIsModalOpen(open);
+    if (!open) {
+        setSelectedTask(null);
+    }
+  }
 
   const handleTaskAction = () => {
-    setIsModalOpen(false);
+    handleModalOpenChange(false);
     fetchTasks(); // Refresh the list after an action
   };
+
+  const handleEditTask = (task: TaskProfile) => {
+    setSelectedTask(task);
+    setIsModalOpen(true);
+  };
+
+  const handleAddTask = () => {
+    setSelectedTask(null);
+    setIsModalOpen(true);
+  }
   
   return (
     <div>
@@ -70,27 +87,27 @@ export default function MinhaListaPage() {
             Adicione, gerencie e acompanhe todas as suas atividades.
           </p>
         </div>
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
           <DialogTrigger asChild>
-            <Button className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
+            <Button onClick={handleAddTask} className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
               <PlusCircle className="mr-2 w-5 h-5" />
               Criar Tarefa
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-foreground">Criar Nova Tarefa</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-foreground">{selectedTask ? 'Editar Tarefa' : 'Criar Nova Tarefa'}</DialogTitle>
               <DialogDescription>
-                Preencha as informações abaixo para adicionar uma nova tarefa.
+                {selectedTask ? 'Altere as informações da tarefa abaixo.' : 'Preencha as informações abaixo para adicionar uma nova tarefa.'}
               </DialogDescription>
             </DialogHeader>
-            <TaskForm onTaskCreated={handleTaskAction} />
+            <TaskForm onTaskAction={handleTaskAction} task={selectedTask} />
           </DialogContent>
         </Dialog>
       </div>
 
        <div className="bg-card p-6 rounded-2xl border-border">
-            <TaskTable data={tasks} isLoading={isLoading} error={error} onRefresh={fetchTasks} />
+            <TaskTable data={tasks} isLoading={isLoading} error={error} onRefresh={fetchTasks} onEdit={handleEditTask} />
         </div>
     </div>
   );

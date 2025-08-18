@@ -7,10 +7,11 @@
  * - getDashboardMetrics - Retrieves key metrics for the Task dashboard.
  * - updateTaskStatus - Updates the status of a task.
  * - deleteTask - Deletes a task permanently.
+ * - updateTask - Updates the details of a task.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { TaskSchema, TaskProfileSchema } from '@/ai/schemas';
+import { TaskSchema, TaskProfileSchema, UpdateTaskSchema } from '@/ai/schemas';
 import * as taskService from '@/services/taskService';
 
 const ActorSchema = z.object({ actor: z.string() });
@@ -77,6 +78,15 @@ const deleteTaskFlow = ai.defineFlow(
     async (input) => taskService.deleteTask(input.taskId, input.actor)
 );
 
+const updateTaskFlow = ai.defineFlow(
+    {
+        name: 'updateTaskFlow',
+        inputSchema: UpdateTaskSchema.extend(ActorSchema.shape),
+        outputSchema: z.object({ id: z.string() })
+    },
+    async (input) => taskService.updateTask(input.id, input, input.actor)
+);
+
 
 // Exported functions (client-callable wrappers)
 export async function createTask(input: z.infer<typeof TaskSchema> & z.infer<typeof ActorSchema>): Promise<{ id: string; }> {
@@ -97,4 +107,8 @@ export async function updateTaskStatus(input: z.infer<typeof UpdateTaskStatusInp
 
 export async function deleteTask(input: z.infer<typeof DeleteTaskInputSchema>): Promise<{ id: string; success: boolean }> {
     return deleteTaskFlow(input);
+}
+
+export async function updateTask(input: z.infer<typeof UpdateTaskSchema> & z.infer<typeof ActorSchema>): Promise<{ id: string; }> {
+    return updateTaskFlow(input);
 }

@@ -180,6 +180,10 @@ export const TaskSchema = z.object({
   responsibleUserId: z.string().optional(),
 });
 
+export const UpdateTaskSchema = TaskSchema.extend({
+    id: z.string(),
+});
+
 export const TaskProfileSchema = TaskSchema.extend({
     id: z.string(),
     createdAt: z.string(),

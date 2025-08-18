@@ -12,14 +12,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { createTask } from '@/ai/flows/task-management';
+import { createTask, updateTask } from '@/ai/flows/task-management';
 import { listUsers } from '@/ai/flows/user-management';
-import { TaskSchema, UserProfile } from '@/ai/schemas';
+import { TaskSchema, TaskProfile, UserProfile } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Loader2, AlertCircle, CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 const FormSchema = TaskSchema.extend({
     dueDate: z.union([z.string().datetime(), z.date(), z.null()]).optional(),
@@ -28,14 +28,17 @@ type FormValues = z.infer<typeof FormSchema>;
 
 
 type TaskFormProps = {
-  onTaskCreated: () => void;
+  onTaskAction: () => void;
+  task?: TaskProfile | null;
 };
 
-export function TaskForm({ onTaskCreated }: TaskFormProps) {
+export function TaskForm({ onTaskAction, task }: TaskFormProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<UserProfile[]>([]);
+  
+  const isEditMode = !!task;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -61,21 +64,31 @@ export function TaskForm({ onTaskCreated }: TaskFormProps) {
     register,
     handleSubmit,
     control,
+    reset,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
-    defaultValues: {
-      status: 'todo',
-      priority: 'medium',
-      description: '',
-      responsibleUserId: undefined,
-      dueDate: null,
-    },
   });
+
+  useEffect(() => {
+    if (task) {
+        const dueDate = task.dueDate ? parseISO(task.dueDate.toString()) : null;
+        reset({ ...task, dueDate });
+    } else {
+        reset({
+            title: '',
+            description: '',
+            status: 'todo',
+            priority: 'medium',
+            responsibleUserId: undefined,
+            dueDate: null,
+        });
+    }
+  }, [task, reset]);
 
   const onSubmit = async (data: FormValues) => {
     if (!currentUser) {
-      setError('Você precisa estar autenticado para criar uma tarefa.');
+      setError('Você precisa estar autenticado para realizar esta ação.');
       return;
     }
     setIsLoading(true);
@@ -86,11 +99,16 @@ export function TaskForm({ onTaskCreated }: TaskFormProps) {
         dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
         responsibleUserId: data.responsibleUserId || undefined,
       };
-      await createTask({ ...submissionData, actor: currentUser.uid });
-      onTaskCreated();
+
+      if (isEditMode) {
+        await updateTask({ ...submissionData, id: task.id, actor: currentUser.uid });
+      } else {
+        await createTask({ ...submissionData, actor: currentUser.uid });
+      }
+      onTaskAction();
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Falha ao criar a tarefa. Tente novamente.');
+      setError(err.message || `Falha ao ${isEditMode ? 'atualizar' : 'criar'} a tarefa. Tente novamente.`);
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +132,7 @@ export function TaskForm({ onTaskCreated }: TaskFormProps) {
             name="status"
             control={control}
             render={({ field }) => (
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o status" />
                 </SelectTrigger>
@@ -134,7 +152,7 @@ export function TaskForm({ onTaskCreated }: TaskFormProps) {
             name="priority"
             control={control}
             render={({ field }) => (
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger>
                     <SelectValue placeholder="Selecione a prioridade" />
                     </SelectTrigger>
@@ -208,7 +226,7 @@ export function TaskForm({ onTaskCreated }: TaskFormProps) {
       <div className="flex justify-end pt-4">
         <Button type="submit" disabled={isLoading} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
           {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
-          {isLoading ? 'Salvando...' : 'Salvar Tarefa'}
+          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : 'Salvar Tarefa')}
         </Button>
       </div>
     </form>

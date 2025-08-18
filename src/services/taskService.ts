@@ -6,7 +6,7 @@
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { TaskSchema, TaskProfileSchema } from '@/ai/schemas';
+import { TaskSchema, TaskProfileSchema, UpdateTaskSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import { adminDb } from '@/lib/firebase-admin';
 
@@ -27,6 +27,26 @@ export const createTask = async (input: z.infer<typeof TaskSchema>, actorUid: st
     const taskRef = await adminDb.collection('tasks').add(newTaskData);
 
     return { id: taskRef.id };
+};
+
+export const updateTask = async (taskId: string, input: z.infer<typeof UpdateTaskSchema>, actorUid: string) => {
+    const { organizationId } = await getAdminAndOrg(actorUid);
+    const taskRef = adminDb.collection('tasks').doc(taskId);
+
+    const taskDoc = await taskRef.get();
+    if (!taskDoc.exists || taskDoc.data()?.companyId !== organizationId) {
+        throw new Error('Tarefa não encontrada ou acesso negado.');
+    }
+
+    const { id, ...updateData } = input;
+    
+    await taskRef.update({
+        ...updateData,
+        dueDate: updateData.dueDate ? new Date(updateData.dueDate) : null,
+        updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    return { id: taskId };
 };
 
 export const listTasks = async (actorUid: string): Promise<z.infer<typeof TaskProfileSchema>[]> => {

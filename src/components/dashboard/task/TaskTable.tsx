@@ -65,7 +65,7 @@ const statusMap: Record<TaskProfile['status'], { text: string; color: string }> 
 };
 
 
-export function TaskTable({ data, isLoading, error, onRefresh }: { data: TaskProfile[], isLoading: boolean, error: string | null, onRefresh: () => void }) {
+export function TaskTable({ data, isLoading, error, onRefresh, onEdit }: { data: TaskProfile[], isLoading: boolean, error: string | null, onRefresh: () => void, onEdit: (task: TaskProfile) => void }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [currentUser, setCurrentUser] = React.useState<FirebaseUser | null>(null);
@@ -148,7 +148,7 @@ export function TaskTable({ data, isLoading, error, onRefresh }: { data: TaskPro
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onEdit(task)}>
                         <Edit className="mr-2 h-4 w-4" />
                         Editar Tarefa
                     </DropdownMenuItem>
