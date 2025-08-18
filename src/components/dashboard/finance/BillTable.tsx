@@ -108,7 +108,11 @@ export function BillTable({ onEdit }: { onEdit: (bill: BillProfile) => void; }) 
     },
     {
       accessorKey: 'dueDate',
-      header: 'Vencimento',
+      header: ({ column }) => (
+        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+            Vencimento <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       cell: ({ row }) => format(new Date(row.getValue('dueDate')), "dd/MM/yyyy"),
     },
     {
@@ -188,9 +192,9 @@ export function BillTable({ onEdit }: { onEdit: (bill: BillProfile) => void; }) 
       try {
         const result = await listBills({ actor: currentUser.uid });
         setData(result);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to fetch bills:', err);
-        setError('Não foi possível carregar as contas a pagar/receber.');
+        setError(err.message || 'Não foi possível carregar as contas a pagar/receber.');
       } finally {
         setIsLoading(false);
       }
