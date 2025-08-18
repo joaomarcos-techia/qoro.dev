@@ -64,10 +64,10 @@ const statusMap: Record<BillProfile['status'], { text: string; color: string }> 
 
 interface BillTableProps {
     onEdit: (bill: BillProfile) => void;
-    key: number;
+    refreshKey: number;
 }
 
-export function BillTable({ onEdit, key: refreshKey }: BillTableProps) {
+export function BillTable({ onEdit, refreshKey }: BillTableProps) {
   const [data, setData] = React.useState<BillProfile[]>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);

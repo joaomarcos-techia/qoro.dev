@@ -70,7 +70,7 @@ export default function PendenciasPage() {
       </div>
 
       <div className="bg-card p-6 rounded-2xl border-border">
-        <BillTable key={refreshKey} onEdit={handleEditBill} />
+        <BillTable onEdit={handleEditBill} refreshKey={refreshKey} />
       </div>
     </div>
   );
