@@ -204,16 +204,16 @@ export async function getDashboardMetrics(input: z.infer<typeof ActorSchema>): P
     return getDashboardMetricsFlow(input);
 }
 
-export async function createBill(input: z.infer<typeof BillSchema>, actor: string): Promise<{ id: string }> {
-    return createBillFlow({ ...input, actor });
+export async function createBill(input: z.infer<typeof BillSchema> & { actor: string }): Promise<{ id: string }> {
+    return createBillFlow(input);
 }
 
 export async function listBills(input: z.infer<typeof ActorSchema>): Promise<z.infer<typeof BillProfileSchema>[]> {
     return listBillsFlow(input);
 }
 
-export async function updateBill(input: z.infer<typeof UpdateBillSchema>, actor: string): Promise<{ id: string }> {
-    return updateBillFlow({ ...input, actor });
+export async function updateBill(input: z.infer<typeof UpdateBillSchema> & { actor: string }): Promise<{ id: string }> {
+    return updateBillFlow(input);
 }
 
 export async function deleteBill(input: z.infer<typeof DeleteBillInputSchema>): Promise<{ id: string; success: boolean }> {
