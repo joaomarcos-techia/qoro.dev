@@ -1,10 +1,42 @@
 
 'use client';
 
+import { useState } from 'react';
+import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Receipt } from 'lucide-react';
+import { BillTable } from '@/components/dashboard/finance/BillTable';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { BillForm } from '@/components/dashboard/finance/BillForm';
+import { BillProfile } from '@/ai/schemas';
+
 
 export default function ContasAPagarPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBill, setSelectedBill] = useState<BillProfile | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleAction = () => {
+    setIsModalOpen(false);
+    setSelectedBill(null);
+    setRefreshKey(prev => prev + 1);
+  };
+  
+  const handleAdd = () => {
+    setSelectedBill(null);
+    setIsModalOpen(true);
+  };
+  
+  const handleEdit = (bill: BillProfile) => {
+    setSelectedBill(bill);
+    setIsModalOpen(true);
+  };
 
   return (
     <div>
@@ -15,20 +47,27 @@ export default function ContasAPagarPage() {
             Gerencie seus recebimentos e pagamentos futuros para nunca perder um prazo.
           </p>
         </div>
-        <Button className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
-            <PlusCircle className="mr-2 w-5 h-5" />
-            Lançar Conta
-        </Button>
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogTrigger asChild>
+                <Button onClick={handleAdd} className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
+                    <PlusCircle className="mr-2 w-5 h-5" />
+                    Lançar Conta
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[700px]">
+                <DialogHeader>
+                    <DialogTitle className="text-2xl font-bold text-foreground">{selectedBill ? 'Editar Conta' : 'Lançar Nova Conta'}</DialogTitle>
+                    <DialogDescription>
+                        {selectedBill ? 'Atualize as informações da conta abaixo.' : 'Registre uma nova conta a pagar ou a receber.'}
+                    </DialogDescription>
+                </DialogHeader>
+                <BillForm bill={selectedBill} onAction={handleAction} />
+            </DialogContent>
+        </Dialog>
       </div>
 
       <div className="bg-card p-6 rounded-2xl border-border">
-        <div className="flex flex-col items-center justify-center text-center min-h-[400px]">
-            <Receipt className="w-16 h-16 text-muted-foreground/30 mb-4" />
-            <h3 className="text-xl font-bold text-foreground">Nenhuma conta futura registrada</h3>
-            <p className="text-muted-foreground mt-2 max-w-md">
-                Clique em "Lançar Conta" para registrar seus próximos pagamentos e recebimentos e manter seu fluxo de caixa sob controle.
-            </p>
-        </div>
+        <BillTable key={refreshKey} onEdit={handleEdit} />
       </div>
     </div>
   );

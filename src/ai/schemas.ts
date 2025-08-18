@@ -243,7 +243,7 @@ export const TransactionSchema = z.object({
     type: z.enum(['income', 'expense']),
     amount: z.coerce.number().positive('O valor deve ser maior que zero.'),
     description: z.string().min(1, 'A descrição é obrigatória.'),
-    date: z.date(),
+    date: z.union([z.string().datetime(), z.date()]),
     category: z.string().min(1, "A categoria é obrigatória."),
     status: z.enum(['pending', 'paid', 'cancelled']).default('paid'),
     paymentMethod: z.enum(['cash', 'credit_card', 'debit_card', 'pix', 'bank_transfer', 'boleto']),
@@ -263,6 +263,30 @@ export const TransactionProfileSchema = TransactionSchema.extend({
     customerName: z.string().optional(), // Denormalized for display
 });
 export type TransactionProfile = z.infer<typeof TransactionProfileSchema>;
+
+export const BillSchema = z.object({
+    description: z.string().min(1, 'A descrição é obrigatória.'),
+    amount: z.coerce.number().positive('O valor deve ser maior que zero.'),
+    type: z.enum(['payable', 'receivable']),
+    status: z.enum(['pending', 'paid', 'overdue', 'cancelled']).default('pending'),
+    dueDate: z.date(),
+    paymentDate: z.date().optional().nullable(),
+    contactId: z.string().optional(), // Can be customer or supplier ID
+    contactType: z.enum(['customer', 'supplier']).optional(),
+    accountId: z.string().optional(), // The account from which it was paid/received
+});
+
+export const UpdateBillSchema = BillSchema.extend({
+    id: z.string(),
+});
+
+export const BillProfileSchema = BillSchema.extend({
+    id: z.string(),
+    createdAt: z.string(),
+    contactName: z.string().optional(),
+});
+export type BillProfile = z.infer<typeof BillProfileSchema>;
+
 
 export const SupplierSchema = z.object({
     name: z.string().min(1, 'O nome é obrigatório.'),
