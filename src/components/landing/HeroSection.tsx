@@ -1,7 +1,7 @@
 
 'use client';
 
-import { ArrowRight, PlayCircle } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { DashboardMockup } from './DashboardMockup';
 
@@ -23,16 +23,12 @@ export function HeroSection() {
         </p>
         
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 animate-fade-in-up animation-delay-600">
-          <Link href="/signup">
+          <Link href="/#precos">
             <div className="bg-primary text-primary-foreground px-8 py-4 rounded-full transition-all duration-300 shadow-lg hover:shadow-primary/40 hover:-translate-y-1 group flex items-center justify-center text-lg font-semibold">
-              Começar grátis por 14 dias
+              Começar gratuitamente
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
-          <a href="#produtos" className="group flex items-center text-white/80 hover:text-white transition-colors">
-            <PlayCircle className="w-6 h-6 mr-2 text-primary group-hover:scale-110 transition-transform"/>
-            <span className="font-medium">Ver como funciona</span>
-          </a>
         </div>
         
         <div className="mt-20 max-w-5xl mx-auto animate-float">
