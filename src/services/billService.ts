@@ -30,14 +30,14 @@ export const listBills = async (actorUid: string): Promise<BillProfile[]> => {
 
     if (billsSnapshot.empty) return [];
     
-    const customerIds = [...new Set(billsSnapshot.docs.map(doc => doc.data().contactId).filter(id => id))];
+    const contactIds = [...new Set(billsSnapshot.docs.map(doc => doc.data().contactId).filter(id => id))];
     const contacts: Record<string, { name?: string }> = {};
 
-    if (customerIds.length > 0) {
-        const customersSnapshot = await adminDb.collection('customers').where('__name__', 'in', customerIds).get();
+    if (contactIds.length > 0) {
+        const customersSnapshot = await adminDb.collection('customers').where('__name__', 'in', contactIds).get();
         customersSnapshot.forEach(doc => { contacts[doc.id] = { name: doc.data().name }; });
 
-        const suppliersSnapshot = await adminDb.collection('suppliers').where('__name__', 'in', customerIds).get();
+        const suppliersSnapshot = await adminDb.collection('suppliers').where('__name__', 'in', contactIds).get();
         suppliersSnapshot.forEach(doc => { contacts[doc.id] = { name: doc.data().name }; });
     }
 

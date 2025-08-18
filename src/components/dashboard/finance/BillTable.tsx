@@ -47,7 +47,7 @@ import { listBills, deleteBill } from '@/ai/flows/bill-management';
 import type { BillProfile } from '@/ai/schemas';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -109,7 +109,7 @@ export function BillTable({ onEdit }: { onEdit: (bill: BillProfile) => void; }) 
     {
       accessorKey: 'dueDate',
       header: 'Vencimento',
-      cell: ({ row }) => format(row.getValue('dueDate') as Date, "dd/MM/yyyy"),
+      cell: ({ row }) => format(new Date(row.getValue('dueDate')), "dd/MM/yyyy"),
     },
     {
       accessorKey: 'contactName',
@@ -187,9 +187,7 @@ export function BillTable({ onEdit }: { onEdit: (bill: BillProfile) => void; }) 
       setError(null);
       try {
         const result = await listBills({ actor: currentUser.uid });
-        // Sort by due date client-side
-        const sortedData = result.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-        setData(sortedData);
+        setData(result);
       } catch (err) {
         console.error('Failed to fetch bills:', err);
         setError('Não foi possível carregar as contas a pagar/receber.');
