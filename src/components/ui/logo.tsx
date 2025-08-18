@@ -1,4 +1,3 @@
-
 'use client';
 import Image from 'next/image';
 
@@ -7,16 +6,18 @@ interface LogoProps {
 }
 
 export function Logo({ height = 32 }: LogoProps) {
-  // Calculate width based on a 102:32 aspect ratio of the SVG
-  const width = (height / 32) * 102;
+  const width = (height / 32) * 102; // Mantém a proporção de 102:32
 
   return (
-    <div className="flex items-center justify-center" style={{ height: `${height}px` }}>
+    <div 
+      className="relative" 
+      style={{ width: `${width}px`, height: `${height}px` }}
+    >
       <Image
         src="/logo.svg"
         alt="Qoro Logo"
-        width={width}
-        height={height}
+        fill
+        sizes={`${width}px`}
         priority
       />
     </div>
