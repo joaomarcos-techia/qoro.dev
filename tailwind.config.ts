@@ -101,7 +101,7 @@ export default {
         'fade-in-up': 'fade-in-up 0.8s ease-out forwards',
         'float': 'float 6s ease-in-out infinite',
         'background-pan': 'background-pan 15s linear infinite',
-        'infinite-scroll': 'infinite-scroll 40s linear infinite',
+        'infinite-scroll': 'infinite-scroll 25s linear infinite',
       },
     },
   },
