@@ -1,1 +1,191 @@
-// This file has been removed as part of the feature deletion.
+
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { createBill, updateBill } from '@/ai/flows/finance-management';
+import { listCustomers, listSuppliers } from '@/ai/flows/crm-management';
+import { BillSchema, CustomerProfile, SupplierProfile, BillProfile } from '@/ai/schemas';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { Loader2, AlertCircle, CalendarIcon, Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+type BillFormProps = {
+  onAction: () => void;
+  bill?: BillProfile | null;
+};
+
+const FormSchema = BillSchema.extend({
+    dueDate: z.date(),
+});
+type FormValues = z.infer<typeof FormSchema>;
+
+export function BillForm({ onAction, bill }: BillFormProps) {
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [customers, setCustomers] = useState<CustomerProfile[]>([]);
+  const [suppliers, setSuppliers] = useState<SupplierProfile[]>([]);
+  const [entitySearch, setEntitySearch] = useState('');
+  const [isEntityPopoverOpen, setIsEntityPopoverOpen] = useState(false);
+  
+  const isEditMode = !!bill;
+
+  const {
+    register, handleSubmit, control, reset, watch, setValue, formState: { errors },
+  } = useForm<FormValues>({
+    resolver: zodResolver(FormSchema),
+  });
+
+  const billType = watch('type');
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+  
+  useEffect(() => {
+    if (currentUser) {
+        const fetchData = async () => {
+            try {
+                const [customersData, suppliersData] = await Promise.all([
+                    listCustomers({ actor: currentUser.uid }),
+                    listSuppliers({ actor: currentUser.uid })
+                ]);
+                setCustomers(customersData);
+                setSuppliers(suppliersData);
+            } catch (err) {
+                 console.error("Failed to load customers or suppliers", err);
+                 setError("Não foi possível carregar os dados necessários. Tente novamente.");
+            }
+        };
+        fetchData();
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (bill) {
+        reset({ ...bill, dueDate: parseISO(bill.dueDate) });
+    } else {
+        reset({
+            type: 'payable',
+            status: 'pending',
+            dueDate: new Date(),
+            description: '',
+            amount: 0,
+            entityId: '',
+            entityType: 'supplier',
+            notes: ''
+        });
+    }
+  }, [bill, reset]);
+  
+  // Reset entity when type changes
+  useEffect(() => {
+      setValue('entityId', undefined);
+      setValue('entityType', billType === 'payable' ? 'supplier' : 'customer');
+  }, [billType, setValue]);
+
+  const onSubmit = async (data: FormValues) => {
+    if (!currentUser) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+        const submissionData = { ...data, dueDate: data.dueDate.toISOString() };
+        if (isEditMode) {
+            await updateBill({ ...submissionData, id: bill.id, actor: currentUser.uid });
+        } else {
+            await createBill({ ...submissionData, actor: currentUser.uid });
+        }
+      onAction();
+    } catch (err) {
+      console.error(err);
+      setError(`Falha ao ${isEditMode ? 'atualizar' : 'criar'} a conta. Tente novamente.`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const entities = billType === 'payable' ? suppliers : customers;
+  const filteredEntities = entities.filter(e => e.name.toLowerCase().includes(entitySearch.toLowerCase()));
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="description">Descrição*</Label>
+          <Input id="description" {...register('description')} placeholder="Ex: Aluguel do escritório, Venda do produto X" />
+          {errors.description && <p className="text-destructive text-sm">{errors.description.message}</p>}
+        </div>
+        <div className="space-y-2">
+          <Label>Tipo*</Label>
+          <Controller name="type" control={control} render={({ field }) => (
+            <Select onValueChange={field.onChange} value={field.value}><SelectTrigger><SelectValue/></SelectTrigger>
+                <SelectContent><SelectItem value="payable">A Pagar</SelectItem><SelectItem value="receivable">A Receber</SelectItem></SelectContent>
+            </Select>
+          )}/>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="amount">Valor (R$)*</Label>
+          <Input id="amount" type="number" step="0.01" {...register('amount')} placeholder="0,00" />
+          {errors.amount && <p className="text-destructive text-sm">{errors.amount.message}</p>}
+        </div>
+        <div className="space-y-2">
+          <Label>Associar a</Label>
+            <Controller name="entityId" control={control} render={({ field }) => (
+                <Popover open={isEntityPopoverOpen} onOpenChange={setIsEntityPopoverOpen}>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start font-normal">
+                            {field.value ? entities.find(e => e.id === field.value)?.name : `Selecione ${billType === 'payable' ? 'Fornecedor' : 'Cliente'}`}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0">
+                        <div className="p-2 border-b"><Input placeholder="Buscar..." value={entitySearch} onChange={(e) => setEntitySearch(e.target.value)} /></div>
+                        <div className="max-h-[200px] overflow-y-auto">
+                            {filteredEntities.map(entity => (
+                                <div key={entity.id} onClick={() => { field.onChange(entity.id); setIsEntityPopoverOpen(false); }} className="p-2 hover:bg-accent cursor-pointer text-sm">{entity.name}</div>
+                            ))}
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            )}/>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="dueDate">Data de Vencimento*</Label>
+          <Controller name="dueDate" control={control} render={({ field }) => (
+            <Popover>
+                <PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}</Button></PopoverTrigger>
+                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+            </Popover>
+          )}/>
+           {errors.dueDate && <p className="text-destructive text-sm">{errors.dueDate.message}</p>}
+        </div>
+        <div className="space-y-2 md:col-span-2">
+            <Label>Notas/Observações</Label>
+            <Textarea {...register('notes')} placeholder="Ex: Ref. ao mês de Julho, NF 12345"/>
+        </div>
+      </div>
+       {error && <div className="bg-destructive/20 text-destructive-foreground p-4 rounded-lg flex items-center mt-4"><AlertCircle className="w-5 h-5 mr-3" /><span className="text-sm">{error}</span></div>}
+      <div className="flex justify-end pt-4">
+        <Button type="submit" disabled={isLoading} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
+          {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
+          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : 'Salvar Conta')}
+        </Button>
+      </div>
+    </form>
+  );
+}
