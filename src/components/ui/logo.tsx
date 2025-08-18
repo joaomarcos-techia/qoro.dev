@@ -1,3 +1,4 @@
+
 'use client';
 import Image from 'next/image';
 
@@ -6,7 +7,7 @@ interface LogoProps {
 }
 
 export function Logo({ height = 32 }: LogoProps) {
-  const width = (height / 32) * 120; // Adjusted aspect ratio
+  const width = (height / 32) * 100;
 
   return (
     <div 
