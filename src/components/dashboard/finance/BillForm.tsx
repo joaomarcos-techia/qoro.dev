@@ -13,7 +13,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createBill, updateBill } from '@/ai/flows/finance-management';
-import { listCustomers, listSuppliers } from '@/ai/flows/crm-management';
+import { listCustomers } from '@/ai/flows/crm-management';
+import { listSuppliers } from '@/ai/flows/supplier-management';
 import { BillSchema, CustomerProfile, SupplierProfile, BillProfile } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -79,7 +80,7 @@ export function BillForm({ onAction, bill }: BillFormProps) {
 
   useEffect(() => {
     if (bill) {
-        reset({ ...bill, dueDate: parseISO(bill.dueDate) });
+        reset({ ...bill, dueDate: parseISO(bill.dueDate as unknown as string) });
     } else {
         reset({
             type: 'payable',
