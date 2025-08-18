@@ -140,16 +140,16 @@ body {
   --fc-border-color: hsl(var(--border));
   --fc-daygrid-event-dot-width: 8px;
   --fc-list-event-dot-width: 10px;
-  --fc-event-border-color: hsl(var(--primary));
+  --fc-event-border-color: transparent;
   --fc-event-text-color: hsl(var(--primary-foreground));
   --fc-event-bg-color: hsl(var(--primary));
-  --fc-today-bg-color: hsla(var(--primary) / 0.1);
+  --fc-today-bg-color: hsl(var(--card));
 
   @apply text-sm text-foreground;
 }
 
 .fc .fc-col-header-cell-cushion {
-  @apply text-muted-foreground;
+  @apply text-muted-foreground font-semibold py-3;
 }
 
 .fc .fc-daygrid-day-number {
@@ -157,22 +157,27 @@ body {
 }
 
 .fc .fc-toolbar-title {
-  @apply text-lg font-bold text-foreground;
+  @apply text-xl font-bold text-foreground;
 }
+
 .fc .fc-button {
   @apply bg-secondary text-secondary-foreground border-border shadow-none hover:bg-secondary/80 transition-all duration-300;
 }
+
 .fc .fc-button-primary {
     @apply bg-primary text-primary-foreground hover:bg-primary/90;
 }
+
 .fc .fc-button-primary:disabled {
     @apply bg-muted text-muted-foreground;
 }
+
 .fc-day-today {
-    background-color: hsl(var(--secondary)) !important;
+    background-color: hsl(var(--secondary) / 0.5) !important;
 }
+
 .fc-event {
-    @apply p-1 rounded-md text-xs font-medium cursor-pointer border;
+    @apply p-1 rounded-md text-xs font-medium cursor-pointer border-none shadow-md;
 }
 
 /* Chart axis color for dark theme */

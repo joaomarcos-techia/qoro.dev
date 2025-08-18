@@ -80,7 +80,7 @@ export function TaskForm({ onTaskAction, task }: TaskFormProps) {
             description: '',
             status: 'todo',
             priority: 'medium',
-            responsibleUserId: undefined,
+            responsibleUserId: '', // Use empty string for controlled component
             dueDate: null,
         });
     }
@@ -172,11 +172,12 @@ export function TaskForm({ onTaskAction, task }: TaskFormProps) {
             name="responsibleUserId"
             control={control}
             render={({ field }) => (
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || ''}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um responsável" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">Ninguém</SelectItem>
                   {users.map(user => (
                     <SelectItem key={user.uid} value={user.uid}>{user.name || user.email}</SelectItem>
                   ))}
@@ -201,7 +202,7 @@ export function TaskForm({ onTaskAction, task }: TaskFormProps) {
                             )}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(new Date(field.value), "PPP") : <span>Escolha uma data</span>}
+                            {field.value ? format(new Date(field.value), "PPP", {locale: ptBR}) : <span>Escolha uma data</span>}
                         </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
