@@ -69,6 +69,10 @@ export const updateTransaction = async (input: z.infer<typeof UpdateTransactionS
                 throw new Error("Acesso negado à transação.");
             }
 
+            // Garante que os valores sejam números antes do cálculo
+            const oldAmount = Number(oldData?.amount || 0);
+            const newAmount = Number(updateData.amount || 0);
+
             // Se a conta mudou, precisamos ajustar os saldos de ambas as contas.
             const oldAccountRef = adminDb.collection('accounts').doc(oldData?.accountId);
             const newAccountRef = adminDb.collection('accounts').doc(updateData.accountId);
@@ -77,20 +81,21 @@ export const updateTransaction = async (input: z.infer<typeof UpdateTransactionS
             const oldAccountDoc = await t.get(oldAccountRef);
             if (!oldAccountDoc.exists) throw new Error("Conta antiga não encontrada.");
             let oldAccountBalance = oldAccountDoc.data()!.balance;
-            oldAccountBalance += (oldData?.type === 'expense' ? oldData?.amount : -oldData?.amount);
-            t.update(oldAccountRef, { balance: oldAccountBalance });
-
+            oldAccountBalance += (oldData?.type === 'expense' ? oldAmount : -oldAmount);
+            
             // Aplicar o novo valor à nova conta
             const newAccountDoc = await t.get(newAccountRef);
             if (!newAccountDoc.exists) throw new Error("Nova conta não encontrada.");
             let newAccountBalance = newAccountDoc.data()!.balance;
-            newAccountBalance += (updateData.type === 'income' ? updateData.amount : -updateData.amount);
             
             // Se a conta antiga e a nova forem as mesmas, o saldo já foi ajustado
             if (oldData?.accountId === updateData.accountId) {
+                newAccountBalance = oldAccountBalance + (updateData.type === 'income' ? newAmount : -newAmount);
                 t.update(newAccountRef, { balance: newAccountBalance });
             } else {
-                 t.update(newAccountRef, { balance: newAccountBalance });
+                newAccountBalance += (updateData.type === 'income' ? newAmount : -newAmount);
+                t.update(oldAccountRef, { balance: oldAccountBalance });
+                t.update(newAccountRef, { balance: newAccountBalance });
             }
             
             // Finalmente, atualiza a transação
