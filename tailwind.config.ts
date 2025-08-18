@@ -90,6 +90,10 @@ export default {
             '50%': { 'background-position': '100% 50%' },
             '100%': { 'background-position': '0% 50%' },
         },
+        'infinite-scroll': {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(-100%)' },
+        }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -97,6 +101,7 @@ export default {
         'fade-in-up': 'fade-in-up 0.8s ease-out forwards',
         'float': 'float 6s ease-in-out infinite',
         'background-pan': 'background-pan 15s linear infinite',
+        'infinite-scroll': 'infinite-scroll 40s linear infinite',
       },
     },
   },

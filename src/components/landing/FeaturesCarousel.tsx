@@ -4,6 +4,7 @@
 import { useKeenSlider } from 'keen-slider/react';
 import 'keen-slider/keen-slider.min.css';
 import { Eye, BrainCircuit, Rocket, ShieldCheck, Link, Scaling } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const features = [
   {
@@ -44,44 +45,45 @@ const features = [
   },
 ];
 
-const animation = { duration: 20000, easing: (t: number) => t }
-
 export function FeaturesCarousel() {
-  const [sliderRef] = useKeenSlider<HTMLDivElement>({
-    loop: true,
-    renderMode: "performance",
-    drag: false,
-    slides: {
-      perView: "auto",
-      spacing: 15,
-    },
-    created(s) {
-      s.moveToIdx(5, true, animation)
-    },
-    updated(s) {
-      s.moveToIdx(s.track.details.abs + 5, true, animation)
-    },
-    animationEnded(s) {
-      s.moveToIdx(s.track.details.abs + 5, true, animation)
-    },
-  })
-
   return (
-    <div ref={sliderRef} className="keen-slider">
-      {[...features, ...features].map((feature, index) => (
-         <div key={index} className="keen-slider__slide" style={{ minWidth: 250, maxWidth: 250 }}>
-            <div className="relative group flex flex-col items-center text-center p-6 bg-secondary/30 rounded-2xl border border-border transition-all duration-300 hover:bg-secondary/60 overflow-hidden h-full">
-               <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/10 via-transparent to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className={`text-black w-16 h-16 rounded-2xl flex items-center justify-center mb-5 flex-shrink-0 shadow-lg transition-transform duration-300 ${feature.colorClass}`}>
-                <feature.icon className="w-7 h-7" />
+    <div className="w-full inline-flex flex-nowrap overflow-hidden [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-200px),transparent_100%)]">
+      <ul className="flex items-center justify-center md:justify-start [&_li]:mx-4 [&_img]:max-w-none animate-infinite-scroll hover:[animation-play-state:paused]">
+        {features.map((feature, index) => {
+           const Icon = feature.icon;
+           return (
+            <li key={index} style={{ minWidth: 250, maxWidth: 250 }}>
+              <div className="relative group flex flex-col items-center text-center p-6 bg-secondary/30 rounded-2xl border border-border transition-all duration-300 hover:bg-secondary/60 overflow-hidden h-full">
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/10 via-transparent to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className={cn("text-black w-16 h-16 rounded-2xl flex items-center justify-center mb-5 flex-shrink-0 shadow-lg transition-transform duration-300", feature.colorClass)}>
+                  <Icon className="w-7 h-7" />
+                </div>
+                <div className="relative z-10">
+                  <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
+                  <p className="text-white/70 text-sm">{feature.description}</p>
+                </div>
               </div>
-              <div className="relative z-10">
-                <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
-                <p className="text-white/70 text-sm">{feature.description}</p>
+            </li>
+        )})}
+      </ul>
+      <ul className="flex items-center justify-center md:justify-start [&_li]:mx-4 [&_img]:max-w-none animate-infinite-scroll hover:[animation-play-state:paused]" aria-hidden="true">
+        {features.map((feature, index) => {
+           const Icon = feature.icon;
+           return (
+            <li key={index} style={{ minWidth: 250, maxWidth: 250 }}>
+              <div className="relative group flex flex-col items-center text-center p-6 bg-secondary/30 rounded-2xl border border-border transition-all duration-300 hover:bg-secondary/60 overflow-hidden h-full">
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/10 via-transparent to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className={cn("text-black w-16 h-16 rounded-2xl flex items-center justify-center mb-5 flex-shrink-0 shadow-lg transition-transform duration-300", feature.colorClass)}>
+                  <Icon className="w-7 h-7" />
+                </div>
+                <div className="relative z-10">
+                  <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
+                  <p className="text-white/70 text-sm">{feature.description}</p>
+                </div>
               </div>
-            </div>
-        </div>
-      ))}
+            </li>
+        )})}
+      </ul>
     </div>
   )
 }
