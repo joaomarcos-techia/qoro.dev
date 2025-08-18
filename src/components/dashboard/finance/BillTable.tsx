@@ -64,9 +64,10 @@ const statusMap: Record<BillProfile['status'], { text: string; color: string }> 
 
 interface BillTableProps {
     onEdit: (bill: BillProfile) => void;
+    key: number;
 }
 
-export function BillTable({ onEdit }: BillTableProps) {
+export function BillTable({ onEdit, key: refreshKey }: BillTableProps) {
   const [data, setData] = React.useState<BillProfile[]>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -74,8 +75,26 @@ export function BillTable({ onEdit }: BillTableProps) {
   const [error, setError] = React.useState<string | null>(null);
   const [currentUser, setCurrentUser] = React.useState<FirebaseUser | null>(null);
   
-  const [refreshKey, setRefreshKey] = React.useState(0);
-  const triggerRefresh = () => setRefreshKey(prev => prev + 1);
+  const triggerRefresh = () => {
+    if (currentUser) {
+        fetchData(currentUser);
+    }
+  }
+
+  const fetchData = React.useCallback(async (user: FirebaseUser) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+        const bills = await listBills({ actor: user.uid });
+        bills.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        setData(bills);
+    } catch (err: any) {
+        console.error('Failed to fetch bills:', err);
+        setError(err.message || 'Não foi possível carregar as pendências.');
+    } finally {
+        setIsLoading(false);
+    }
+  }, []);
   
   const handleDelete = async (billId: string) => {
     if (!currentUser) return;
@@ -196,24 +215,10 @@ export function BillTable({ onEdit }: BillTableProps) {
   }, []);
 
   React.useEffect(() => {
-    async function fetchData() {
-      if (!currentUser) return;
-      setIsLoading(true);
-      setError(null);
-      try {
-        const bills = await listBills({ actor: currentUser.uid });
-        // Sort by due date client-side
-        bills.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-        setData(bills);
-      } catch (err: any) {
-        console.error('Failed to fetch bills:', err);
-        setError(err.message || 'Não foi possível carregar as pendências.');
-      } finally {
-        setIsLoading(false);
-      }
+    if (currentUser) {
+        fetchData(currentUser);
     }
-    fetchData();
-  }, [currentUser, refreshKey]);
+  }, [currentUser, refreshKey, fetchData]);
 
   const table = useReactTable({
     data,

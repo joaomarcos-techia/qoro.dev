@@ -48,12 +48,19 @@ export function BillForm({ onAction, bill }: BillFormProps) {
     control,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
   });
   
   const billType = watch('type');
+
+  useEffect(() => {
+    // When bill type changes, clear the contactId field
+    setValue('contactId', '');
+  }, [billType, setValue]);
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -118,14 +125,14 @@ export function BillForm({ onAction, bill }: BillFormProps) {
         };
 
         if (isEditMode) {
-            await updateBill({ ...submissionData, id: bill.id }, currentUser.uid);
+            await updateBill({ ...submissionData, id: bill.id, actor: currentUser.uid });
         } else {
-            await createBill(submissionData, currentUser.uid);
+            await createBill({ ...submissionData, actor: currentUser.uid });
         }
         onAction();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError(`Falha ao ${isEditMode ? 'atualizar' : 'criar'} a pendência. Tente novamente.`);
+      setError(err.message || `Falha ao ${isEditMode ? 'atualizar' : 'criar'} a pendência. Tente novamente.`);
     } finally {
       setIsLoading(false);
     }
