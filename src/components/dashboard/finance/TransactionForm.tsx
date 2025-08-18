@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -79,7 +80,7 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
   useEffect(() => {
     if (transaction) {
         const date = transaction.date ? parseISO(transaction.date) : new Date();
-        reset({ ...transaction, date });
+        reset({ ...transaction, date, customerId: transaction.customerId || '' });
     } else {
         reset({
             type: 'expense',
