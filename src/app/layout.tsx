@@ -4,6 +4,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Qoro - Transforme seu negócio com nossa plataforma integrada',
   description: 'Qoro - Plataforma completa com CRM, monitoramento, gestão de tarefas e controle financeiro para transformar seu negócio',
+  viewport: 'width=device-width, initial-scale=1',
 };
 
 export default function RootLayout({

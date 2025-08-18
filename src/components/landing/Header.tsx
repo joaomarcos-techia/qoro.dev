@@ -4,9 +4,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/ui/logo';
+import { useState } from 'react';
+import { Menu, X } from 'lucide-react';
 
 export function Header() {
   const pathname = usePathname();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navLinks = [
     { href: '/#home', label: 'Início' },
@@ -20,6 +23,7 @@ export function Header() {
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>, href: string) => {
     if (href.startsWith('/#')) {
         e.preventDefault();
+        setIsMenuOpen(false); // Close mobile menu on link click
         const targetId = href.substring(2);
         const targetElement = document.getElementById(targetId);
         if (targetElement) {
@@ -61,13 +65,44 @@ export function Header() {
             ))}
           </nav>
 
-          <Link href="/login">
-              <div className="hidden md:block bg-primary text-primary-foreground px-5 py-2 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 hover:scale-105">
-                  Entrar
-              </div>
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/login">
+                <div className="hidden md:block bg-primary text-primary-foreground px-5 py-2 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 hover:scale-105">
+                    Entrar
+                </div>
+            </Link>
+            <button
+                className="md:hidden text-white"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label="Toggle menu"
+            >
+                {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
       </div>
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+          <div className="md:hidden mt-2 mx-4 rounded-xl bg-black/80 backdrop-blur-lg border border-border p-4">
+              <nav className="flex flex-col space-y-4 text-center">
+                  {navLinks.map(link => (
+                      <a 
+                          key={link.href} 
+                          href={link.href} 
+                          onClick={(e) => handleLinkClick(e, link.href)}
+                          className="text-gray-300 hover:text-white text-base py-2"
+                      >
+                          {link.label}
+                      </a>
+                  ))}
+                   <Link href="/login">
+                        <div className="w-full bg-primary text-primary-foreground mt-2 py-2.5 rounded-full font-medium text-sm">
+                            Entrar
+                        </div>
+                    </Link>
+              </nav>
+          </div>
+      )}
     </header>
   );
 }
