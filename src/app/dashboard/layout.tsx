@@ -81,6 +81,7 @@ const navItems: Record<string, NavItem[]> = {
         { href: '/dashboard/crm/produtos', label: 'Produtos', icon: ShoppingCart },
         { href: '/dashboard/crm/servicos', label: 'Serviços', icon: Wrench },
         { href: '/dashboard/crm/orcamentos', label: 'Orçamentos', icon: FileText },
+        { href: '/dashboard/crm/fornecedores', label: 'Fornecedores', icon: Truck },
     ],
     task: [
         { href: '/dashboard/task/minha-lista', label: 'Minha Lista', icon: List },
@@ -90,9 +91,9 @@ const navItems: Record<string, NavItem[]> = {
     finance: [
         { href: '/dashboard/finance/visao-geral', label: 'Visão Geral', icon: LayoutDashboard },
         { href: '/dashboard/finance/transacoes', label: 'Transações', icon: ArrowLeftRight },
+        { href: '/dashboard/finance/pendencias', label: 'Pendências', icon: Receipt },
         { href: '/dashboard/finance/contas', label: 'Contas', icon: Landmark },
         { href: '/dashboard/finance/conciliacao', label: 'Conciliação', icon: GitCompareArrows },
-        { href: '/dashboard/finance/fornecedores', label: 'Fornecedores', icon: Truck },
     ],
     pulse: []
 }

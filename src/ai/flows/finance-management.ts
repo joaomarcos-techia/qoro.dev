@@ -11,12 +11,17 @@
  * - updateTransaction - Updates an existing financial transaction.
  * - deleteTransaction - Deletes a financial transaction.
  * - getDashboardMetrics - Retrieves key metrics for the Finance dashboard.
+ * - createBill - Creates a new bill (payable/receivable).
+ * - listBills - Lists all bills.
+ * - updateBill - Updates a bill.
+ * - deleteBill - Deletes a bill.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { AccountSchema, AccountProfileSchema, TransactionSchema, TransactionProfileSchema, UpdateAccountSchema, UpdateTransactionSchema } from '@/ai/schemas';
+import { AccountSchema, AccountProfileSchema, TransactionSchema, TransactionProfileSchema, UpdateAccountSchema, UpdateTransactionSchema, BillSchema, BillProfileSchema, UpdateBillSchema } from '@/ai/schemas';
 import * as financeService from '@/services/financeService';
 import * as transactionService from '@/services/transactionService';
+import * as billService from '@/services/billService';
 
 const ActorSchema = z.object({ actor: z.string() });
 
@@ -27,6 +32,11 @@ const DeleteAccountInputSchema = z.object({
 const DeleteTransactionInputSchema = z.object({
     transactionId: z.string(),
 }).extend(ActorSchema.shape);
+
+const DeleteBillInputSchema = z.object({
+    billId: z.string(),
+}).extend(ActorSchema.shape);
+
 
 const DashboardMetricsOutputSchema = z.object({
     totalBalance: z.number(),
@@ -119,6 +129,44 @@ const getDashboardMetricsFlow = ai.defineFlow(
     async ({ actor }) => financeService.getDashboardMetrics(actor)
 );
 
+
+// Define Bill flows
+const createBillFlow = ai.defineFlow(
+    {
+        name: 'createBillFlow',
+        inputSchema: BillSchema.extend(ActorSchema.shape),
+        outputSchema: z.object({ id: z.string() })
+    },
+    async (input) => billService.createBill(input, input.actor)
+);
+
+const listBillsFlow = ai.defineFlow(
+    {
+        name: 'listBillsFlow',
+        inputSchema: ActorSchema,
+        outputSchema: z.array(BillProfileSchema)
+    },
+    async ({ actor }) => billService.listBills(actor)
+);
+
+const updateBillFlow = ai.defineFlow(
+    {
+        name: 'updateBillFlow',
+        inputSchema: UpdateBillSchema.extend(ActorSchema.shape),
+        outputSchema: z.object({ id: z.string() })
+    },
+    async (input) => billService.updateBill(input, input.actor)
+);
+
+const deleteBillFlow = ai.defineFlow(
+    {
+        name: 'deleteBillFlow',
+        inputSchema: DeleteBillInputSchema,
+        outputSchema: z.object({ id: z.string(), success: z.boolean() })
+    },
+    async (input) => billService.deleteBill(input.billId, input.actor)
+);
+
 // Exported functions (client-callable wrappers)
 export async function createAccount(input: z.infer<typeof AccountSchema> & z.infer<typeof ActorSchema>): Promise<{ id: string; }> {
     return createAccountFlow(input);
@@ -154,4 +202,20 @@ export async function deleteTransaction(input: z.infer<typeof DeleteTransactionI
 
 export async function getDashboardMetrics(input: z.infer<typeof ActorSchema>): Promise<z.infer<typeof DashboardMetricsOutputSchema>> {
     return getDashboardMetricsFlow(input);
+}
+
+export async function createBill(input: z.infer<typeof BillSchema>, actor: string): Promise<{ id: string }> {
+    return createBillFlow({ ...input, actor });
+}
+
+export async function listBills(input: z.infer<typeof ActorSchema>): Promise<z.infer<typeof BillProfileSchema>[]> {
+    return listBillsFlow(input);
+}
+
+export async function updateBill(input: z.infer<typeof UpdateBillSchema>, actor: string): Promise<{ id: string }> {
+    return updateBillFlow({ ...input, actor });
+}
+
+export async function deleteBill(input: z.infer<typeof DeleteBillInputSchema>): Promise<{ id: string; success: boolean }> {
+    return deleteBillFlow(input);
 }

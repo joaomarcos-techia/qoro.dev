@@ -170,6 +170,23 @@ export const QuoteProfileSchema = QuoteSchema.extend({
 export type QuoteProfile = z.infer<typeof QuoteProfileSchema>;
 
 
+export const SupplierSchema = z.object({
+    name: z.string().min(1, 'O nome é obrigatório.'),
+    cnpj: z.string().optional(),
+    email: z.string().email('Email inválido.'),
+    phone: z.string().optional(),
+    address: AddressSchema.optional(),
+    paymentTerms: z.string().optional(),
+    isActive: z.boolean().default(true),
+});
+
+export const SupplierProfileSchema = SupplierSchema.extend({
+    id: z.string(),
+    createdAt: z.string(),
+});
+export type SupplierProfile = z.infer<typeof SupplierProfileSchema>;
+
+
 // Schemas for Task Management
 export const TaskSchema = z.object({
   title: z.string().min(1, 'O título é obrigatório.'),
@@ -264,18 +281,23 @@ export const TransactionProfileSchema = TransactionSchema.extend({
 });
 export type TransactionProfile = z.infer<typeof TransactionProfileSchema>;
 
-export const SupplierSchema = z.object({
-    name: z.string().min(1, 'O nome é obrigatório.'),
-    cnpj: z.string().optional(),
-    email: z.string().email('Email inválido.'),
-    phone: z.string().optional(),
-    address: AddressSchema.optional(),
-    paymentTerms: z.string().optional(),
-    isActive: z.boolean().default(true),
+export const BillSchema = z.object({
+    type: z.enum(['payable', 'receivable']),
+    description: z.string().min(1, 'A descrição é obrigatória.'),
+    amount: z.coerce.number().positive('O valor deve ser maior que zero.'),
+    dueDate: z.union([z.string().datetime(), z.date()]),
+    status: z.enum(['pending', 'paid', 'overdue']).default('pending'),
+    contactId: z.string().min(1, 'É necessário selecionar um cliente ou fornecedor.'),
+    paymentDate: z.union([z.string().datetime(), z.date()]).optional().nullable(),
 });
 
-export const SupplierProfileSchema = SupplierSchema.extend({
+export const UpdateBillSchema = BillSchema.extend({
+    id: z.string(),
+});
+
+export const BillProfileSchema = BillSchema.extend({
     id: z.string(),
     createdAt: z.string(),
+    contactName: z.string().optional(),
 });
-export type SupplierProfile = z.infer<typeof SupplierProfileSchema>;
+export type BillProfile = z.infer<typeof BillProfileSchema>;

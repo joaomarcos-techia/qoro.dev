@@ -1,7 +1,9 @@
 
+'use client'
+
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { BillSchema, BillProfile, UpdateBillSchema } from '@/ai/schemas';
+import { BillSchema, BillProfileSchema, UpdateBillSchema, BillProfile } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import { adminDb } from '@/lib/firebase-admin';
 
@@ -25,7 +27,7 @@ export const listBills = async (actorUid: string): Promise<BillProfile[]> => {
     const { organizationId } = await getAdminAndOrg(actorUid);
     const billsSnapshot = await adminDb.collection('bills')
         .where('companyId', '==', organizationId)
-        .orderBy('dueDate', 'asc')
+        .orderBy('createdAt', 'desc')
         .get();
 
     if (billsSnapshot.empty) return [];
@@ -34,6 +36,8 @@ export const listBills = async (actorUid: string): Promise<BillProfile[]> => {
     const contacts: Record<string, { name?: string }> = {};
 
     if (contactIds.length > 0) {
+        // This is inefficient but necessary without a unified 'contacts' collection.
+        // In a real-world scenario, a single contacts collection would be better.
         const customersSnapshot = await adminDb.collection('customers').where('__name__', 'in', contactIds).get();
         customersSnapshot.forEach(doc => { contacts[doc.id] = { name: doc.data().name }; });
 
