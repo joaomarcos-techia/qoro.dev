@@ -16,6 +16,7 @@ export const createBill = async (input: z.infer<typeof BillSchema>, actorUid: st
 
     const newBillData = {
         ...input,
+        dueDate: new Date(input.dueDate),
         companyId: organizationId,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
@@ -31,6 +32,7 @@ export const listBills = async (actorUid: string): Promise<z.infer<typeof BillPr
     const billsSnapshot = await adminDb.collection('bills')
                                      .where('companyId', '==', organizationId)
                                      .orderBy('dueDate', 'desc')
+                                     .orderBy('__name__', 'desc') // Added for query stability
                                      .get();
     
     if (billsSnapshot.empty) {
@@ -87,29 +89,32 @@ export const updateBill = async (input: z.infer<typeof UpdateBillSchema>, actorU
         throw new Error("Conta não encontrada ou acesso negado.");
     }
     const oldStatus = doc.data()?.status;
-    
+    const isAlreadyPaid = oldStatus === 'paid';
+
     await billRef.update({
         ...updateData,
+        dueDate: new Date(updateData.dueDate),
         updatedAt: FieldValue.serverTimestamp(),
     });
 
-    if (updateData.status === 'paid' && oldStatus !== 'paid') {
-        const accounts = await adminDb.collection('accounts').where('companyId', '==', organizationId).limit(1).get();
-        if (accounts.empty) {
+    if (updateData.status === 'paid' && !isAlreadyPaid) {
+        const accountsSnapshot = await adminDb.collection('accounts').where('companyId', '==', organizationId).limit(1).get();
+        if (accountsSnapshot.empty) {
             throw new Error("Nenhuma conta financeira encontrada para registrar o pagamento. Crie uma conta primeiro.");
         }
-        const primaryAccountId = accounts.docs[0].id;
+        const primaryAccountId = accountsSnapshot.docs[0].id;
         
         const transactionData: z.infer<typeof TransactionSchema> = {
             accountId: primaryAccountId,
             type: updateData.type === 'payable' ? 'expense' : 'income',
             amount: updateData.amount,
-            description: `Pagamento: ${updateData.description}`,
+            description: `Pagamento/Recebimento: ${updateData.description}`,
             date: new Date(),
             category: updateData.type === 'payable' ? 'Pagamento de Contas' : 'Recebimento de Contas',
             status: 'paid',
             paymentMethod: 'bank_transfer',
             customerId: updateData.entityType === 'customer' ? updateData.entityId : undefined,
+            tags: [`bill-${id}`],
         };
         await transactionService.createTransaction(transactionData, actorUid);
     }
@@ -125,6 +130,21 @@ export const deleteBill = async (billId: string, actorUid: string) => {
     if (!doc.exists || doc.data()?.companyId !== organizationId) {
         throw new Error("Conta não encontrada ou acesso negado.");
     }
+    
+    // If the bill was paid, we should revert the transaction
+    if (doc.data()?.status === 'paid') {
+        const transactionSnapshot = await adminDb.collection('transactions')
+            .where('companyId', '==', organizationId)
+            .where('tags', 'array-contains', `bill-${billId}`)
+            .limit(1)
+            .get();
+
+        if (!transactionSnapshot.empty) {
+            const transactionId = transactionSnapshot.docs[0].id;
+            await transactionService.deleteTransaction(transactionId, actorUid);
+        }
+    }
+
 
     await billRef.delete();
     return { id: billId, success: true };
