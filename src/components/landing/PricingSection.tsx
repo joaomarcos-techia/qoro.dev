@@ -22,10 +22,10 @@ const plans: Plan[] = [
     priceDetails: 'Para sempre. Sem pegadinhas.',
     features: [
       'Até 2 usuários',
-      'QoroCRM com funcionalidades essenciais',
-      'QoroFinance com limites de uso',
-      'QoroTask com limites de uso',
-      'QoroPulse com até 5 perguntas/mês',
+      'QoroCRM: Gestão de Funil de Vendas (limitado a 1 funil e 50 oportunidades), Cadastro de Clientes (limitado a 100 contatos).',
+      'QoroFinance: Dashboard Financeiro (visão básica), Registro de Transações (limitado a 20 transações/mês).',
+      'QoroTask: Quadros Kanban (limitado a 1 quadro e 30 tarefas), Atribuição e Prazos (básico).',
+      'QoroPulse: Acesso limitado a 5 perguntas/mês, sem automação de ações.',
     ],
     buttonText: 'Começar Grátis',
     isPopular: false,
@@ -36,12 +36,12 @@ const plans: Plan[] = [
     description: 'Para equipes que buscam mais poder e automação.',
     price: 'R$ 299',
     priceUnit: '/mês',
-    priceDetails: 'Inclui até 5 usuários. Cancele quando quiser.',
+    priceDetails: 'Inclui até 5 usuários. Desconto de 15% para pagamento anual.',
     features: [
-      'QoroCRM com funcionalidades ilimitadas',
-      'QoroFinance com gestão completa',
-      'QoroTask com quadros e tarefas ilimitados',
-      'QoroPulse com IA para insights e ações',
+      'QoroCRM: Funil de Vendas ilimitado, Cadastro Completo ilimitado, Criação de Orçamentos.',
+      'QoroFinance: Dashboard Financeiro completo, Gestão de Contas (a pagar e a receber) ilimitada, Registro de Transações ilimitado.',
+      'QoroTask: Quadros Kanban ilimitados, Atribuição e Prazos avançados, Visão em Calendário.',
+      'QoroPulse: Acesso expandido a perguntas, sugestões de oportunidades e riscos, automação de ações básicas.',
       'Suporte prioritário via e-mail',
     ],
     buttonText: 'Escolher Profissional',
@@ -53,13 +53,13 @@ const plans: Plan[] = [
     description: 'Solução robusta para empresas com necessidades complexas.',
     price: 'R$ 799',
     priceUnit: '/mês',
-    priceDetails: 'Para equipes maiores e necessidades avançadas.',
+    priceDetails: 'Inclui até 10 usuários.',
     features: [
-      'Todas as funcionalidades, sem limites',
-      'Análise preditiva avançada com IA',
-      'Integrações com outros sistemas (ERP, BI)',
-      'Segurança avançada (SSO, auditoria)',
-      'Gerente de Sucesso dedicado',
+      'Todas as funcionalidades do Plano Profissional, ilimitadas.',
+      'QoroPulse: Análise preditiva avançada, automação de ações complexas, integração com sistemas de BI, suporte dedicado de IA.',
+      'Segurança: SSO (Single Sign-On), auditoria de acesso, controle de permissões granular.',
+      'Integrações com outros sistemas (ERP, e-commerce).',
+      'Suporte: Gerente de Sucesso do Cliente dedicado, suporte 24/7, treinamento personalizado.',
     ],
     buttonText: 'Escolher Enterprise',
     isPopular: false,
@@ -139,4 +139,5 @@ export function PricingSection() {
       </section>
     );
   }
+
 
