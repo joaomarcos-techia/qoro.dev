@@ -51,8 +51,9 @@ const plans: Plan[] = [
   {
     name: 'Enterprise',
     description: 'Solução robusta para empresas com necessidades complexas.',
-    price: 'Customizado',
-    priceDetails: 'A partir de R$ 799/mês. Fale conosco.',
+    price: 'R$ 799',
+    priceUnit: '/mês',
+    priceDetails: 'Para equipes maiores e necessidades avançadas.',
     features: [
       'Todas as funcionalidades, sem limites',
       'Análise preditiva avançada com IA',
@@ -60,9 +61,9 @@ const plans: Plan[] = [
       'Segurança avançada (SSO, auditoria)',
       'Gerente de Sucesso dedicado',
     ],
-    buttonText: 'Fale com um especialista',
+    buttonText: 'Escolher Enterprise',
     isPopular: false,
-    signupPath: 'http://bit.ly/41Emn3C',
+    signupPath: '/signup',
   },
 ];
 
@@ -138,3 +139,4 @@ export function PricingSection() {
       </section>
     );
   }
+
