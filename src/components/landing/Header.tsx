@@ -50,7 +50,7 @@ export function Header() {
             </Link>
           </div>
           
-          <nav className="hidden md:flex space-x-16">
+          <nav className="hidden md:flex space-x-12">
             {navLinks.map(link => (
               <a 
                 key={link.href} 
