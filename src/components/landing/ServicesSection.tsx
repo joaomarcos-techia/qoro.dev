@@ -40,7 +40,7 @@ export function ServicesSection() {
           
           <div className="flex flex-col gap-8 items-center">
             {images.map((image, index) => (
-              <div key={index} className={`group relative transition-all duration-500 ease-in-out transform hover:scale-105 ${image.className}`}>
+              <div key={index} className={`group relative transition-all duration-500 ease-in-out transform hover:scale-105`}>
                 <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-primary rounded-xl blur opacity-25 group-hover:opacity-60 transition duration-1000 animate-tilt"></div>
                 <div className="relative">
                     <Image
@@ -49,7 +49,7 @@ export function ServicesSection() {
                       width={800}
                       height={600}
                       className="object-contain rounded-xl border-2 border-border"
-                      quality={90}
+                      quality={100}
                     />
                 </div>
               </div>
