@@ -25,9 +25,9 @@ const chartConfig = {
     despesa: { label: "Despesa", color: "hsl(var(--chart-1))" },
 };
 
-const MetricCard = ({ title, value, icon: Icon, isLoading, color, format }: { title: string, value: number, icon: React.ElementType, isLoading: boolean, color: string, format?: (value: number) => string }) => (
+const MetricCard = ({ title, value, icon: Icon, isLoading, format }: { title: string, value: number, icon: React.ElementType, isLoading: boolean, format?: (value: number) => string }) => (
   <div className="bg-card p-6 rounded-2xl border border-border flex items-center">
-    <div className={`p-3 rounded-xl text-black mr-4 ${color}`}>
+    <div className={`p-3 rounded-xl text-primary-foreground mr-4 bg-primary`}>
       <Icon className="w-6 h-6" />
     </div>
     <div>
@@ -132,10 +132,10 @@ export default function VisaoGeralPage() {
             <div className="space-y-8">
                 {/* Metrics Section */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <MetricCard title="Receita (Mês)" value={metrics?.totalIncome ?? 0} icon={TrendingUp} isLoading={isLoading} color="bg-green-500" format={formatCurrency} />
-                    <MetricCard title="Despesa (Mês)" value={metrics?.totalExpense ?? 0} icon={TrendingDown} isLoading={isLoading} color="bg-red-500" format={formatCurrency} />
-                    <MetricCard title="Lucro Líquido (Mês)" value={metrics?.netProfit ?? 0} icon={DollarSign} isLoading={isLoading} color="bg-blue-500" format={formatCurrency} />
-                    <MetricCard title="Saldo em Contas" value={metrics?.totalBalance ?? 0} icon={Wallet} isLoading={isLoading} color="bg-yellow-500" format={formatCurrency} />
+                    <MetricCard title="Receita (Mês)" value={metrics?.totalIncome ?? 0} icon={TrendingUp} isLoading={isLoading} format={formatCurrency} />
+                    <MetricCard title="Despesa (Mês)" value={metrics?.totalExpense ?? 0} icon={TrendingDown} isLoading={isLoading} format={formatCurrency} />
+                    <MetricCard title="Lucro Líquido (Mês)" value={metrics?.netProfit ?? 0} icon={DollarSign} isLoading={isLoading} format={formatCurrency} />
+                    <MetricCard title="Saldo em Contas" value={metrics?.totalBalance ?? 0} icon={Wallet} isLoading={isLoading} format={formatCurrency} />
                 </div>
                 
                 {/* Charts Section */}

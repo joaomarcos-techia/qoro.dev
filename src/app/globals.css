@@ -48,25 +48,25 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 0%; /* #000000 */
-    --foreground: 0 0% 100%; /* #FFFFFF */
-    --card: 0 0% 7%; /* #121212 */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 10%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
+    --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 188 100% 50%; /* #00F0FF - Azul Neon */
-    --primary-foreground: 0 0% 0%; /* Preto para contraste com neon */
-    --secondary: 0 0% 17%; /* #2C2C2C */
+    --primary: 271 78% 65%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 10% 17%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 17%;
-    --muted-foreground: 0 0% 70%; /* #B3B3B3 */
-    --accent: 188 100% 50%;
-    --accent-foreground: 0 0% 0%;
-    --destructive: 0 72% 51%; /* #E5484D */
+    --muted: 240 10% 17%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 240 10% 17%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 17%; /* #2C2C2C */
-    --input: 0 0% 17%;
-    --ring: 188 100% 50%;
+    --border: 240 10% 17%;
+    --input: 240 10% 17%;
+    --ring: 271 78% 65%;
     --radius: 0.75rem;
 
     /* QoroFinance Colors */
@@ -83,25 +83,25 @@ body {
   }
 
   .dark {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-    --card: 0 0% 7%;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 10%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
+    --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 188 100% 50%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 0 0% 17%;
+    --primary: 271 78% 65%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 10% 17%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 17%;
+    --muted: 240 10% 17%;
     --muted-foreground: 0 0% 70%;
-    --accent: 0 0% 17%;
+    --accent: 240 10% 17%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 17%;
-    --input: 0 0% 17%;
-    --ring: 188 100% 50%;
+    --border: 240 10% 17%;
+    --input: 240 10% 17%;
+    --ring: 271 78% 65%;
   }
 }
 
