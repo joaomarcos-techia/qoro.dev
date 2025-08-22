@@ -2,7 +2,7 @@
 'use client';
 
 import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import Image from 'next/image';
 
 const images = [
     {
@@ -43,7 +43,7 @@ export function ServicesSection() {
               <div key={index} className={`group relative transition-all duration-500 ease-in-out transform hover:scale-105`}>
                 <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-primary rounded-xl blur opacity-25 group-hover:opacity-60 transition duration-1000 animate-tilt"></div>
                 <div className="relative">
-                    <img
+                    <Image
                       src={image.src}
                       alt={image.alt}
                       width={800}
