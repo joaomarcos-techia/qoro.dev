@@ -28,7 +28,7 @@ export function ServicesSection() {
               Sua empresa tem uma necessidade única. Nós temos a solução.
             </h2>
             <div className="space-y-6 text-xl text-white/70 mb-8 leading-relaxed">
-              <p>
+               <p>
                 <strong className="text-white">Agentes de IA para Vendas:</strong> Automatize o contato, qualifique leads e agende reuniões 24/7. Deixe a IA trabalhar por você e sua equipe focar em fechar negócios.
               </p>
               <p>
@@ -45,10 +45,10 @@ export function ServicesSection() {
           
           <div className="flex flex-col gap-8 items-center">
             {images.map((image, index) => (
-              <div key={index} className={`group relative transition-all duration-500 ease-in-out transform hover:scale-105`}>
+              <div key={index} className="group relative transition-all duration-500 ease-in-out transform hover:scale-105">
                 <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-primary rounded-xl blur opacity-25 group-hover:opacity-60 transition duration-1000 animate-tilt"></div>
                 <div className="relative">
-                    <Image
+                    <img
                       src={image.src}
                       alt={image.alt}
                       width={800}

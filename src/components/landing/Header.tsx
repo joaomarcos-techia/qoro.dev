@@ -16,7 +16,6 @@ export function Header() {
     { href: '/#sobre', label: 'Sobre' },
     { href: '/#servicos', label: 'Serviços' },
     { href: '/#precos', label: 'Planos' },
-    { href: '/#contato', label: 'Contato' },
   ];
   
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>, href: string) => {
@@ -41,7 +40,7 @@ export function Header() {
 
   return (
     <header className="fixed w-full top-0 left-0 z-50 transition-all duration-300 ease-in-out py-4">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="rounded-full py-3 px-6 flex items-center justify-between shadow-lg border border-border bg-black/50 backdrop-blur-lg transition-all duration-300 ease-in-out overflow-hidden">
           <div className="flex items-center">
             <Link href="/#home" onClick={(e) => handleLinkClick(e, '/#home')} className="text-xl">
@@ -65,6 +64,9 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-4">
+            <a href="http://bit.ly/41Emn3C" target="_blank" rel="noopener noreferrer" className="hidden md:block bg-secondary text-secondary-foreground px-5 py-2 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:bg-secondary/80">
+                Fale com um especialista
+            </a>
             <Link href="/login">
                 <div className="hidden md:block bg-primary text-primary-foreground px-5 py-2 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 hover:scale-105">
                     Entrar
@@ -94,6 +96,9 @@ export function Header() {
                           {link.label}
                       </a>
                   ))}
+                  <a href="http://bit.ly/41Emn3C" target="_blank" rel="noopener noreferrer" className="bg-secondary text-secondary-foreground mt-2 py-2.5 rounded-full font-medium text-sm">
+                      Fale com um especialista
+                  </a>
                    <Link href="/login">
                         <div className="w-full bg-primary text-primary-foreground mt-2 py-2.5 rounded-full font-medium text-sm">
                             Entrar
