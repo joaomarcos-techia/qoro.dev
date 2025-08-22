@@ -3,6 +3,7 @@
 
 import { ArrowRight, Code, DatabaseZap, Bot } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const services = [
   {
@@ -18,6 +19,19 @@ const services = [
     colorClass: 'from-blue-500 to-cyan-500',
   },
 ];
+
+const images = [
+    {
+      src: 'https://firebasestorage.googleapis.com/v0/b/qoro-iy1gs.firebasestorage.app/o/site.png?alt=media&token=b004694d-d2ac-49bd-aa20-fb5061fc0a4c',
+      alt: 'Exemplo de website desenvolvido',
+      className: 'rounded-xl md:rotate-3 md:hover:rotate-0'
+    },
+    {
+      src: 'https://firebasestorage.googleapis.com/v0/b/qoro-iy1gs.firebasestorage.app/o/site1.png?alt=media&token=f9fb65bd-d523-4d24-81af-7b1ef44b248e',
+      alt: 'Exemplo de plataforma SaaS desenvolvida',
+      className: 'rounded-xl md:-rotate-3 md:hover:rotate-0 mt-8 md:mt-0'
+    }
+  ];
 
 export function ServicesSection() {
   return (
@@ -40,21 +54,20 @@ export function ServicesSection() {
             </a>
           </div>
           
-          <div className="space-y-8">
-            {services.map((service, index) => {
-              const Icon = service.icon;
-              return (
-                <div key={index} className="flex items-start group p-6 bg-secondary/30 rounded-2xl border border-border transition-all duration-300 hover:border-primary/50 hover:bg-secondary/60">
-                  <div className={`text-white w-12 h-12 rounded-xl flex items-center justify-center mr-6 flex-shrink-0 bg-gradient-to-br ${service.colorClass} shadow-lg`}>
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-2">{service.title}</h3>
-                    <p className="text-white/70">{service.description}</p>
-                  </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            {images.map((image, index) => (
+              <div key={index} className={`transition-all duration-500 ease-in-out transform hover:scale-105 ${image.className}`}>
+                <div className="relative aspect-[4/3] w-full">
+                    <Image
+                    src={image.src}
+                    alt={image.alt}
+                    fill
+                    className="object-cover rounded-xl border-2 border-border"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    />
                 </div>
-              )
-            })}
+              </div>
+            ))}
           </div>
         </div>
       </div>
