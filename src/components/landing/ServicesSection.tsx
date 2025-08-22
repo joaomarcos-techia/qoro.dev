@@ -1,4 +1,3 @@
-
 'use client';
 
 import { ArrowRight } from 'lucide-react';
@@ -9,12 +8,12 @@ const images = [
     {
       src: 'https://firebasestorage.googleapis.com/v0/b/qoro-iy1gs.firebasestorage.app/o/site.png?alt=media&token=b004694d-d2ac-49bd-aa20-fb5061fc0a4c',
       alt: 'Exemplo de website desenvolvido',
-      className: 'md:rotate-3'
+      className: ''
     },
     {
       src: 'https://firebasestorage.googleapis.com/v0/b/qoro-iy1gs.firebasestorage.app/o/site1.png?alt=media&token=f9fb65bd-d523-4d24-81af-7b1ef44b248e',
       alt: 'Exemplo de plataforma SaaS desenvolvida',
-      className: 'md:-rotate-3'
+      className: ''
     }
   ];
 
