@@ -3,12 +3,22 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/ui/logo';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function Header() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [hasScrolled, setHasScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setHasScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const navLinks = [
     { href: '/#home', label: 'Início' },
@@ -41,27 +51,32 @@ export function Header() {
   return (
     <header className="fixed w-full top-0 left-0 z-50 transition-all duration-300 ease-in-out py-4">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="rounded-full py-3 px-6 flex items-center justify-between shadow-lg border border-border bg-black/50 backdrop-blur-lg transition-all duration-300 ease-in-out overflow-hidden">
+        <div className={cn(
+          "rounded-full py-3 px-6 flex items-center justify-between transition-all duration-300 ease-in-out overflow-hidden",
+          hasScrolled ? "bg-black/50 backdrop-blur-lg border-border shadow-lg" : "bg-transparent border-transparent"
+        )}>
           <div className="flex-shrink-0">
             <Link href="/#home" onClick={(e) => handleLinkClick(e, '/#home')} className="text-xl">
               <Logo/>
             </Link>
           </div>
           
-          <nav className="hidden md:flex flex-1 justify-center items-center space-x-16">
-            {navLinks.map(link => (
-              <a 
-                key={link.href} 
-                href={link.href} 
-                onClick={(e) => handleLinkClick(e, link.href)}
-                target={link.href.startsWith('http') ? '_blank' : '_self'}
-                rel={link.href.startsWith('http') ? 'noopener noreferrer' : ''}
-                className="text-gray-300 hover:text-white text-sm transition-colors"
-              >
-                {link.label}
-              </a>
-            ))}
-          </nav>
+          <div className="hidden md:flex flex-1 justify-center">
+            <nav className="flex items-center space-x-12">
+                {navLinks.map(link => (
+                <a 
+                    key={link.href} 
+                    href={link.href} 
+                    onClick={(e) => handleLinkClick(e, link.href)}
+                    target={link.href.startsWith('http') ? '_blank' : '_self'}
+                    rel={link.href.startsWith('http') ? 'noopener noreferrer' : ''}
+                    className="text-gray-300 hover:text-white text-sm transition-colors"
+                >
+                    {link.label}
+                </a>
+                ))}
+            </nav>
+          </div>
           
           <div className="hidden md:flex flex-shrink-0">
              <Link href="/login">
