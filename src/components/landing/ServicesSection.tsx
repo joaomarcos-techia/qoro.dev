@@ -1,3 +1,4 @@
+
 'use client';
 
 import { ArrowRight } from 'lucide-react';
@@ -49,7 +50,7 @@ export function ServicesSection() {
                       width={800}
                       height={600}
                       className="object-contain rounded-xl border-2 border-border"
-                      quality={100}
+                      unoptimized
                     />
                 </div>
               </div>
