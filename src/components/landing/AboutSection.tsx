@@ -1,4 +1,3 @@
-
 import { FeaturesCarousel } from './FeaturesCarousel';
 
 export function AboutSection() {

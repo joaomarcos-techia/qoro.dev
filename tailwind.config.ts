@@ -1,4 +1,3 @@
-
 import type { Config } from 'tailwindcss';
 
 export default {
@@ -86,13 +85,6 @@ export default {
             '0%, 100%': { transform: 'translateY(0)' },
             '50%': { transform: 'translateY(-10px)' },
         },
-        'background-pan': {
-            '0%': { transform: 'translateX(0) translateY(0)' },
-            '25%': { transform: 'translateX(10px) translateY(10px)' },
-            '50%': { transform: 'translateX(0) translateY(20px)' },
-            '75%': { transform: 'translateX(-10px) translateY(10px)' },
-            '100%': { transform: 'translateX(0) translateY(0)' },
-        },
         'infinite-scroll': {
           from: { transform: 'translateX(0)' },
           to: { transform: 'translateX(-100%)' },
@@ -107,7 +99,6 @@ export default {
         'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in-up': 'fade-in-up 0.8s ease-out forwards',
         'float': 'float 6s ease-in-out infinite',
-        'background-pan': 'background-pan 15s ease-in-out infinite',
         'infinite-scroll': 'infinite-scroll 25s linear infinite',
         'shine': 'shine 6s linear infinite',
       },
