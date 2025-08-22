@@ -15,7 +15,7 @@ export function HeroSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative text-center">
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 animate-fade-in-up">
           Transforme o caos em clareza.
-          <span className="block gradient-text">Sua empresa, finalmente unificada.</span>
+          <span className="block gradient-text animate-shine">Sua empresa, finalmente unificada.</span>
         </h1>
         
         <p className="text-lg md:text-xl text-white/70 mb-10 max-w-3xl mx-auto leading-relaxed animate-fade-in-up animation-delay-300">
