@@ -27,9 +27,14 @@ export function ServicesSection() {
             <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
               Sua empresa tem uma necessidade única. Nós temos a solução.
             </h2>
-            <p className="text-xl text-white/70 mb-8 leading-relaxed">
-              Além da plataforma Qoro, nossa equipe de especialistas está pronta para desenvolver soluções personalizadas que se integram perfeitamente ao seu fluxo de trabalho e resolvem desafios específicos do seu negócio.
-            </p>
+            <div className="space-y-6 text-xl text-white/70 mb-8 leading-relaxed">
+              <p>
+                <strong className="text-white">Agentes de IA para Vendas:</strong> Automatize o contato, qualifique leads e agende reuniões 24/7. Deixe a IA trabalhar por você e sua equipe focar em fechar negócios.
+              </p>
+              <p>
+                <strong className="text-white">Aplicações Personalizadas:</strong> Transformamos seus processos complexos em sistemas simples e eficientes. Desenvolvemos o software exato que sua operação precisa para escalar.
+              </p>
+            </div>
              <a href="http://bit.ly/41Emn3C" target="_blank" rel="noopener noreferrer">
                 <div className="inline-flex items-center text-lg font-semibold bg-primary text-primary-foreground px-8 py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-primary/40 hover:-translate-y-1 group">
                     Fale com um especialista
