@@ -68,11 +68,11 @@ const plans: Plan[] = [
 ];
 
 const PricingCard = ({ plan }: { plan: Plan }) => {
-    const cardBaseClasses = "bg-card border rounded-3xl p-8 backdrop-blur-sm transition-all duration-300 hover:-translate-y-2";
-    const popularClasses = "border-2 border-primary shadow-2xl shadow-primary/20";
-    const normalClasses = "border-border hover:border-border/80";
+    const cardBaseClasses = "bg-card border rounded-3xl p-8 backdrop-blur-sm transition-all duration-300 hover:-translate-y-2 h-full flex flex-col";
+    const popularClasses = "border-2 border-primary shadow-2xl shadow-primary/20 hover:shadow-primary/40";
+    const normalClasses = "border-border hover:border-primary";
     
-    const buttonBaseClasses = "w-full py-3 rounded-xl transition-all duration-300 font-semibold";
+    const buttonBaseClasses = "w-full py-3 rounded-xl transition-all duration-300 font-semibold mt-auto";
     const popularButtonClasses = "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl";
     const normalButtonClasses = "bg-secondary hover:bg-secondary/80 text-white border border-border";
 
@@ -95,7 +95,7 @@ const PricingCard = ({ plan }: { plan: Plan }) => {
             <p className="text-sm text-white/60">{plan.priceDetails}</p>
         </div>
         
-        <ul className="space-y-4 mb-8 min-h-[220px]">
+        <ul className="space-y-4 mb-8 flex-grow">
             {plan.features.map((feature, index) => (
                 <li key={index} className="flex items-start text-white/80">
                     <Check className="w-5 h-5 text-crm-primary mr-3 flex-shrink-0 mt-0.5" />
@@ -128,7 +128,7 @@ export function PricingSection() {
               Comece de graça e evolua conforme sua empresa cresce. Simples e transparente.
             </p>
           </div>
-          <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-center">
+          <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
             {plans.map(plan => (
               <div key={plan.name}>
                  <PricingCard plan={plan} />
@@ -139,6 +139,3 @@ export function PricingSection() {
       </section>
     );
   }
-
-
-
