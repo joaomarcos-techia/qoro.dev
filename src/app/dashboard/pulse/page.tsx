@@ -3,7 +3,7 @@
 
 import { useState, useRef, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { Send, BrainCircuit, Loader, AlertCircle, Sparkles, Code, Pencil, FlaskConical, User } from 'lucide-react';
+import { Send, BrainCircuit, Loader, AlertCircle, Sparkles, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
@@ -81,29 +81,23 @@ export default function PulsePage() {
     }
   };
   
-  const handleSuggestionClick = (question: string) => {
-    setInput(question);
-    const textarea = document.querySelector('textarea');
-    if (textarea) textarea.focus();
-  }
-
   const renderWelcomeScreen = () => (
     <div className="flex-grow flex flex-col items-center justify-center text-center">
         <div className="flex items-center text-4xl font-bold text-foreground mb-10">
              <Sparkles className="w-9 h-9 mr-4 text-pulse-primary" />
-            <span>Boa tarde {userName.split(' ')[0]}</span>
+            <span>Boa tarde, {userName.split(' ')[0]}</span>
         </div>
     </div>
   );
 
   return (
     <div className="flex flex-col h-full bg-black">
-        {/* Main Content */}
-        <div className="flex-grow flex flex-col items-center w-full px-4">
+        {/* Main Content: Chat Area and Input Form */}
+        <div className="flex-grow flex flex-col items-center w-full px-4 relative">
             {/* Chat Area */}
             <div 
                 ref={scrollAreaRef}
-                className="flex-grow w-full max-w-4xl overflow-y-auto space-y-8 flex flex-col pt-8"
+                className="flex-grow w-full max-w-4xl overflow-y-auto space-y-8 flex flex-col pt-8 pb-32" // Added pb-32 for spacing from input
             >
                 {messages.length === 0 && !isLoading ? (
                     renderWelcomeScreen()
@@ -140,7 +134,7 @@ export default function PulsePage() {
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-pulse-primary text-black flex items-center justify-center">
                         <BrainCircuit size={18} />
                     </div>
-                    <div className="max-w-lg px-5 py-3 rounded-2xl bg-secondary text-foreground flex items-center">
+                    <div className="max-w-lg px-5 py-3 rounded-2xl bg-card text-foreground flex items-center">
                         <Loader className="w-5 h-5 animate-spin text-muted-foreground" />
                     </div>
                 </div>
@@ -148,37 +142,39 @@ export default function PulsePage() {
             </div>
 
             {/* Input Area */}
-            <div className="w-full max-w-4xl pt-4 pb-8 bg-black">
-                <div className="relative">
-                    <Textarea
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            handleSendMessage(e);
-                        }
-                        }}
-                        placeholder="Pergunte qualquer coisa sobre seu negócio..."
-                        className="w-full pr-14 py-4 pl-4 bg-secondary rounded-2xl border-2 border-border focus:ring-2 focus:ring-pulse-primary/50 text-base resize-none"
-                        rows={1}
-                        disabled={isLoading}
-                    />
-                    <Button
-                        type="button"
-                        onClick={() => handleSendMessage()}
-                        size="icon"
-                        disabled={isLoading || !input.trim()}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-pulse-primary text-primary-foreground rounded-lg hover:bg-pulse-primary/90 disabled:bg-gray-600"
-                    >
-                        <Send size={20} />
-                    </Button>
-                </div>
-                 {error && (
-                    <div className="text-destructive text-sm mt-2 flex items-center">
-                        <AlertCircle className="w-4 h-4 mr-2" />
-                        {error}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black to-transparent">
+                <div className="w-full max-w-4xl mx-auto px-4 pt-4 pb-8">
+                    <div className="relative bg-card border border-border rounded-2xl shadow-2xl">
+                        <Textarea
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                handleSendMessage(e);
+                            }
+                            }}
+                            placeholder="Pergunte qualquer coisa sobre seu negócio..."
+                            className="w-full pr-16 pl-4 py-4 bg-transparent rounded-2xl border-none focus:ring-0 text-base resize-none shadow-none"
+                            rows={1}
+                            disabled={isLoading}
+                        />
+                        <Button
+                            type="button"
+                            onClick={() => handleSendMessage()}
+                            size="icon"
+                            disabled={isLoading || !input.trim()}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-pulse-primary text-primary-foreground rounded-lg hover:bg-pulse-primary/90 disabled:bg-gray-600"
+                        >
+                            <Send size={20} />
+                        </Button>
                     </div>
-                )}
+                    {error && (
+                        <div className="text-destructive text-sm mt-2 flex items-center justify-center">
+                            <AlertCircle className="w-4 h-4 mr-2" />
+                            {error}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     </div>
