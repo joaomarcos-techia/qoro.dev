@@ -12,13 +12,6 @@ import { doc, getDoc } from 'firebase/firestore';
 import { askPulse } from '@/ai/flows/pulse-flow';
 import type { PulseMessage } from '@/ai/schemas';
 
-const exampleQuestions = [
-    { text: "Qual foi meu produto mais vendido?", icon: Sparkles },
-    { text: "Crie um script de follow-up para um cliente.", icon: Pencil },
-    { text: "Qual a principal fonte de despesas este mês?", icon: FlaskConical },
-    { text: "Resuma as tarefas de alta prioridade.", icon: Code },
-];
-
 export default function PulsePage() {
   const [messages, setMessages] = useState<PulseMessage[]>([]);
   const [input, setInput] = useState('');
@@ -98,7 +91,7 @@ export default function PulsePage() {
     <div className="flex-grow flex flex-col items-center justify-center text-center">
         <div className="flex items-center text-4xl font-bold text-foreground mb-10">
              <Sparkles className="w-9 h-9 mr-4 text-pulse-primary" />
-            <span>Boa tarde, {userName.split(' ')[0]}</span>
+            <span>Boa tarde {userName.split(' ')[0]}</span>
         </div>
     </div>
   );
@@ -156,23 +149,6 @@ export default function PulsePage() {
 
             {/* Input Area */}
             <div className="w-full max-w-4xl pt-4 pb-8 bg-black">
-                 {messages.length === 0 && !isLoading && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                        {exampleQuestions.map((q, i) => {
-                            const Icon = q.icon;
-                            return (
-                            <Button 
-                                key={i}
-                                onClick={() => handleSuggestionClick(q.text)}
-                                variant="outline"
-                                className="bg-secondary/50 border-border hover:bg-secondary/80 justify-start"
-                            >
-                                <Icon className="w-4 h-4 mr-2 text-pulse-primary"/>
-                                {q.text}
-                            </Button>
-                        )})}
-                    </div>
-                )}
                 <div className="relative">
                     <Textarea
                         value={input}
