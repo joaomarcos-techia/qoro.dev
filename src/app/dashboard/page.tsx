@@ -49,9 +49,9 @@ const formatCurrency = (value: number) => {
     }).format(value);
 };
 
-const MetricCard = ({ title, value, icon: Icon, isLoading, error }: { title: string, value: string, icon: React.ElementType, isLoading: boolean, error?: boolean }) => (
+const MetricCard = ({ title, value, icon: Icon, isLoading, error, colorClass = 'bg-primary' }: { title: string, value: string, icon: React.ElementType, isLoading: boolean, error?: boolean, colorClass?: string }) => (
     <div className="bg-card p-6 rounded-2xl border border-border flex items-center transition-all duration-200 hover:border-primary/50 hover:-translate-y-1">
-        <div className={`p-3 rounded-xl ${error ? 'bg-yellow-500' : 'bg-primary'} text-primary-foreground mr-4 shadow-lg`}>
+        <div className={`p-3 rounded-xl ${error ? 'bg-yellow-500' : colorClass} text-black mr-4 shadow-lg`}>
             {error ? <AlertTriangle className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
         </div>
         <div>
@@ -208,13 +208,13 @@ function DashboardContent() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {permissions?.qoroCrm && (
                   <>
-                    <MetricCard title="Total de Clientes" value={String(crmMetrics.totalCustomers)} icon={Users} isLoading={isLoading.metrics} error={errors.crm} />
-                    <MetricCard title="Leads no Funil" value={String(crmMetrics.totalLeads)} icon={TrendingUp} isLoading={isLoading.metrics} error={errors.crm} />
+                    <MetricCard title="Total de Clientes" value={String(crmMetrics.totalCustomers)} icon={Users} isLoading={isLoading.metrics} error={errors.crm} colorClass='bg-crm-primary' />
+                    <MetricCard title="Leads no Funil" value={String(crmMetrics.totalLeads)} icon={TrendingUp} isLoading={isLoading.metrics} error={errors.crm} colorClass='bg-crm-primary' />
                   </>
                 )}
-                {permissions?.qoroTask && <MetricCard title="Tarefas Pendentes" value={String(taskMetrics.pendingTasks)} icon={ListTodo} isLoading={isLoading.metrics} error={errors.task} />
+                {permissions?.qoroTask && <MetricCard title="Tarefas Pendentes" value={String(taskMetrics.pendingTasks)} icon={ListTodo} isLoading={isLoading.metrics} error={errors.task} colorClass='bg-task-primary' />
                 }
-                {permissions?.qoroFinance && <MetricCard title="Saldo em Contas" value={formatCurrency(financeMetrics.totalBalance)} icon={DollarSign} isLoading={isLoading.metrics} error={errors.finance} />
+                {permissions?.qoroFinance && <MetricCard title="Saldo em Contas" value={formatCurrency(financeMetrics.totalBalance)} icon={DollarSign} isLoading={isLoading.metrics} error={errors.finance} colorClass='bg-finance-primary' />
                 }
             </div>
              {(errors.crm || errors.task || errors.finance) && (

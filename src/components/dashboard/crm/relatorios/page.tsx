@@ -26,13 +26,13 @@ interface CrmReportMetrics {
 const chartConfig = {
   revenue: {
     label: "Receita",
-    color: "hsl(var(--primary))",
+    color: "hsl(var(--crm-primary))",
   },
 };
 
 const MetricCard = ({ title, value, icon: Icon, isLoading, format }: { title: string, value: string | number, icon: React.ElementType, isLoading: boolean, format?: (value: number) => string }) => (
   <div className="bg-card p-6 rounded-2xl border border-border flex items-center">
-    <div className="p-3 rounded-xl bg-primary text-primary-foreground mr-4 shadow-lg shadow-primary/30">
+    <div className="p-3 rounded-xl bg-crm-primary text-black mr-4 shadow-lg shadow-crm-primary/30">
       <Icon className="w-6 h-6" />
     </div>
     <div>

@@ -26,7 +26,7 @@ interface CrmReportMetrics {
 const chartConfig = {
   revenue: {
     label: "Receita",
-    color: "hsl(var(--chart-1))",
+    color: "hsl(var(--crm-primary))",
   },
 };
 

@@ -41,7 +41,7 @@ const MetricCard = ({ title, value, icon: Icon, isLoading, format, colorClass = 
   </div>
 );
 
-export default function VisaoGeralPage() {
+export default function RelatoriosPage() {
     const [metrics, setMetrics] = useState<FinanceMetrics | null>(null);
     const [transactions, setTransactions] = useState<TransactionProfile[]>([]);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -184,7 +184,7 @@ export default function VisaoGeralPage() {
     return (
       <div>
         <div className="mb-8">
-            <h1 className="text-4xl font-bold text-foreground">Visão Geral Financeira</h1>
+            <h1 className="text-4xl font-bold text-foreground">Relatórios Financeiros</h1>
             <p className="text-muted-foreground">
                 Acompanhe as métricas e a saúde financeira do seu negócio em tempo real.
             </p>
