@@ -83,36 +83,38 @@ export default function PulsePage() {
   }
 
   const renderWelcomeScreen = () => (
-     <div className="text-center text-muted-foreground h-full flex flex-col justify-center max-w-2xl mx-auto">
-        <div className="mb-6 text-center">
-            <h1 className="text-3xl font-bold text-foreground flex items-center justify-center">
-                <BrainCircuit className="w-8 h-8 mr-3 text-pulse-primary"/>
-                QoroPulse
-            </h1>
-            <p className="text-muted-foreground mt-2">
-                Converse com seus dados e obtenha insights de negócio em tempo real.
-            </p>
+     <div className="flex-grow flex items-center justify-center">
+        <div className="text-center text-muted-foreground max-w-2xl mx-auto">
+            <div className="mb-6 text-center">
+                <h1 className="text-3xl font-bold text-foreground flex items-center justify-center">
+                    <BrainCircuit className="w-8 h-8 mr-3 text-pulse-primary"/>
+                    QoroPulse
+                </h1>
+                <p className="text-muted-foreground mt-2">
+                    Converse com seus dados e obtenha insights de negócio em tempo real.
+                </p>
+            </div>
+            <p className="mb-8">Como posso ajudar você a otimizar sua empresa hoje?</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {exampleQuestions.map((q, i) => (
+                    <button 
+                        key={i}
+                        onClick={() => handleSuggestionClick(q)}
+                        className="bg-card hover:bg-secondary p-4 rounded-xl text-left text-sm font-medium border border-border hover:border-primary/50 transition-all duration-300"
+                    >
+                    {q}
+                    </button>
+                ))}
+            </div>
         </div>
-        <p className="mb-8">Como posso ajudar você a otimizar sua empresa hoje?</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {exampleQuestions.map((q, i) => (
-                <button 
-                    key={i}
-                    onClick={() => handleSuggestionClick(q)}
-                    className="bg-card hover:bg-secondary p-4 rounded-xl text-left text-sm font-medium border border-border hover:border-primary/50 transition-all duration-300"
-                >
-                {q}
-                </button>
-            ))}
-        </div>
-    </div>
+     </div>
   );
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto bg-card rounded-2xl border border-border">
+    <div className="flex flex-col h-full max-w-6xl mx-auto bg-black rounded-2xl border border-border">
         <div 
             ref={scrollAreaRef}
-            className="flex-1 overflow-y-auto p-6 space-y-6"
+            className="flex-1 overflow-y-auto p-6 space-y-6 flex flex-col"
         >
             {messages.length === 0 ? (
                 renderWelcomeScreen()
