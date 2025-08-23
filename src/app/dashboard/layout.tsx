@@ -37,39 +37,24 @@ interface NavItem {
 interface NavGroup {
     group: string;
     icon: LucideIcon;
-    color: string;
-    textColor: string;
-    shadowColor: string;
 }
 
 const navConfig: Record<string, NavGroup> = {
     crm: {
         group: 'QoroCRM',
         icon: Users,
-        color: 'bg-crm-primary',
-        textColor: 'text-crm-primary',
-        shadowColor: 'shadow-crm-primary/30',
     },
     task: {
         group: 'QoroTask',
         icon: CheckSquare,
-        color: 'bg-task-primary',
-        textColor: 'text-task-primary',
-        shadowColor: 'shadow-task-primary/30',
     },
     finance: {
         group: 'QoroFinance',
         icon: DollarSign,
-        color: 'bg-finance-primary',
-        textColor: 'text-finance-primary',
-        shadowColor: 'shadow-finance-primary/30',
     },
     pulse: {
       group: 'QoroPulse',
       icon: Activity,
-      color: 'bg-pulse-primary',
-      textColor: 'text-pulse-primary',
-      shadowColor: 'shadow-pulse-primary/30',
   },
 };
 
@@ -82,10 +67,10 @@ const navItems: Record<string, NavItem[]> = {
         { href: '/dashboard/crm/servicos', label: 'Serviços', icon: Wrench },
         { href: '/dashboard/crm/orcamentos', label: 'Orçamentos', icon: FileText },
         { href: '/dashboard/crm/fornecedores', label: 'Fornecedores', icon: Truck },
+        { href: '/dashboard/crm/relatorios', label: 'Relatórios', icon: BarChart3 },
     ],
     task: [
-        { href: '/dashboard/task/minha-lista', label: 'Minha Lista', icon: List },
-        { href: '/dashboard/task/tarefas', label: 'Progresso', icon: LayoutGrid },
+        { href: '/dashboard/task/tarefas', label: 'Quadro', icon: LayoutGrid },
         { href: '/dashboard/task/calendario', label: 'Calendário', icon: Calendar },
     ],
     finance: [
@@ -120,16 +105,16 @@ export default function DashboardLayout({
         return null;
     }
     
-    const { group, icon: GroupIcon, color, textColor, shadowColor } = moduleConfig;
+    const { group, icon: GroupIcon } = moduleConfig;
     
     return (
         <aside className="w-64 flex-shrink-0 bg-card border-r border-border flex flex-col">
             <div className="p-4 border-b border-border space-y-4">
                 <div className="flex items-center">
-                    <div className={`p-3 rounded-xl text-black mr-4 shadow-lg ${color} ${shadowColor}`}>
+                    <div className={'p-3 rounded-xl text-black mr-4 shadow-lg bg-primary shadow-primary/30'}>
                         <GroupIcon className="w-6 h-6" />
                     </div>
-                    <h2 className={`text-xl font-bold ${textColor}`}>{group}</h2>
+                    <h2 className={'text-xl font-bold text-primary'}>{group}</h2>
                 </div>
                 <Link href="/dashboard" className="flex items-center text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
                     <ChevronLeft className="w-4 h-4 mr-2" />
@@ -144,7 +129,7 @@ export default function DashboardLayout({
                         href={item.href}
                         className={`flex items-center px-4 py-3 my-1 rounded-xl text-sm font-medium transition-all duration-200 group ${
                             pathname === item.href
-                            ? `${color} text-black shadow-lg ${shadowColor}`
+                            ? 'bg-primary text-black shadow-lg shadow-primary/30'
                             : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                         }`}
                         >

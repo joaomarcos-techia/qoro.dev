@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useTransition } from 'react';
+import { useState, useEffect, useMemo, useTransition, useCallback } from 'react';
 import { Loader2, ServerCrash, CheckCircle, AlertCircle, PlusCircle } from 'lucide-react';
 import { TaskKanbanBoard } from '@/components/dashboard/task/TaskKanbanBoard';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -23,7 +23,7 @@ export default function ProgressoPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TaskProfile | null>(null);
 
-  const fetchTasks = () => {
+  const fetchTasks = useCallback(() => {
     if (currentUser) {
       setIsLoading(true);
       setError(null);
@@ -35,7 +35,7 @@ export default function ProgressoPage() {
         })
         .finally(() => setIsLoading(false));
     }
-  };
+  }, [currentUser]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -48,7 +48,7 @@ export default function ProgressoPage() {
     if (currentUser) {
       fetchTasks();
     }
-  }, [currentUser]);
+  }, [currentUser, fetchTasks]);
 
   const showTemporaryFeedback = (message: string, type: 'success' | 'error' = 'success') => {
     setFeedback({ type, message });
@@ -161,7 +161,11 @@ export default function ProgressoPage() {
 
   return (
     <div className='h-[calc(100vh-120px)] flex flex-col'>
-      <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
+        <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
+          <DialogTrigger asChild>
+            {/* O gatilho agora é o botão principal da página */}
+            <span />
+          </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle className="text-2xl font-bold text-foreground">{selectedTask ? 'Editar Tarefa' : 'Criar Nova Tarefa'}</DialogTitle>
@@ -176,7 +180,7 @@ export default function ProgressoPage() {
       <div className="flex-shrink-0">
         <div className="flex justify-between items-center mb-6">
             <div>
-            <h1 className="text-4xl font-bold text-foreground">Progresso das Tarefas</h1>
+            <h1 className="text-4xl font-bold text-foreground">Quadro de Tarefas</h1>
             <p className="text-muted-foreground">
                 Visualize e mova suas tarefas entre as fases do fluxo de trabalho.
             </p>
