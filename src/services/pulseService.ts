@@ -57,7 +57,7 @@ export const listConversations = async (actorUid: string): Promise<z.infer<typeo
         const snapshot = await adminDb.collectionGroup('pulse_conversations')
             .where('organizationId', '==', organizationId)
             .where('userId', '==', actorUid)
-            .orderBy('createdAt', 'desc')
+            .orderBy('updatedAt', 'desc')
             .get();
             
         if (snapshot.empty) {
@@ -66,7 +66,6 @@ export const listConversations = async (actorUid: string): Promise<z.infer<typeo
 
         const conversations = snapshot.docs.map(doc => {
             const data = doc.data();
-            // Use createdAt as a fallback for updatedAt
             const updatedAt = data.updatedAt ? data.updatedAt.toDate().toISOString() : data.createdAt.toDate().toISOString();
             
             return ConversationSchema.parse({
@@ -77,10 +76,6 @@ export const listConversations = async (actorUid: string): Promise<z.infer<typeo
                 messages: data.messages || [],
             });
         });
-
-        // Manually sort by the reliable `updatedAt` field we've just constructed.
-        // This ensures recent conversations (new or updated) appear first.
-        conversations.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
         return conversations;
 
