@@ -3,75 +3,19 @@
 /**
  * @fileOverview A conversational AI agent for business insights.
  * - askPulse - A function that handles the conversational chat with QoroPulse.
- * - listConversations - Lists all conversations for the user.
- * - getConversation - Gets a single conversation.
- * - deleteConversation - Deletes a specific conversation.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { AskPulseInputSchema, PulseMessageSchema, ConversationSchema } from '@/ai/schemas';
+import { AskPulseInputSchema, PulseMessageSchema } from '@/ai/schemas';
 import { listCustomersTool, listSaleLeadsTool } from '@/ai/tools/crm-tools';
 import { createTaskTool, listTasksTool } from '@/ai/tools/task-tools';
 import { listAccountsTool, getFinanceSummaryTool } from '@/ai/tools/finance-tools';
 import { listSuppliersTool } from '@/ai/tools/supplier-tools';
-import * as pulseService from '@/services/pulseService';
-
-const ActorSchema = z.object({ actor: z.string() });
-const ConversationIdSchema = z.object({ conversationId: z.string() });
-
 
 export async function askPulse(input: z.infer<typeof AskPulseInputSchema>): Promise<z.infer<typeof PulseMessageSchema>> {
   return pulseFlow(input);
 }
-
-export async function listConversations(input: z.infer<typeof ActorSchema>): Promise<z.infer<typeof ConversationSchema>[]> {
-    return listConversationsFlow(input);
-}
-
-export async function getConversation(input: z.infer<typeof ConversationIdSchema> & z.infer<typeof ActorSchema>): Promise<z.infer<typeof ConversationSchema> | null> {
-    return getConversationFlow(input);
-}
-
-export async function deleteConversation(input: z.infer<typeof ConversationIdSchema> & z.infer<typeof ActorSchema>): Promise<{ success: boolean }> {
-    return deleteConversationFlow(input);
-}
-
-const listConversationsFlow = ai.defineFlow(
-    {
-        name: 'listPulseConversationsFlow',
-        inputSchema: ActorSchema,
-        outputSchema: z.array(ConversationSchema),
-    },
-    async ({ actor }) => {
-        return pulseService.listConversations(actor);
-    }
-);
-
-const getConversationFlow = ai.defineFlow(
-    {
-        name: 'getPulseConversationFlow',
-        inputSchema: ConversationIdSchema.extend(ActorSchema.shape),
-        outputSchema: ConversationSchema.nullable(),
-    },
-    async ({ conversationId, actor }) => {
-        return pulseService.getConversation(conversationId, actor);
-    }
-);
-
-
-const deleteConversationFlow = ai.defineFlow(
-    {
-        name: 'deletePulseConversationFlow',
-        inputSchema: ConversationIdSchema.extend(ActorSchema.shape),
-        outputSchema: z.object({ success: z.boolean() }),
-    },
-    async ({ conversationId, actor }) => {
-        await pulseService.deleteConversation(conversationId, actor);
-        return { success: true };
-    }
-);
-
 
 const pulseFlow = ai.defineFlow(
   {
@@ -81,7 +25,6 @@ const pulseFlow = ai.defineFlow(
   },
   async (input) => {
     const { actor, messages } = input;
-    let conversationId = input.conversationId;
 
     const history = messages.slice(0, -1).map(message => ({
         role: message.role === 'user' ? 'user' : 'model',
@@ -142,19 +85,7 @@ Transformar dados empresariais em decisões estratégicas com impacto real. Iden
         content: llmResponse.text,
     };
     
-    const updatedMessages = [...messages, assistantResponse];
-
-    if (!conversationId || conversationId === 'new') {
-        const titleResponse = await ai.generate({
-            model: 'googleai/gemini-2.0-flash',
-            prompt: `Crie um título curto (máximo 5 palavras) para a seguinte conversa:\n\nUsuário: ${prompt}\nAssistente: ${assistantResponse.content}`,
-        });
-        const title = titleResponse.text.replace(/"/g, '');
-        conversationId = await pulseService.saveConversation(actor, title, updatedMessages);
-    } else {
-        await pulseService.updateConversation(conversationId, actor, updatedMessages);
-    }
-    
-    return { ...assistantResponse, conversationId };
+    return assistantResponse;
   }
 );
+

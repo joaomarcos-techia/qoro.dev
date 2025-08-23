@@ -1,31 +1,7 @@
 
 'use server';
 /**
- * @fileOverview Defines Genkit tools for the Pulse module.
+ * @fileOverview Ferramentas para o QoroPulse.
+ * A funcionalidade de histórico foi removida. Este arquivo pode ser usado
+ * para futuras ferramentas do módulo.
  */
-
-import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-
-// This file is kept for potential future use but is no longer
-// directly used by the main pulse flow after removing the conversation history feature.
-// It can be repurposed for other metadata generation tasks.
-
-export const generateTitleTool = ai.defineTool(
-    {
-        name: 'generateTitleTool',
-        description: 'Gera um título curto e conciso para uma conversa com base na primeira interação.',
-        inputSchema: z.object({
-            prompt: z.string().describe('O prompt inicial do usuário.'),
-            response: z.string().describe('A resposta inicial do assistente.'),
-        }),
-        outputSchema: z.string(),
-    },
-    async (input) => {
-        const llmResponse = await ai.generate({
-            model: 'googleai/gemini-2.0-flash',
-            prompt: `Crie um título curto (máximo 5 palavras) para a seguinte conversa:\n\nUsuário: ${input.prompt}\nAssistente: ${input.response}`,
-        });
-        return llmResponse.text.replace(/"/g, ''); // Remove quotes from title
-    }
-);
