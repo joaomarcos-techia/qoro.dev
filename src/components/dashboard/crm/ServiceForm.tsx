@@ -9,27 +9,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { createProduct } from '@/ai/flows/crm-management';
-import { ProductSchema } from '@/ai/schemas';
+import { createProduct, updateProduct } from '@/ai/flows/crm-management';
+import { ProductSchema, ProductProfile } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type ServiceFormProps = {
-  onServiceCreated: () => void;
+  onAction: () => void;
+  service?: ProductProfile | null;
 };
 
 // Re-using ProductSchema for services as the structure is identical.
-// In a real-world scenario, you might want a distinct ServiceSchema if they diverge.
-const ServiceSchema = ProductSchema.extend({
-    // Service-specific fields can be added here if needed
-});
+const ServiceSchema = ProductSchema;
 
-export function ServiceForm({ onServiceCreated }: ServiceFormProps) {
+export function ServiceForm({ onAction, service }: ServiceFormProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isEditMode = !!service;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -43,36 +43,46 @@ export function ServiceForm({ onServiceCreated }: ServiceFormProps) {
     handleSubmit,
     control,
     watch,
+    reset,
     formState: { errors },
   } = useForm<z.infer<typeof ServiceSchema>>({
     resolver: zodResolver(ServiceSchema),
-    defaultValues: {
+  });
+
+  useEffect(() => {
+    if (service) {
+      reset(service);
+    } else {
+      reset({
         name: '',
         description: '',
-        category: 'Serviço', // Default category
+        category: 'Serviço',
         price: 0,
         pricingModel: 'fixed',
         durationHours: 1,
-    },
-  });
+      });
+    }
+  }, [service, reset]);
 
   const pricingModel = watch('pricingModel');
 
   const onSubmit = async (data: z.infer<typeof ServiceSchema>) => {
     if (!currentUser) {
-      setError('Você precisa estar autenticado para criar um serviço.');
+      setError('Você precisa estar autenticado para executar esta ação.');
       return;
     }
     setIsLoading(true);
     setError(null);
     try {
-      // We use the same createProduct flow, as the data structure is compatible.
-      // The `category` field helps differentiate.
-      await createProduct({ ...data, actor: currentUser.uid });
-      onServiceCreated();
+      if (isEditMode) {
+        await updateProduct({ ...data, id: service.id, actor: currentUser.uid });
+      } else {
+        await createProduct({ ...data, actor: currentUser.uid });
+      }
+      onAction();
     } catch (err) {
       console.error(err);
-      setError('Falha ao criar o serviço. Tente novamente.');
+      setError(`Falha ao ${isEditMode ? 'atualizar' : 'criar'} o serviço. Tente novamente.`);
     } finally {
       setIsLoading(false);
     }
@@ -97,7 +107,7 @@ export function ServiceForm({ onServiceCreated }: ServiceFormProps) {
         <div className="space-y-2">
             <Label>Modelo de Preço*</Label>
             <Controller name="pricingModel" control={control} render={({ field }) => (
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value="fixed">Preço Fixo</SelectItem>
@@ -129,7 +139,7 @@ export function ServiceForm({ onServiceCreated }: ServiceFormProps) {
       <div className="flex justify-end pt-4">
         <Button type="submit" disabled={isLoading} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
           {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
-          {isLoading ? 'Salvando...' : 'Salvar Serviço'}
+          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : 'Salvar Serviço')}
         </Button>
       </div>
     </form>

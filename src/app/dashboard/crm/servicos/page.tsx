@@ -14,15 +14,38 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { ServiceForm } from '@/components/dashboard/crm/ServiceForm';
+import { ProductProfile } from '@/ai/schemas';
 
 export default function ServicosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<ProductProfile | null>(null);
   const [refreshCounter, setRefreshCounter] = useState(0);
 
-  const handleServiceCreated = () => {
-    setIsModalOpen(false);
-    setRefreshCounter(prev => prev + 1); // Trigger a refresh
+  const triggerRefresh = () => {
+    setRefreshCounter(prev => prev + 1);
   };
+  
+  const handleModalOpenChange = (open: boolean) => {
+    setIsModalOpen(open);
+    if (!open) {
+        setSelectedService(null);
+    }
+  }
+
+  const handleAction = () => {
+    handleModalOpenChange(false);
+    triggerRefresh();
+  };
+  
+  const handleEdit = (service: ProductProfile) => {
+    setSelectedService(service);
+    setIsModalOpen(true);
+  };
+
+  const handleAdd = () => {
+    setSelectedService(null);
+    setIsModalOpen(true);
+  }
 
   return (
     <div>
@@ -33,27 +56,27 @@ export default function ServicosPage() {
             Cadastre e gerencie os serviços que sua empresa oferece.
           </p>
         </div>
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
           <DialogTrigger asChild>
-            <Button className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
+            <Button onClick={handleAdd} className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
               <PlusCircle className="mr-2 w-5 h-5" />
               Adicionar Serviço
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-foreground">Adicionar Novo Serviço</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-foreground">{selectedService ? 'Editar Serviço' : 'Adicionar Novo Serviço'}</DialogTitle>
               <DialogDescription>
-                Preencha as informações abaixo para cadastrar um novo serviço no sistema.
+                {selectedService ? 'Altere as informações do serviço abaixo.' : 'Preencha as informações abaixo para cadastrar um novo serviço no sistema.'}
               </DialogDescription>
             </DialogHeader>
-            <ServiceForm onServiceCreated={handleServiceCreated} />
+            <ServiceForm onAction={handleAction} service={selectedService} />
           </DialogContent>
         </Dialog>
       </div>
 
       <div className="bg-card p-6 rounded-2xl border-border">
-        <ServiceTable key={refreshCounter} />
+        <ServiceTable key={refreshCounter} onEdit={handleEdit} onRefresh={triggerRefresh} />
       </div>
     </div>
   );

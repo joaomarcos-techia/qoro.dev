@@ -20,10 +20,12 @@
  * - updateCustomer - Updates a customer's profile.
  * - getOrganizationDetails - Fetches details for the user's organization.
  * - updateSaleLeadStage - Updates the stage of a sale lead.
+ * - updateSaleLead - Updates a sale lead.
+ * - deleteSaleLead - Deletes a sale lead.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { CustomerSchema, CustomerProfileSchema, SaleLeadSchema, SaleLeadProfileSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema, OrganizationProfileSchema } from '@/ai/schemas';
+import { CustomerSchema, CustomerProfileSchema, SaleLeadSchema, SaleLeadProfileSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema, OrganizationProfileSchema, UpdateSaleLeadSchema } from '@/ai/schemas';
 import * as crmService from '@/services/crmService';
 
 const ActorSchema = z.object({ actor: z.string() });
@@ -56,6 +58,10 @@ const DeleteQuoteInputSchema = z.object({
     quoteId: z.string(),
 }).extend(ActorSchema.shape);
 
+const DeleteSaleLeadInputSchema = z.object({
+    leadId: z.string(),
+}).extend(ActorSchema.shape);
+
 
 // Define flows
 const createCustomerFlow = ai.defineFlow(
@@ -83,6 +89,24 @@ const createSaleLeadFlow = ai.defineFlow(
         outputSchema: z.object({ id: z.string() })
     },
     async (input) => crmService.createSaleLead(input, input.actor)
+);
+
+const updateSaleLeadFlow = ai.defineFlow(
+    {
+        name: 'updateSaleLeadFlow',
+        inputSchema: UpdateSaleLeadSchema.extend(ActorSchema.shape),
+        outputSchema: z.object({ id: z.string() })
+    },
+    async (input) => crmService.updateSaleLead(input.id, input, input.actor)
+);
+
+const deleteSaleLeadFlow = ai.defineFlow(
+    {
+        name: 'deleteSaleLeadFlow',
+        inputSchema: DeleteSaleLeadInputSchema,
+        outputSchema: z.object({ id: z.string(), success: z.boolean() })
+    },
+    async (input) => crmService.deleteSaleLead(input.leadId, input.actor)
 );
 
 const listSaleLeadsFlow = ai.defineFlow(
@@ -238,6 +262,14 @@ export async function listCustomers(input: z.infer<typeof ActorSchema>): Promise
 
 export async function createSaleLead(input: z.infer<typeof SaleLeadSchema> & z.infer<typeof ActorSchema>): Promise<{ id: string; }> {
     return createSaleLeadFlow(input);
+}
+
+export async function updateSaleLead(input: z.infer<typeof UpdateSaleLeadSchema> & z.infer<typeof ActorSchema>): Promise<{ id: string; }> {
+    return updateSaleLeadFlow(input);
+}
+
+export async function deleteSaleLead(input: z.infer<typeof DeleteSaleLeadInputSchema>): Promise<{ id: string, success: boolean }> {
+    return deleteSaleLeadFlow(input);
 }
 
 export async function listSaleLeads(input: z.infer<typeof ActorSchema>): Promise<z.infer<typeof SaleLeadProfileSchema>[]> {

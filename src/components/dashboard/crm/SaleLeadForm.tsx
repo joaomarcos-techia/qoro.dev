@@ -11,16 +11,17 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { createSaleLead, listCustomers } from '@/ai/flows/crm-management';
-import { SaleLeadSchema, CustomerProfile } from '@/ai/schemas';
+import { createSaleLead, listCustomers, updateSaleLead } from '@/ai/flows/crm-management';
+import { SaleLeadSchema, CustomerProfile, SaleLeadProfile, UpdateSaleLeadSchema } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Loader2, AlertCircle, CalendarIcon, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 type SaleLeadFormProps = {
-  onSaleLeadCreated: () => void;
+  onAction: () => void;
+  saleLead?: SaleLeadProfile | null;
 };
 
 const FormSchema = SaleLeadSchema.extend({
@@ -28,7 +29,7 @@ const FormSchema = SaleLeadSchema.extend({
 });
 type FormValues = z.infer<typeof FormSchema>;
 
-export function SaleLeadForm({ onSaleLeadCreated }: SaleLeadFormProps) {
+export function SaleLeadForm({ onAction, saleLead }: SaleLeadFormProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,18 +38,16 @@ export function SaleLeadForm({ onSaleLeadCreated }: SaleLeadFormProps) {
   const [customerSearch, setCustomerSearch] = useState('');
   const [isCustomerPopoverOpen, setIsCustomerPopoverOpen] = useState(false);
 
+  const isEditMode = !!saleLead;
+
   const {
     register,
     handleSubmit,
     control,
+    reset,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
-    defaultValues: {
-      stage: 'new',
-      priority: 'medium',
-      expectedCloseDate: new Date(),
-    },
   });
 
   useEffect(() => {
@@ -73,9 +72,25 @@ export function SaleLeadForm({ onSaleLeadCreated }: SaleLeadFormProps) {
     fetchCustomers();
   }, [fetchCustomers]);
 
+  useEffect(() => {
+    if (saleLead) {
+        const expectedCloseDate = saleLead.expectedCloseDate ? parseISO(saleLead.expectedCloseDate) : new Date();
+        reset({ ...saleLead, expectedCloseDate });
+    } else {
+        reset({
+            stage: 'new',
+            priority: 'medium',
+            expectedCloseDate: new Date(),
+            customerId: '',
+            title: '',
+            value: 0,
+        });
+    }
+  }, [saleLead, reset]);
+
   const onSubmit = async (data: FormValues) => {
     if (!currentUser) {
-      setError('Você precisa estar autenticado para criar uma oportunidade.');
+      setError(`Você precisa estar autenticado para ${isEditMode ? 'atualizar' : 'criar'} uma oportunidade.`);
       return;
     }
     setIsLoading(true);
@@ -86,11 +101,15 @@ export function SaleLeadForm({ onSaleLeadCreated }: SaleLeadFormProps) {
           ...data,
           expectedCloseDate: data.expectedCloseDate.toISOString(),
       };
-      await createSaleLead({ ...submissionData, actor: currentUser.uid });
-      onSaleLeadCreated();
+      if (isEditMode) {
+        await updateSaleLead({ ...submissionData, id: saleLead.id, actor: currentUser.uid });
+      } else {
+        await createSaleLead({ ...submissionData, actor: currentUser.uid });
+      }
+      onAction();
     } catch (err) {
       console.error(err);
-      setError('Falha ao criar a oportunidade. Tente novamente.');
+      setError(`Falha ao ${isEditMode ? 'atualizar' : 'criar'} a oportunidade. Tente novamente.`);
     } finally {
       setIsLoading(false);
     }
@@ -152,7 +171,7 @@ export function SaleLeadForm({ onSaleLeadCreated }: SaleLeadFormProps) {
             <div className="space-y-2">
                 <Label>Estágio*</Label>
                  <Controller name="stage" control={control} render={({ field }) => (
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                         <SelectTrigger><SelectValue/></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="new">Novo / Lead Recebido</SelectItem>
@@ -170,7 +189,7 @@ export function SaleLeadForm({ onSaleLeadCreated }: SaleLeadFormProps) {
             <div className="space-y-2">
                 <Label>Prioridade*</Label>
                  <Controller name="priority" control={control} render={({ field }) => (
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                         <SelectTrigger><SelectValue/></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="low">Baixa</SelectItem>
@@ -203,15 +222,15 @@ export function SaleLeadForm({ onSaleLeadCreated }: SaleLeadFormProps) {
         </div>
 
        {error && (
-            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg flex items-center">
+            <div className="bg-destructive/20 border-l-4 border-destructive text-destructive-foreground p-4 rounded-lg flex items-center">
               <AlertCircle className="w-5 h-5 mr-3" />
               <span className="text-sm">{error}</span>
             </div>
         )}
       <div className="flex justify-end pt-4">
-        <Button type="submit" disabled={isLoading} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 shadow-neumorphism hover:shadow-neumorphism-hover flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
+        <Button type="submit" disabled={isLoading} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
           {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
-          {isLoading ? 'Salvando...' : 'Salvar Oportunidade'}
+          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : 'Salvar Oportunidade')}
         </Button>
       </div>
     </form>

@@ -38,16 +38,22 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, ArrowUpDown, Search, Loader2, Truck, Trash2 } from 'lucide-react';
+import { MoreHorizontal, ArrowUpDown, Search, Loader2, Truck, Trash2, Edit } from 'lucide-react';
 import { listSuppliers, deleteSupplier } from '@/ai/flows/supplier-management';
 import type { SupplierProfile } from '@/ai/schemas';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 
-export function SupplierTable() {
+interface SupplierTableProps {
+    onEdit: (supplier: SupplierProfile) => void;
+    onRefresh: () => void;
+}
+
+export function SupplierTable({ onEdit, onRefresh }: SupplierTableProps) {
   const [data, setData] = React.useState<SupplierProfile[]>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -82,14 +88,14 @@ export function SupplierTable() {
     if(currentUser) {
         fetchSuppliers();
     }
-  }, [currentUser, fetchSuppliers]);
+  }, [currentUser, fetchSuppliers, onRefresh]);
   
   const handleDelete = async (supplierId: string) => {
     if (!currentUser) return;
     setIsDeleting(true);
     try {
         await deleteSupplier({ supplierId, actor: currentUser.uid });
-        await fetchSuppliers();
+        onRefresh();
     } catch (err) {
         console.error("Failed to delete supplier:", err);
         setError("Não foi possível excluir o fornecedor.");
@@ -137,7 +143,10 @@ export function SupplierTable() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                <DropdownMenuItem>Editar Fornecedor</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onEdit(supplier)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Editar Fornecedor
+                </DropdownMenuItem>
                  <AlertDialogTrigger asChild>
                     <DropdownMenuItem className="text-red-500 focus:text-red-400 focus:bg-destructive/20">
                         <Trash2 className="mr-2 h-4 w-4" />

@@ -1,7 +1,7 @@
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { SupplierSchema, SupplierProfileSchema } from '@/ai/schemas';
+import { SupplierSchema, SupplierProfileSchema, UpdateSupplierSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import { adminDb } from '@/lib/firebase-admin';
 
@@ -18,6 +18,25 @@ export const createSupplier = async (input: z.infer<typeof SupplierSchema>, acto
     const supplierRef = await adminDb.collection('suppliers').add(newSupplierData);
 
     return { id: supplierRef.id };
+};
+
+export const updateSupplier = async (supplierId: string, input: z.infer<typeof UpdateSupplierSchema>, actorUid: string) => {
+    const { organizationId } = await getAdminAndOrg(actorUid);
+    const supplierRef = adminDb.collection('suppliers').doc(supplierId);
+
+    const doc = await supplierRef.get();
+    if (!doc.exists || doc.data()?.companyId !== organizationId) {
+        throw new Error('Fornecedor não encontrado ou acesso negado.');
+    }
+
+    const { id, ...updateData } = input;
+
+    await supplierRef.update({
+        ...updateData,
+        updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    return { id: supplierId };
 };
 
 export const listSuppliers = async (actorUid: string): Promise<z.infer<typeof SupplierProfileSchema>[]> => {

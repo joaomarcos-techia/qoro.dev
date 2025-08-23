@@ -22,16 +22,28 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, ArrowUpDown, Search, Loader2, Wrench } from 'lucide-react';
-import { listProducts } from '@/ai/flows/crm-management';
+import { MoreHorizontal, ArrowUpDown, Search, Loader2, Wrench, Edit, Trash2, Copy } from 'lucide-react';
+import { listProducts, deleteProduct } from '@/ai/flows/crm-management';
 import type { ProductProfile } from '@/ai/schemas';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -45,67 +57,12 @@ const formatCurrency = (value: number | null | undefined, pricingModel: 'fixed' 
     return pricingModel === 'per_hour' ? `${formattedValue}/h` : formattedValue;
 };
 
-export const columns: ColumnDef<ProductProfile>[] = [
-  {
-    accessorKey: 'name',
-    header: ({ column }) => (
-        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-            Nome <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-    ),
-    cell: ({ row }) => <div className="font-medium text-foreground">{row.getValue('name')}</div>,
-  },
-  {
-    accessorKey: 'category',
-    header: 'Categoria',
-    cell: ({ row }) => row.getValue('category') || '-',
-  },
-  {
-    accessorKey: 'price',
-    header: 'Preço',
-    cell: ({ row }) => formatCurrency(row.getValue('price'), row.original.pricingModel),
-  },
-   {
-    accessorKey: 'pricingModel',
-    header: 'Modelo',
-    cell: ({ row }) => {
-        const model = row.getValue('pricingModel');
-        if (model === 'per_hour') return 'Por Hora';
-        return 'Fixo';
-    },
-  },
-  {
-    accessorKey: 'createdAt',
-    header: 'Criado em',
-    cell: ({ row }) => new Date(row.getValue('createdAt')).toLocaleDateString('pt-BR'),
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => {
-      const service = row.original;
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Ações</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(service.id)}>
-              Copiar ID do Serviço
-            </DropdownMenuItem>
-            <DropdownMenuItem>Editar Serviço</DropdownMenuItem>
-            <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400">Excluir Serviço</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
-  },
-];
+interface ServiceTableProps {
+    onEdit: (service: ProductProfile) => void;
+    onRefresh: () => void;
+}
 
-export function ServiceTable() {
+export function ServiceTable({ onEdit, onRefresh }: ServiceTableProps) {
   const [data, setData] = React.useState<ProductProfile[]>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -120,17 +77,112 @@ export function ServiceTable() {
     return () => unsubscribe();
   }, []);
 
+  const handleDelete = async (productId: string) => {
+    if (!currentUser) return;
+    try {
+        await deleteProduct({ productId, actor: currentUser.uid });
+        onRefresh();
+    } catch(err: any) {
+        console.error("Failed to delete service:", err);
+        setError(err.message || "Não foi possível excluir o serviço.");
+    }
+  };
+
+  const columns: ColumnDef<ProductProfile>[] = [
+    {
+      accessorKey: 'name',
+      header: ({ column }) => (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+              Nome <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+      ),
+      cell: ({ row }) => <div className="font-medium text-foreground">{row.getValue('name')}</div>,
+    },
+    {
+      accessorKey: 'category',
+      header: 'Categoria',
+      cell: ({ row }) => row.getValue('category') || '-',
+    },
+    {
+      accessorKey: 'price',
+      header: 'Preço',
+      cell: ({ row }) => formatCurrency(row.getValue('price'), row.original.pricingModel),
+    },
+     {
+      accessorKey: 'pricingModel',
+      header: 'Modelo',
+      cell: ({ row }) => {
+          const model = row.getValue('pricingModel');
+          if (model === 'per_hour') return 'Por Hora';
+          return 'Fixo';
+      },
+    },
+    {
+      accessorKey: 'createdAt',
+      header: 'Criado em',
+      cell: ({ row }) => new Date(row.getValue('createdAt')).toLocaleDateString('pt-BR'),
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => {
+        const service = row.original;
+        return (
+            <AlertDialog>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Abrir menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => onEdit(service)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar Serviço
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(service.id)}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Copiar ID
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <AlertDialogTrigger asChild>
+                            <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Excluir Serviço
+                            </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o serviço <span className='font-bold'>{service.name}</span>.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleDelete(service.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Sim, excluir
+                    </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+          </AlertDialog>
+        );
+      },
+    },
+  ];
+
   React.useEffect(() => {
     async function fetchData() {
       if (!currentUser) return;
       setIsLoading(true);
       setError(null);
       try {
-        // We fetch from the 'products' collection, then filter by category client-side.
-        // This is a simplification. In a larger app, you might have a dedicated 'services' collection
-        // or a 'type' field on the product itself to filter in the backend query.
         const allItems = await listProducts({ actor: currentUser.uid });
-        const services = allItems.filter(item => item.category?.toLowerCase().includes('serviço') || item.cost === undefined || item.cost === null);
+        // Correctly filter for services based on pricing model
+        const services = allItems.filter(item => item.pricingModel === 'per_hour');
         setData(services);
       } catch (err) {
         console.error('Failed to fetch services:', err);
@@ -140,7 +192,7 @@ export function ServiceTable() {
       }
     }
     fetchData();
-  }, [currentUser]);
+  }, [currentUser, onRefresh]);
 
   const table = useReactTable({
     data,

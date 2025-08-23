@@ -8,20 +8,25 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createSupplier } from '@/ai/flows/supplier-management';
-import { SupplierSchema } from '@/ai/schemas';
+import { createSupplier, updateSupplier } from '@/ai/flows/supplier-management';
+import { SupplierSchema, SupplierProfile } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Loader2, AlertCircle } from 'lucide-react';
+import * as supplierService from '@/services/supplierService';
+
 
 type SupplierFormProps = {
-  onSupplierCreated: () => void;
+  onAction: () => void;
+  supplier?: SupplierProfile | null;
 };
 
-export function SupplierForm({ onSupplierCreated }: SupplierFormProps) {
+export function SupplierForm({ onAction, supplier }: SupplierFormProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isEditMode = !!supplier;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -33,31 +38,44 @@ export function SupplierForm({ onSupplierCreated }: SupplierFormProps) {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<z.infer<typeof SupplierSchema>>({
     resolver: zodResolver(SupplierSchema),
-    defaultValues: {
-      name: '',
-      cnpj: '',
-      email: '',
-      phone: '',
-      paymentTerms: '',
-    },
   });
+
+  useEffect(() => {
+    if (supplier) {
+        reset(supplier);
+    } else {
+        reset({
+            name: '',
+            cnpj: '',
+            email: '',
+            phone: '',
+            paymentTerms: '',
+        });
+    }
+  }, [supplier, reset]);
+
 
   const onSubmit = async (data: z.infer<typeof SupplierSchema>) => {
     if (!currentUser) {
-      setError('Você precisa estar autenticado para criar um fornecedor.');
+      setError('Você precisa estar autenticado para executar esta ação.');
       return;
     }
     setIsLoading(true);
     setError(null);
     try {
-      await createSupplier({ ...data, actor: currentUser.uid });
-      onSupplierCreated();
+      if (isEditMode) {
+        await supplierService.updateSupplier({ ...data, id: supplier.id, actor: currentUser.uid });
+      } else {
+        await supplierService.createSupplier({ ...data, actor: currentUser.uid });
+      }
+      onAction();
     } catch (err) {
       console.error(err);
-      setError('Falha ao criar o fornecedor. Tente novamente.');
+      setError(`Falha ao ${isEditMode ? 'atualizar' : 'criar'} o fornecedor. Tente novamente.`);
     } finally {
       setIsLoading(false);
     }
@@ -98,7 +116,7 @@ export function SupplierForm({ onSupplierCreated }: SupplierFormProps) {
       <div className="flex justify-end pt-4">
         <Button type="submit" disabled={isLoading} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
           {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
-          {isLoading ? 'Salvando...' : 'Salvar Fornecedor'}
+          {isLoading ? 'Salvando...' : isEditMode ? 'Salvar Alterações' : 'Salvar Fornecedor'}
         </Button>
       </div>
     </form>

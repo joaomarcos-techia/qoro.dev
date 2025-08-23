@@ -1,7 +1,7 @@
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { CustomerSchema, CustomerProfileSchema, SaleLeadProfileSchema, SaleLeadSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema } from '@/ai/schemas';
+import { CustomerSchema, CustomerProfileSchema, SaleLeadProfileSchema, SaleLeadSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema, UpdateSaleLeadSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import type { SaleLeadProfile, QuoteProfile } from '@/ai/schemas';
 import { adminDb } from '@/lib/firebase-admin';
@@ -119,6 +119,40 @@ export const createSaleLead = async (input: z.infer<typeof SaleLeadSchema>, acto
     const saleLeadRef = await adminDb.collection('sales_pipeline').add(newSaleLeadData);
     return { id: saleLeadRef.id };
 };
+
+export const updateSaleLead = async (leadId: string, input: z.infer<typeof UpdateSaleLeadSchema>, actorUid: string) => {
+    const { organizationId } = await getAdminAndOrg(actorUid);
+    const leadRef = adminDb.collection('sales_pipeline').doc(leadId);
+
+    const leadDoc = await leadRef.get();
+    if (!leadDoc.exists || leadDoc.data()?.companyId !== organizationId) {
+        throw new Error('Oportunidade não encontrada ou acesso negado.');
+    }
+
+    const { id, ...updateData } = input;
+
+    await leadRef.update({
+        ...updateData,
+        updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    return { id: leadId };
+};
+
+export const deleteSaleLead = async (leadId: string, actorUid: string) => {
+    const { organizationId } = await getAdminAndOrg(actorUid);
+    const leadRef = adminDb.collection('sales_pipeline').doc(leadId);
+
+    const leadDoc = await leadRef.get();
+    if (!leadDoc.exists || leadDoc.data()?.companyId !== organizationId) {
+        throw new Error('Oportunidade não encontrada ou acesso negado.');
+    }
+
+    await leadRef.delete();
+
+    return { id: leadId, success: true };
+};
+
 
 export const listSaleLeads = async (actorUid: string): Promise<SaleLeadProfile[]> => {
     const { organizationId } = await getAdminAndOrg(actorUid);

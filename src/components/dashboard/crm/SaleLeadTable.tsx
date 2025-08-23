@@ -22,16 +22,28 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, ArrowUpDown, Search, Loader2, Target } from 'lucide-react';
-import { listSaleLeads } from '@/ai/flows/crm-management';
+import { MoreHorizontal, ArrowUpDown, Search, Loader2, Target, Edit, Trash2 } from 'lucide-react';
+import { listSaleLeads, deleteSaleLead } from '@/ai/flows/crm-management';
 import type { SaleLeadProfile } from '@/ai/schemas';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -52,76 +64,118 @@ const stageMap: Record<SaleLeadProfile['stage'], { text: string; color: string }
     lost: { text: 'Perdido', color: 'bg-red-500/20 text-red-300' },
 };
 
-export const columns: ColumnDef<SaleLeadProfile>[] = [
-  {
-    accessorKey: 'title',
-    header: ({ column }) => (
-        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-            Título <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-    ),
-    cell: ({ row }) => <div className="font-medium text-foreground">{row.getValue('title')}</div>,
-  },
-  {
-    accessorKey: 'customerName',
-    header: 'Cliente',
-  },
-  {
-    accessorKey: 'value',
-    header: 'Valor',
-    cell: ({ row }) => formatCurrency(row.getValue('value')),
-  },
-  {
-    accessorKey: 'stage',
-    header: 'Estágio',
-    cell: ({ row }) => {
-        const stage = row.getValue('stage') as keyof typeof stageMap;
-        const { text, color } = stageMap[stage] || { text: 'Desconhecido', color: 'bg-gray-500/20 text-gray-300' };
-        return (
-          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${color}`}>
-            {text}
-          </span>
-        );
-      },
-  },
-  {
-    accessorKey: 'expectedCloseDate',
-    header: 'Fechamento Previsto',
-    cell: ({ row }) => {
-      const dateStr = row.getValue('expectedCloseDate') as string;
-      return format(parseISO(dateStr), 'dd/MM/yyyy');
-    },
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => {
-      const lead = row.original;
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Ações</DropdownMenuLabel>
-            <DropdownMenuItem>Editar Oportunidade</DropdownMenuItem>
-            <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400">Excluir Oportunidade</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
-  },
-];
+interface SaleLeadTableProps {
+    onEdit: (lead: SaleLeadProfile) => void;
+    onRefresh: () => void;
+}
 
-export function SaleLeadTable() {
+export function SaleLeadTable({ onEdit, onRefresh }: SaleLeadTableProps) {
   const [data, setData] = React.useState<SaleLeadProfile[]>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [currentUser, setCurrentUser] = React.useState<FirebaseUser | null>(null);
+  
+  const handleDelete = async (leadId: string) => {
+    if (!currentUser) return;
+    try {
+        await deleteSaleLead({ leadId, actor: currentUser.uid });
+        onRefresh();
+    } catch(err: any) {
+        console.error("Failed to delete lead:", err);
+        setError(err.message || "Não foi possível excluir a oportunidade.");
+    }
+  };
+
+
+  const columns: ColumnDef<SaleLeadProfile>[] = [
+    {
+        accessorKey: 'title',
+        header: ({ column }) => (
+            <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                Título <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+        ),
+        cell: ({ row }) => <div className="font-medium text-foreground">{row.getValue('title')}</div>,
+    },
+    {
+        accessorKey: 'customerName',
+        header: 'Cliente',
+    },
+    {
+        accessorKey: 'value',
+        header: 'Valor',
+        cell: ({ row }) => formatCurrency(row.getValue('value')),
+    },
+    {
+        accessorKey: 'stage',
+        header: 'Estágio',
+        cell: ({ row }) => {
+            const stage = row.getValue('stage') as keyof typeof stageMap;
+            const { text, color } = stageMap[stage] || { text: 'Desconhecido', color: 'bg-gray-500/20 text-gray-300' };
+            return (
+            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${color}`}>
+                {text}
+            </span>
+            );
+        },
+    },
+    {
+        accessorKey: 'expectedCloseDate',
+        header: 'Fechamento Previsto',
+        cell: ({ row }) => {
+        const dateStr = row.getValue('expectedCloseDate') as string;
+        return format(parseISO(dateStr), 'dd/MM/yyyy');
+        },
+    },
+    {
+        id: 'actions',
+        cell: ({ row }) => {
+        const lead = row.original;
+        return (
+            <AlertDialog>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Abrir menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => onEdit(lead)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar Oportunidade
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <AlertDialogTrigger asChild>
+                            <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Excluir Oportunidade
+                            </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. Isso excluirá permanentemente a oportunidade <span className='font-bold'>{lead.title}</span>.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDelete(lead.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Sim, excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+          </AlertDialog>
+        );
+        },
+    },
+    ];
 
   React.useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -146,7 +200,7 @@ export function SaleLeadTable() {
       }
     }
     fetchData();
-  }, [currentUser]);
+  }, [currentUser, onRefresh]);
 
   const table = useReactTable({
     data,

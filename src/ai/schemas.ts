@@ -103,6 +103,10 @@ export const SaleLeadSchema = z.object({
     expectedCloseDate: z.string().datetime(),
 });
 
+export const UpdateSaleLeadSchema = SaleLeadSchema.extend({
+    id: z.string(),
+});
+
 export const SaleLeadProfileSchema = SaleLeadSchema.extend({
     id: z.string(),
     createdAt: z.string(),
@@ -178,6 +182,10 @@ export const SupplierSchema = z.object({
     address: AddressSchema.optional(),
     paymentTerms: z.string().optional(),
     isActive: z.boolean().default(true),
+});
+
+export const UpdateSupplierSchema = SupplierSchema.extend({
+    id: z.string(),
 });
 
 export const SupplierProfileSchema = SupplierSchema.extend({

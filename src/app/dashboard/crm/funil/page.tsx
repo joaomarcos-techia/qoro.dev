@@ -6,7 +6,7 @@ import { SaleLeadProfile } from '@/ai/schemas';
 import { listSaleLeads, updateSaleLeadStage } from '@/ai/flows/crm-management';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { Loader2, ServerCrash, AlertCircle } from 'lucide-react';
+import { Loader2, ServerCrash, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function FunilPage() {
   const [leads, setLeads] = useState<SaleLeadProfile[]>([]);
@@ -46,6 +46,14 @@ export default function FunilPage() {
       setIsLoading(false);
     }
   }, [currentUser]);
+  
+  const showTemporaryFeedback = (message: string, type: 'success' | 'error' = 'success') => {
+    setFeedback({ type, message });
+    setTimeout(() => {
+        setFeedback(null);
+    }, 5000);
+  };
+
 
   const handleMoveLead = (leadId: string, newStage: SaleLeadProfile['stage']) => {
     startTransition(async () => {
@@ -59,9 +67,10 @@ export default function FunilPage() {
 
         try {
             await updateSaleLeadStage({ leadId, stage: newStage, actor: currentUser.uid });
+            showTemporaryFeedback("Oportunidade movida com sucesso!");
         } catch (err) {
             console.error("Failed to move lead", err);
-            setFeedback({ type: 'error', message: "Erro ao mover oportunidade." });
+            showTemporaryFeedback("Erro ao mover oportunidade.", "error");
             setLeads(originalLeads); // Revert on failure
         }
     });
@@ -132,7 +141,7 @@ export default function FunilPage() {
         </div>
          {feedback && (
             <div className={`mb-4 p-3 rounded-lg flex items-center text-sm ${feedback.type === 'success' ? 'bg-green-800/20 text-green-300 border border-green-500/30' : 'bg-red-800/20 text-red-300 border border-red-500/30'}`}>
-                <AlertCircle className="w-5 h-5 mr-3" />
+                {feedback.type === 'success' ? <CheckCircle className="w-5 h-5 mr-3" /> : <AlertCircle className="w-5 h-5 mr-3" />}
                 <span>{feedback.message}</span>
             </div>
         )}
