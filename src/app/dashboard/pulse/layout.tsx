@@ -1,7 +1,8 @@
 
-// This file is intentionally left empty.
-// The main dashboard layout at src/app/dashboard/layout.tsx
-// will handle the rendering for the /pulse route.
+'use client';
+// This layout is now simplified as the main sidebar logic is handled 
+// by the root DashboardLayout. This file can be further customized
+// for Pulse-specific layout needs in the future if necessary.
 export default function PulseLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
