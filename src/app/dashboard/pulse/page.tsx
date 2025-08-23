@@ -85,7 +85,7 @@ export default function PulsePage() {
     <div className="flex-grow flex flex-col items-center justify-center text-center">
         <div className="flex items-center text-4xl font-bold text-foreground mb-10">
              <Sparkles className="w-9 h-9 mr-4 text-pulse-primary" />
-            <span>Boa tarde, {userName.split(' ')[0]}</span>
+            <span>Como posso ajudar?</span>
         </div>
     </div>
   );
