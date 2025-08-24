@@ -111,6 +111,8 @@ export default function PulsePage() {
     } catch (error) {
         console.error("Error calling Pulse Flow:", error);
         setError('Ocorreu um erro ao comunicar com a IA. Tente novamente.');
+        // Re-add user message so they can retry
+        setMessages(prev => prev.slice(0, -1));
     } finally {
         setIsSending(false);
     }
@@ -129,7 +131,7 @@ export default function PulsePage() {
     if (isLoadingHistory) {
       return (
         <div className="flex-grow flex flex-col items-center justify-center">
-          <Loader className="w-8 h-8 animate-spin text-primary" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
           <p className="mt-4 text-muted-foreground">Carregando conversa...</p>
         </div>
       );
@@ -149,7 +151,7 @@ export default function PulsePage() {
           className={`max-w-2xl px-5 py-3 rounded-2xl ${
               message.role === 'user'
               ? 'bg-secondary text-primary-foreground'
-              : 'bg-transparent text-foreground'
+              : 'bg-card text-foreground'
           }`}
           >
           <p className="whitespace-pre-wrap text-base">{message.content}</p>
@@ -178,7 +180,7 @@ export default function PulsePage() {
                         <BrainCircuit size={18} />
                     </div>
                     <div className="max-w-lg px-5 py-3 rounded-2xl bg-card text-foreground flex items-center">
-                        <Loader className="w-5 h-5 animate-spin text-muted-foreground" />
+                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                     </div>
                 </div>
                 )}
@@ -192,7 +194,8 @@ export default function PulsePage() {
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
-                                handleSendMessage(e);
+                                e.preventDefault();
+                                handleSendMessage();
                             }
                             }}
                             placeholder="Pergunte qualquer coisa sobre seu negócio..."

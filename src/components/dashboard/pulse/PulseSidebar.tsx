@@ -75,9 +75,9 @@ export function PulseSidebar() {
             <button
                 onClick={handleNewConversation}
                 disabled={isPending}
-                className="w-full flex items-center justify-center bg-primary text-primary-foreground px-4 py-2.5 rounded-xl hover:bg-primary/90 transition-all duration-300 font-semibold"
+                className="w-full flex items-center justify-center bg-primary text-primary-foreground px-4 py-2.5 rounded-xl hover:bg-primary/90 transition-all duration-300 font-semibold disabled:opacity-70"
             >
-                <PenSquare className="w-5 h-5 mr-2" />
+                {isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <PenSquare className="w-5 h-5 mr-2" />}
                 {isPending ? 'Carregando...' : 'Nova Conversa'}
             </button>
         </div>
