@@ -3,11 +3,12 @@
 /**
  * @fileOverview A conversational AI agent for business insights.
  * - askPulse - A function that handles the conversational chat with QoroPulse.
+ * - deleteConversation - Deletes a conversation from the history.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { AskPulseInputSchema, AskPulseOutputSchema, PulseMessageSchema } from '@/ai/schemas';
+import { AskPulseInputSchema, AskPulseOutputSchema, PulseMessage, PulseMessageSchema } from '@/ai/schemas';
 import { listCustomersTool, listSaleLeadsTool } from '@/ai/tools/crm-tools';
 import { createTaskTool, listTasksTool } from '@/ai/tools/task-tools';
 import { listAccountsTool, getFinanceSummaryTool } from '@/ai/tools/finance-tools';
@@ -21,6 +22,11 @@ const PulseResponseSchema = z.object({
     title: z.string().optional().describe("Se for uma nova conversa, um título curto e conciso para a conversa, com no máximo 5 palavras. Caso contrário, este campo não deve ser definido."),
 });
 type PulseResponse = z.infer<typeof PulseResponseSchema>;
+
+const DeleteConversationInputSchema = z.object({
+  conversationId: z.string(),
+  actor: z.string(),
+});
 
 export async function askPulse(input: z.infer<typeof AskPulseInputSchema>): Promise<z.infer<typeof AskPulseOutputSchema>> {
   return pulseFlow(input);
@@ -112,7 +118,6 @@ Transformar dados empresariais em decisões estratégicas com impacto real. Iden
 
     if (isNewConversation) {
         if (!title) {
-            // Fallback in case the AI doesn't generate a title for a non-greeting message
              const firstUserMessage = messages[0].content;
              const isGreeting = /^(oi|olá|ola|hello|hi|hey|bom dia|boa tarde|boa noite)/i.test(firstUserMessage.trim());
              if (!isGreeting) {
@@ -132,3 +137,19 @@ Transformar dados empresariais em decisões estratégicas com impacto real. Iden
     };
   }
 );
+
+
+const deleteConversationFlow = ai.defineFlow(
+  {
+    name: 'deleteConversationFlow',
+    inputSchema: DeleteConversationInputSchema,
+    outputSchema: z.object({ success: z.boolean() }),
+  },
+  async ({ conversationId, actor }) => {
+    return pulseService.deleteConversation({ conversationId, actor });
+  }
+);
+
+export async function deleteConversation(input: z.infer<typeof DeleteConversationInputSchema>): Promise<{ success: boolean }> {
+  return deleteConversationFlow(input);
+}

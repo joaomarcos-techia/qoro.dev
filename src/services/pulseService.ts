@@ -80,7 +80,6 @@ export const getConversation = async ({ conversationId, actor }: { conversationI
 export const listConversations = async ({ actor }: { actor: string }): Promise<z.infer<typeof ConversationProfileSchema>[]> => {
     try {
         const { organizationId } = await getAdminAndOrg(actor);
-        // Correctly order by 'updatedAt' in descending order directly in the query
         const snapshot = await adminDb.collection('pulse_conversations')
             .where('organizationId', '==', organizationId)
             .where('userId', '==', actor)
@@ -109,4 +108,17 @@ export const listConversations = async ({ actor }: { actor: string }): Promise<z
         }
         throw new Error(`Failed to fetch conversations: ${error.message}`);
     }
+};
+
+export const deleteConversation = async ({ conversationId, actor }: { conversationId: string, actor: string }) => {
+    const { organizationId } = await getAdminAndOrg(actor);
+    const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
+
+    const doc = await conversationRef.get();
+    if (!doc.exists || doc.data()?.organizationId !== organizationId || doc.data()?.userId !== actor) {
+        throw new Error("Conversa não encontrada ou acesso negado.");
+    }
+
+    await conversationRef.delete();
+    return { success: true };
 };

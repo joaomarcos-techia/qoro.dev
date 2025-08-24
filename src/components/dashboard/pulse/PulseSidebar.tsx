@@ -4,12 +4,24 @@
 import { useState, useEffect, useTransition, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { PlusCircle, MessageSquare, Loader2, Activity, ChevronLeft } from 'lucide-react';
+import { PlusCircle, MessageSquare, Loader2, Activity, ChevronLeft, Trash2 } from 'lucide-react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { listConversations } from '@/services/pulseService';
+import { deleteConversation } from '@/ai/flows/pulse-flow';
 import type { ConversationProfile } from '@/ai/schemas';
 import { cn } from '@/lib/utils';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+  } from "@/components/ui/alert-dialog"
 
 export function PulseSidebar() {
   const [conversations, setConversations] = useState<ConversationProfile[]>([]);
@@ -19,13 +31,6 @@ export function PulseSidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-    });
-    return () => unsubscribe();
-  }, []);
 
   const fetchConversations = useCallback(() => {
     if (currentUser) {
@@ -46,6 +51,13 @@ export function PulseSidebar() {
   }, [currentUser]);
 
   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     if (currentUser) {
         fetchConversations();
     }
@@ -55,6 +67,26 @@ export function PulseSidebar() {
     startTransition(() => {
         router.push('/dashboard/pulse');
     });
+  };
+
+  const handleDeleteConversation = async (conversationId: string) => {
+    if (!currentUser) return;
+    
+    // Optimistically remove from UI
+    setConversations(prev => prev.filter(c => c.id !== conversationId));
+
+    try {
+      await deleteConversation({ conversationId, actor: currentUser.uid });
+      // If the deleted conversation was the active one, navigate away
+      if (pathname.includes(conversationId)) {
+        router.push('/dashboard/pulse');
+      }
+    } catch (err) {
+      console.error("Failed to delete conversation", err);
+      // Revert UI change on failure
+      fetchConversations(); 
+      setError("Falha ao excluir conversa.");
+    }
   };
 
   const renderHistory = () => {
@@ -76,19 +108,42 @@ export function PulseSidebar() {
         const isActive = pathname.includes(convo.id);
         const displayTitle = convo.title || "Nova Conversa";
         return (
-          <Link key={convo.id} href={`/dashboard/pulse/${convo.id}`} passHref>
-            <div
-              className={cn(
-                'flex items-center p-3 my-1 rounded-xl text-sm font-medium transition-all duration-200 group w-full text-left truncate',
-                isActive
-                  ? 'bg-secondary text-foreground'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-              )}
-            >
-              <MessageSquare className="w-4 h-4 mr-3 flex-shrink-0" />
-              <span className="truncate">{displayTitle}</span>
+            <div key={convo.id} className="group relative flex items-center pr-2">
+                <Link href={`/dashboard/pulse/${convo.id}`} passHref className="flex-grow">
+                    <div
+                    className={cn(
+                        'flex items-center p-3 my-1 rounded-xl text-sm font-medium transition-all duration-200 w-full text-left truncate',
+                        isActive
+                        ? 'bg-secondary text-foreground'
+                        : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                    )}
+                    >
+                    <MessageSquare className="w-4 h-4 mr-3 flex-shrink-0" />
+                    <span className="truncate">{displayTitle}</span>
+                    </div>
+                </Link>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <button className="absolute right-2 p-1 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-red-400 transition-opacity">
+                            <Trash2 className="w-4 h-4"/>
+                        </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir esta conversa?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                A conversa "{displayTitle}" será permanentemente excluída. Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDeleteConversation(convo.id); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Sim, excluir
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
-          </Link>
         );
       });
   }
