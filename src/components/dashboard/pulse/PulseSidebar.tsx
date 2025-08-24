@@ -61,6 +61,7 @@ export function PulseSidebar() {
     if (currentUser) {
         fetchConversations();
     }
+  // The pathname dependency ensures the list re-fetches when navigation occurs.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, pathname]);
 
@@ -109,14 +110,14 @@ export function PulseSidebar() {
         const isActive = pathname.includes(convo.id);
         const displayTitle = convo.title || "Nova Conversa";
         return (
-            <div key={convo.id} className="group relative flex items-center pr-2">
-                <Link href={`/dashboard/pulse/${convo.id}`} passHref className="flex-grow">
+            <div key={convo.id} className="group relative flex items-center justify-between p-3 my-1 rounded-xl transition-all duration-200 hover:bg-secondary">
+                <Link href={`/dashboard/pulse/${convo.id}`} passHref className="flex-grow flex items-center min-w-0">
                     <div
                     className={cn(
-                        'flex items-center p-3 my-1 rounded-xl text-sm font-medium transition-all duration-200 w-full text-left truncate',
+                        'flex items-center text-sm font-medium w-full text-left truncate',
                         isActive
-                        ? 'bg-secondary text-foreground'
-                        : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                        ? 'text-foreground'
+                        : 'text-muted-foreground group-hover:text-foreground'
                     )}
                     >
                     <MessageSquare className="w-4 h-4 mr-3 flex-shrink-0" />
@@ -125,7 +126,7 @@ export function PulseSidebar() {
                 </Link>
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
-                        <button className="absolute right-2 p-1 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-red-400 transition-opacity">
+                        <button className="flex-shrink-0 p-1 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-red-400 transition-opacity">
                             <Trash2 className="w-4 h-4"/>
                         </button>
                     </AlertDialogTrigger>
