@@ -41,7 +41,6 @@ const pulseFlow = ai.defineFlow(
   async (input) => {
     const { actor, messages, conversationId } = input;
 
-    // Determine if the conversation already has a title
     let existingConversation = null;
     if (conversationId) {
         existingConversation = await pulseService.getConversation({ conversationId, actor });
@@ -57,7 +56,6 @@ const pulseFlow = ai.defineFlow(
     const prompt = lastMessage.content;
     const isGreeting = /^(oi|olá|ola|hello|hi|hey|bom dia|boa tarde|boa noite)/i.test(prompt.trim());
 
-    // Conditionally create the system prompt
     let systemPrompt = `Você é o QoroPulse— um agente de inteligência estratégica interna. Seu papel é agir como o cérebro analítico da empresa: interpretar dados comerciais, financeiros e operacionais para fornecer respostas inteligentes, acionáveis e estrategicamente valiosas ao empreendedor.
 
 Nunca se posicione como IA ou assistente. Comunique-se como um conselheiro sênior que enxerga o negócio de forma integrada.
@@ -77,18 +75,14 @@ Transformar dados empresariais em decisões estratégicas com impacto real. Iden
 - Linguagem clara, informal e consultiva, sem jargões técnicos.
 - Direto ao ponto, sempre com foco em ação e clareza.
 - Use perguntas estratégicas para provocar reflexão e visão de dono.
+- Quando solicitado insight livre, analise indicadores e comportamento recente para identificar oportunidades, riscos ou desvios relevantes.`;
+    
+    const shouldGenerateTitle = !hasTitle && !isGreeting;
 
-⚙️ Como responder:
-1. **Interprete o que está por trás da pergunta.** Qual dor ou dúvida ela revela? (Ex: problema de vendas, fluxo de caixa, atraso operacional.)
-2. **Conecte os pontos.** Busque relações causais: o que pode estar influenciando o que?
-3. **Traduza o cenário em insight.** Mostre o que o empreendedor não está vendo: tendências, padrões, alertas, hipóteses.
-4. **Dê uma direção clara.** Sugira uma ação, uma decisão ou uma reflexão concreta.
-5. **Quando solicitado insight livre**, analise indicadores e comportamento recente para identificar oportunidades, riscos ou desvios relevantes.`;
-
-    if (!hasTitle && !isGreeting) {
+    if (shouldGenerateTitle) {
         systemPrompt += `
         
-IMPORTANTE: A conversa ainda não tem um título. Baseado na pergunta do usuário, você DEVE gerar um título curto e conciso (máximo 5 palavras) para a conversa no campo "title" do JSON de saída. Se a mensagem for apenas uma saudação, não gere um título.`;
+IMPORTANTE: A conversa ainda não tem um título e a mensagem atual NÃO é uma saudação. Baseado na pergunta do usuário, você DEVE gerar um título curto e conciso (máximo 5 palavras) para a conversa no campo "title" do JSON de saída.`;
     }
 
     const llmResponse = await ai.generate({
@@ -123,23 +117,20 @@ IMPORTANTE: A conversa ainda não tem um título. Baseado na pergunta do usuári
     let currentConversationId = conversationId;
     let finalTitle = existingConversation?.title || '';
 
-    if (output.title && !hasTitle) {
+    if (shouldGenerateTitle && output.title) {
       finalTitle = output.title;
     }
 
-
     if (!conversationId) {
-        // This is a new conversation
         const result = await pulseService.createConversation(actor, finalTitle, updatedMessages);
         currentConversationId = result.id;
     } else {
-        // This is an existing conversation, update messages and maybe the title
-        await pulseService.updateConversation(actor, conversationId, updatedMessages, finalTitle && !hasTitle ? finalTitle : undefined);
+        await pulseService.updateConversation(actor, conversationId, updatedMessages, shouldGenerateTitle ? finalTitle : undefined);
     }
     
     return {
         conversationId: currentConversationId!,
-        title: finalTitle || undefined, // Return the title so the UI can update
+        title: finalTitle || undefined,
         response: assistantMessage,
     };
   }

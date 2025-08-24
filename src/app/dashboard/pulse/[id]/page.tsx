@@ -91,17 +91,12 @@ export default function PulseConversationPage() {
             conversationId: conversationId,
         });
 
-        // If this was a new conversation, the ID will be new.
-        // We need to navigate to the new URL to make sure the history is saved correctly.
         if (conversationId !== response.conversationId) {
              startNavigation(() => {
                 router.push(`/dashboard/pulse/${response.conversationId}`);
              });
         } else {
-            // Otherwise, just update the messages with the real response.
             setMessages(prev => [...prev, response.response]);
-            
-            // If a title was newly generated, refresh the sidebar data
             if (response.title) {
                 router.refresh();
             }
@@ -110,7 +105,6 @@ export default function PulseConversationPage() {
     } catch (error: any) {
         console.error("Error calling Pulse Flow:", error);
         setError(error.message || 'Ocorreu um erro ao comunicar com a IA. Tente novamente.');
-        // Rollback optimistic update
         setMessages(messages);
         setInput(originalInput);
     } finally {
