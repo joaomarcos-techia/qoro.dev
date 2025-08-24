@@ -51,6 +51,7 @@ export function BillForm({ onAction, bill }: BillFormProps) {
   });
 
   const billType = watch('type');
+  const entityType = watch('entityType');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -63,20 +64,25 @@ export function BillForm({ onAction, bill }: BillFormProps) {
     if (currentUser) {
         const fetchData = async () => {
             try {
-                const [customersData, suppliersData] = await Promise.all([
-                    listCustomers({ actor: currentUser.uid }),
-                    listSuppliers({ actor: currentUser.uid })
-                ]);
-                setCustomers(customersData);
-                setSuppliers(suppliersData);
+                if (billType === 'receivable') {
+                    if (customers.length === 0) {
+                        const customersData = await listCustomers({ actor: currentUser.uid });
+                        setCustomers(customersData);
+                    }
+                } else {
+                    if (suppliers.length === 0) {
+                        const suppliersData = await listSuppliers({ actor: currentUser.uid });
+                        setSuppliers(suppliersData);
+                    }
+                }
             } catch (err) {
-                 console.error("Failed to load customers or suppliers", err);
+                 console.error("Failed to load entities", err);
                  setError("Não foi possível carregar os dados necessários. Tente novamente.");
             }
         };
         fetchData();
     }
-  }, [currentUser]);
+  }, [currentUser, billType, customers.length, suppliers.length]);
 
   useEffect(() => {
     if (bill) {
@@ -121,7 +127,7 @@ export function BillForm({ onAction, bill }: BillFormProps) {
     }
   };
 
-  const entities = billType === 'payable' ? suppliers : customers;
+  const entities = entityType === 'supplier' ? suppliers : customers;
   const filteredEntities = entities.filter(e => e.name.toLowerCase().includes(entitySearch.toLowerCase()));
 
   return (
@@ -151,7 +157,7 @@ export function BillForm({ onAction, bill }: BillFormProps) {
                 <Popover open={isEntityPopoverOpen} onOpenChange={setIsEntityPopoverOpen}>
                     <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full justify-start font-normal">
-                            {field.value ? entities.find(e => e.id === field.value)?.name : `Selecione ${billType === 'payable' ? 'Fornecedor' : 'Cliente'}`}
+                            {field.value ? entities.find(e => e.id === field.value)?.name : `Selecione ${entityType === 'supplier' ? 'Fornecedor' : 'Cliente'}`}
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[300px] p-0">

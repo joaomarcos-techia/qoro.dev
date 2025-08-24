@@ -54,7 +54,6 @@ const navItems: Record<string, NavItem[]> = {
         { href: '/dashboard/crm/oportunidades', label: 'Oportunidades', icon: Target },
         { href: '/dashboard/crm/produtos', label: 'Produtos e Serviços', icon: ShoppingCart },
         { href: '/dashboard/crm/orcamentos', label: 'Orçamentos', icon: FileText },
-        { href: '/dashboard/crm/fornecedores', label: 'Fornecedores', icon: Truck },
         { href: '/dashboard/crm/relatorios', label: 'Relatórios', icon: BarChart3 },
     ],
     task: [
@@ -66,6 +65,7 @@ const navItems: Record<string, NavItem[]> = {
         { href: '/dashboard/finance/transacoes', label: 'Transações', icon: ArrowLeftRight },
         { href: '/dashboard/finance/contas', label: 'Contas', icon: Landmark },
         { href: '/dashboard/finance/contas-a-pagar', label: 'Contas a Pagar/Receber', icon: Receipt },
+        { href: '/dashboard/finance/fornecedores', label: 'Fornecedores', icon: Truck },
         { href: '/dashboard/finance/conciliacao', label: 'Conciliação', icon: GitCompareArrows },
     ],
 }
