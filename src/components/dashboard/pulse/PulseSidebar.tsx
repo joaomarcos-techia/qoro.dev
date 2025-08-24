@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { PlusCircle, MessageSquare, Loader2, Activity, ChevronLeft } from 'lucide-react';
@@ -26,13 +27,13 @@ export function PulseSidebar() {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
+  const fetchConversations = useCallback(() => {
     if (currentUser) {
       setIsLoading(true);
       setError(null);
       listConversations({ actor: currentUser.uid })
         .then((data) => {
-            setConversations(data);
+          setConversations(data);
         })
         .catch((err) => {
           console.error("Error loading conversations:", err);
@@ -42,7 +43,11 @@ export function PulseSidebar() {
           setIsLoading(false);
         });
     }
-  }, [currentUser, pathname]);
+  }, [currentUser]);
+
+  useEffect(() => {
+    fetchConversations();
+  }, [fetchConversations, pathname]); // Refetch on navigation
 
   const handleNewConversation = () => {
     startTransition(() => {
@@ -63,7 +68,7 @@ export function PulseSidebar() {
       return <div className="p-4 text-sm text-destructive">{error}</div>;
     }
     if (conversations.length === 0) {
-        return <div className="p-4 text-sm text-muted-foreground">Nenhuma conversa anterior.</div>;
+        return <div className="p-4 text-sm text-muted-foreground text-center">Nenhuma conversa anterior.</div>;
     }
     return conversations.map((convo) => {
         const isActive = pathname.includes(convo.id);
