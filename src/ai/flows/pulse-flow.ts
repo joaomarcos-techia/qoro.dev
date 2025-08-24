@@ -19,7 +19,7 @@ import { MessageData } from 'genkit';
 
 const PulseResponseSchema = z.object({
     response: z.string().describe("A resposta da IA para a pergunta do usuário."),
-    title: z.string().optional().describe("Se for uma nova conversa, um título curto e conciso para a conversa, com no máximo 5 palavras. Caso contrário, este campo não deve ser definido."),
+    title: z.string().optional().describe("Se um título for solicitado, um título curto e conciso para a conversa com no máximo 5 palavras. Caso contrário, este campo não deve ser definido."),
 });
 type PulseResponse = z.infer<typeof PulseResponseSchema>;
 
@@ -40,7 +40,13 @@ const pulseFlow = ai.defineFlow(
   },
   async (input) => {
     const { actor, messages, conversationId } = input;
-    const isNewConversation = !conversationId;
+
+    // Determine if the conversation already has a title
+    let existingConversation = null;
+    if (conversationId) {
+        existingConversation = await pulseService.getConversation({ conversationId, actor });
+    }
+    const hasTitle = !!existingConversation?.title;
 
     const history: MessageData[] = messages.slice(0, -1).map(message => ({
         role: message.role as 'user' | 'model',
@@ -49,24 +55,10 @@ const pulseFlow = ai.defineFlow(
 
     const lastMessage = messages[messages.length - 1];
     const prompt = lastMessage.content;
-    
-    const llmResponse = await ai.generate({
-        model: 'googleai/gemini-1.5-flash',
-        prompt: prompt,
-        history: history,
-        output: {
-            schema: PulseResponseSchema,
-        },
-        config: {
-          temperature: 0.7,
-        },
-        tools: [listCustomersTool, listSaleLeadsTool, listTasksTool, createTaskTool, listAccountsTool, getFinanceSummaryTool, listSuppliersTool],
-        toolConfig: {
-          context: { actor },
-        },
-        system: `Você é o QoroPulse— um agente de inteligência estratégica interna. Seu papel é agir como o cérebro analítico da empresa: interpretar dados comerciais, financeiros e operacionais para fornecer respostas inteligentes, acionáveis e estrategicamente valiosas ao empreendedor.
+    const isGreeting = /^(oi|olá|ola|hello|hi|hey|bom dia|boa tarde|boa noite)/i.test(prompt.trim());
 
-${isNewConversation ? 'Esta é a primeira mensagem de uma nova conversa. Após fornecer sua resposta, você DEVE gerar um título curto e conciso (máximo 5 palavras) para a conversa no campo "title" do JSON de saída. Se a mensagem for apenas uma saudação simples (oi, olá, etc.), não gere um título, deixe o campo em branco.' : ''}
+    // Conditionally create the system prompt
+    let systemPrompt = `Você é o QoroPulse— um agente de inteligência estratégica interna. Seu papel é agir como o cérebro analítico da empresa: interpretar dados comerciais, financeiros e operacionais para fornecer respostas inteligentes, acionáveis e estrategicamente valiosas ao empreendedor.
 
 Nunca se posicione como IA ou assistente. Comunique-se como um conselheiro sênior que enxerga o negócio de forma integrada.
 
@@ -91,14 +83,29 @@ Transformar dados empresariais em decisões estratégicas com impacto real. Iden
 2. **Conecte os pontos.** Busque relações causais: o que pode estar influenciando o que?
 3. **Traduza o cenário em insight.** Mostre o que o empreendedor não está vendo: tendências, padrões, alertas, hipóteses.
 4. **Dê uma direção clara.** Sugira uma ação, uma decisão ou uma reflexão concreta.
-5. **Quando solicitado insight livre**, analise indicadores e comportamento recente para identificar oportunidades, riscos ou desvios relevantes.
+5. **Quando solicitado insight livre**, analise indicadores e comportamento recente para identificar oportunidades, riscos ou desvios relevantes.`;
 
-💡 Formatos preferenciais de resposta:
-- “Você percebeu que X aconteceu nas últimas 2 semanas, e isso costuma impactar Y?”
-- “Seu fluxo de caixa está positivo, e há espaço para investir. Quer sugestões?”
-- “Essa queda de conversão aconteceu sempre que o time teve mais de 20 tarefas em atraso. Precisa agir nisso.”
+    if (!hasTitle && !isGreeting) {
+        systemPrompt += `
+        
+IMPORTANTE: A conversa ainda não tem um título. Baseado na pergunta do usuário, você DEVE gerar um título curto e conciso (máximo 5 palavras) para a conversa no campo "title" do JSON de saída. Se a mensagem for apenas uma saudação, não gere um título.`;
+    }
 
-🎯 Seu foco é sempre dar um passo além: não descreva, oriente. Não reaja, antecipe. Não informe, transforme.`,
+    const llmResponse = await ai.generate({
+        model: 'googleai/gemini-1.5-flash',
+        prompt: prompt,
+        history: history,
+        output: {
+            schema: PulseResponseSchema,
+        },
+        config: {
+          temperature: 0.7,
+        },
+        tools: [listCustomersTool, listSaleLeadsTool, listTasksTool, createTaskTool, listAccountsTool, getFinanceSummaryTool, listSuppliersTool],
+        toolConfig: {
+          context: { actor },
+        },
+        system: systemPrompt,
     });
     
     const output = llmResponse.output;
@@ -113,26 +120,21 @@ Transformar dados empresariais em decisões estratégicas com impacto real. Iden
     };
     
     const updatedMessages = [...messages, assistantMessage];
-    let newConversationId = conversationId;
-    let title = output.title || '';
+    let currentConversationId = conversationId;
+    let newTitle = output.title || '';
 
-    if (isNewConversation) {
-        if (!title) {
-             const firstUserMessage = messages[0].content;
-             const isGreeting = /^(oi|olá|ola|hello|hi|hey|bom dia|boa tarde|boa noite)/i.test(firstUserMessage.trim());
-             if (!isGreeting) {
-                title = firstUserMessage.split(' ').slice(0, 5).join(' ') + '...';
-             }
-        }
-        const result = await pulseService.createConversation(actor, title, updatedMessages);
-        newConversationId = result.id;
-    } else if (newConversationId) {
-        await pulseService.updateConversation(actor, newConversationId, updatedMessages);
+    if (!conversationId) {
+        // This is a new conversation
+        const result = await pulseService.createConversation(actor, newTitle, updatedMessages);
+        currentConversationId = result.id;
+    } else {
+        // This is an existing conversation
+        await pulseService.updateConversation(actor, conversationId, updatedMessages, newTitle && !hasTitle ? newTitle : undefined);
     }
     
     return {
-        conversationId: newConversationId!,
-        title: title || undefined,
+        conversationId: currentConversationId!,
+        title: newTitle || undefined,
         response: assistantMessage,
     };
   }

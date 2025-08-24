@@ -45,7 +45,7 @@ export const createConversation = async (actorUid: string, title: string, messag
     return { id: docRef.id };
 };
 
-export const updateConversation = async (actorUid: string, conversationId: string, messages: PulseMessage[]) => {
+export const updateConversation = async (actorUid: string, conversationId: string, messages: PulseMessage[], newTitle?: string) => {
     const { organizationId } = await getAdminAndOrg(actorUid);
     const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
 
@@ -54,10 +54,17 @@ export const updateConversation = async (actorUid: string, conversationId: strin
         throw new Error("Conversa não encontrada ou acesso negado.");
     }
 
-    await conversationRef.update({
+    const updateData: { messages: PulseMessage[], updatedAt: FieldValue, title?: string } = {
         messages,
         updatedAt: FieldValue.serverTimestamp(),
-    });
+    };
+
+    // Only add title to update if it's a valid string
+    if (newTitle) {
+        updateData.title = newTitle;
+    }
+
+    await conversationRef.update(updateData);
 };
 
 export const getConversation = async ({ conversationId, actor }: { conversationId: string, actor: string }) => {
