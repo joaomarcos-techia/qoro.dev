@@ -3,7 +3,7 @@
 
 import { useState, useRef, useEffect, FormEvent, useCallback, useTransition } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { Send, BrainCircuit, Loader, AlertCircle, Sparkles, User } from 'lucide-react';
+import { Send, BrainCircuit, Loader2, AlertCircle, Sparkles, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
