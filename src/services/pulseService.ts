@@ -45,7 +45,7 @@ export const createConversation = async (actorUid: string, title: string, messag
     return { id: docRef.id };
 };
 
-export const updateConversation = async (actorUid: string, conversationId: string, messages: PulseMessage[], newTitle?: string) => {
+export const updateConversation = async (actorUid: string, conversationId: string, messages: PulseMessage[], newTitle?: string | null) => {
     const { organizationId } = await getAdminAndOrg(actorUid);
     const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
 
@@ -59,7 +59,7 @@ export const updateConversation = async (actorUid: string, conversationId: strin
         updatedAt: FieldValue.serverTimestamp(),
     };
 
-    // Only add title to update if it's a valid string
+    // Only update the title if a new valid title string is provided
     if (newTitle) {
         updateData.title = newTitle;
     }

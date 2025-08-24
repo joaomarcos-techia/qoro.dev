@@ -61,7 +61,8 @@ export function PulseSidebar() {
     if (currentUser) {
         fetchConversations();
     }
-  }, [currentUser, pathname, fetchConversations]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser, pathname]);
 
   const handleNewConversation = () => {
     startTransition(() => {

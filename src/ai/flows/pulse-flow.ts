@@ -115,22 +115,22 @@ IMPORTANTE: A conversa ainda não tem um título e a mensagem atual NÃO é uma 
     
     const updatedMessages = [...messages, assistantMessage];
     let currentConversationId = conversationId;
-    let finalTitle = existingConversation?.title || '';
+    let finalTitle = existingConversation?.title || undefined;
 
     if (shouldGenerateTitle && output.title) {
       finalTitle = output.title;
     }
 
     if (!conversationId) {
-        const result = await pulseService.createConversation(actor, finalTitle, updatedMessages);
+        const result = await pulseService.createConversation(actor, finalTitle || '', updatedMessages);
         currentConversationId = result.id;
     } else {
-        await pulseService.updateConversation(actor, conversationId, updatedMessages, shouldGenerateTitle ? finalTitle : undefined);
+        await pulseService.updateConversation(actor, conversationId, updatedMessages, finalTitle);
     }
     
     return {
         conversationId: currentConversationId!,
-        title: finalTitle || undefined,
+        title: finalTitle,
         response: assistantMessage,
     };
   }
