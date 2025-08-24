@@ -1,14 +1,12 @@
-
 'use client';
 
-import { useState, useRef, useEffect, FormEvent, useCallback, useTransition } from 'react';
+import { useState, useEffect, FormEvent, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Send, BrainCircuit, Loader2, AlertCircle, Sparkles, User } from 'lucide-react';
+import { Send, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { auth } from '@/lib/firebase';
 import { askPulse } from '@/ai/flows/pulse-flow';
 import type { PulseMessage } from '@/ai/schemas';
 
@@ -38,7 +36,7 @@ export default function PulsePage() {
     if (!input.trim() || isSending || !currentUser) return;
   
     const userMessage: PulseMessage = { role: 'user', content: input };
-    const currentMessages = [userMessage]; // Start with only the new message
+    const currentMessages = [userMessage];
     
     setInput('');
     setIsSending(true);
@@ -48,7 +46,6 @@ export default function PulsePage() {
         const response = await askPulse({
             messages: currentMessages,
             actor: currentUser.uid,
-            // No conversationId is passed, forcing a new one
         });
 
         if (response.conversationId) {
@@ -71,18 +68,21 @@ export default function PulsePage() {
   return (
     <div className="flex flex-col h-full bg-black">
         <div className="flex-grow flex flex-col items-center w-full px-4 relative">
-            <div className="flex-grow w-full max-w-4xl overflow-y-auto space-y-8 flex flex-col pt-8 pb-32 justify-center">
+            <div className="flex-grow w-full max-w-4xl flex flex-col justify-center items-center pb-32">
                 
-                {/* This space is intentionally left blank for a clean start */}
-                {isSending && (
-                <div className="flex items-start gap-4 mx-auto w-full">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-pulse-primary text-black flex items-center justify-center">
-                        <BrainCircuit size={18} />
+                {isSending ? (
+                     <div className="flex flex-col items-center justify-center">
+                        <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                        <p className="mt-4 text-muted-foreground">Pensando...</p>
                     </div>
-                    <div className="max-w-lg px-5 py-3 rounded-2xl bg-card text-foreground flex items-center">
-                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                ) : (
+                    <div className="text-center">
+                        <div className="inline-block p-4 bg-pulse-primary/20 rounded-full mb-6 border border-pulse-primary/30">
+                            <Sparkles className="w-10 h-10 text-pulse-primary"/>
+                        </div>
+                        <h1 className="text-4xl font-bold text-foreground mb-4">Como posso te ajudar hoje?</h1>
+                        <p className="text-muted-foreground max-w-lg">Você pode perguntar sobre vendas, finanças, tarefas ou qualquer insight sobre seu negócio.</p>
                     </div>
-                </div>
                 )}
             </div>
 
