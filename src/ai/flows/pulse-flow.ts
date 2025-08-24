@@ -41,7 +41,7 @@ const pulseFlow = ai.defineFlow(
     const prompt = lastMessage.content;
     
     const llmResponse = await ai.generate({
-        model: 'googleai/gemini-pro',
+        model: 'googleai/gemini-2.0-flash',
         prompt: prompt,
         history: history,
         config: {
@@ -104,7 +104,7 @@ Transformar dados empresariais em decisões estratégicas com impacto real. Iden
         Assistente: ${assistantMessage.content}`;
 
         const titleResponse = await ai.generate({
-            model: 'googleai/gemini-pro',
+            model: 'googleai/gemini-2.0-flash',
             prompt: titleGenerationPrompt,
             output: {
                 schema: TitlePromptSchema,
