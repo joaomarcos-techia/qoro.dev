@@ -46,8 +46,10 @@ export function PulseSidebar() {
   }, [currentUser]);
 
   useEffect(() => {
-    fetchConversations();
-  }, [fetchConversations, pathname]); // Refetch on navigation
+    if (currentUser) {
+        fetchConversations();
+    }
+  }, [currentUser, pathname, fetchConversations]);
 
   const handleNewConversation = () => {
     startTransition(() => {

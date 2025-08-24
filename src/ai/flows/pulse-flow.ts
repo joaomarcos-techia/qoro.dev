@@ -112,7 +112,6 @@ Transformar dados empresariais em decisões estratégicas com impacto real. Iden
 
     if (isNewConversation) {
         if (!title) {
-            // Fallback em caso de a IA não gerar o título
             title = messages[0].content.split(' ').slice(0, 5).join(' ') + '...';
         }
         const result = await pulseService.createConversation(actor, title, updatedMessages);

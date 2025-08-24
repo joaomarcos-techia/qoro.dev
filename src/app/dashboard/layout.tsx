@@ -28,6 +28,7 @@ import type { LucideIcon } from 'lucide-react';
 import { Header } from '@/components/dashboard/Header';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { PulseSidebar } from '@/components/dashboard/pulse/PulseSidebar';
 
 interface NavItem {
   href: string;
@@ -40,16 +41,10 @@ interface NavGroup {
     icon: LucideIcon;
 }
 
-interface SidebarHistoryItem {
-  id: string;
-  title: string;
-}
-
 const navConfig: Record<string, NavGroup> = {
     crm: { group: 'QoroCRM', icon: Users },
     task: { group: 'QoroTask', icon: CheckSquare },
     finance: { group: 'QoroFinance', icon: DollarSign },
-    pulse: { group: 'QoroPulse', icon: Activity },
 };
 
 const navItems: Record<string, NavItem[]> = {
@@ -74,9 +69,6 @@ const navItems: Record<string, NavItem[]> = {
         { href: '/dashboard/finance/contas-a-pagar', label: 'Contas a Pagar/Receber', icon: Receipt },
         { href: '/dashboard/finance/conciliacao', label: 'Conciliação', icon: GitCompareArrows },
     ],
-    pulse: [
-        { href: '/dashboard/pulse', label: 'Nova Conversa', icon: LayoutGrid },
-    ]
 }
 
 
@@ -94,6 +86,10 @@ export default function DashboardLayout({
         return null;
     }
     
+    if (currentModule === 'pulse') {
+        return <PulseSidebar />;
+    }
+
     const moduleConfig = navConfig[currentModule];
     const moduleItems = navItems[currentModule] || [];
     
