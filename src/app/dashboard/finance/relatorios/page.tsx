@@ -184,7 +184,7 @@ export default function RelatoriosPage() {
     return (
       <div>
         <div className="mb-8">
-            <h1 className="text-4xl font-bold text-foreground">Relatórios e Visão Geral</h1>
+            <h1 className="text-4xl font-bold text-foreground">Relatórios Financeiros</h1>
             <p className="text-muted-foreground">
                 Acompanhe as métricas e a saúde financeira do seu negócio em tempo real.
             </p>
