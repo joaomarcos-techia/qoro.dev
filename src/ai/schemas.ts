@@ -227,11 +227,38 @@ export const PulseMessageSchema = z.object({
 });
 export type PulseMessage = z.infer<typeof PulseMessageSchema>;
 
+export const ConversationSchema = z.object({
+    title: z.string().optional(),
+    userId: z.string(),
+    organizationId: z.string(),
+    messages: z.array(PulseMessageSchema),
+    createdAt: z.any(),
+    updatedAt: z.any(),
+});
+export type Conversation = z.infer<typeof ConversationSchema>;
+
+export const ConversationProfileSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    updatedAt: z.string(),
+});
+export type ConversationProfile = z.infer<typeof ConversationProfileSchema>;
+
+
 export const AskPulseInputSchema = z.object({
     messages: z.array(PulseMessageSchema),
     actor: z.string(),
+    conversationId: z.string().optional(),
 });
 export type AskPulseInput = z.infer<typeof AskPulseInputSchema>;
+
+export const AskPulseOutputSchema = z.object({
+    conversationId: z.string(),
+    title: z.string().optional(),
+    response: PulseMessageSchema,
+});
+export type AskPulseOutput = z.infer<typeof AskPulseOutputSchema>;
+
 
 // Schemas for Finance Management
 export const AccountSchema = z.object({

@@ -7,24 +7,30 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { AskPulseInputSchema, PulseMessageSchema } from '@/ai/schemas';
+import { AskPulseInputSchema, AskPulseOutputSchema, PulseMessageSchema } from '@/ai/schemas';
 import { listCustomersTool, listSaleLeadsTool } from '@/ai/tools/crm-tools';
 import { createTaskTool, listTasksTool } from '@/ai/tools/task-tools';
 import { listAccountsTool, getFinanceSummaryTool } from '@/ai/tools/finance-tools';
 import { listSuppliersTool } from '@/ai/tools/supplier-tools';
+import * as pulseService from '@/services/pulseService';
 
-export async function askPulse(input: z.infer<typeof AskPulseInputSchema>): Promise<z.infer<typeof PulseMessageSchema>> {
+export async function askPulse(input: z.infer<typeof AskPulseInputSchema>): Promise<z.infer<typeof AskPulseOutputSchema>> {
   return pulseFlow(input);
 }
+
+const TitlePromptSchema = z.object({
+    title: z.string().describe("Um título curto e conciso para a conversa, com no máximo 5 palavras."),
+});
 
 const pulseFlow = ai.defineFlow(
   {
     name: 'pulseFlow',
     inputSchema: AskPulseInputSchema,
-    outputSchema: PulseMessageSchema,
+    outputSchema: AskPulseOutputSchema,
   },
   async (input) => {
-    const { actor, messages } = input;
+    const { actor, messages, conversationId } = input;
+    const isNewConversation = !conversationId;
 
     const history = messages.slice(0, -1).map(message => ({
         role: message.role === 'user' ? 'user' : 'model',
@@ -80,11 +86,43 @@ Transformar dados empresariais em decisões estratégicas com impacto real. Iden
 🎯 Seu foco é sempre dar um passo além: não descreva, oriente. Não reaja, antecipe. Não informe, transforme.`,
     });
 
-    const assistantResponse: z.infer<typeof PulseMessageSchema> = {
+    const assistantMessage: z.infer<typeof PulseMessageSchema> = {
         role: 'assistant',
         content: llmResponse.text,
     };
     
-    return assistantResponse;
+    const updatedMessages = [...messages, assistantMessage];
+    let newConversationId = conversationId;
+    let title = '';
+
+    if (isNewConversation) {
+        // Generate a title for the new conversation
+        const titleGenerationPrompt = `Com base na seguinte conversa, gere um título curto e conciso (máximo de 5 palavras) que resuma o assunto principal.
+
+        Conversa:
+        Usuário: ${prompt}
+        Assistente: ${assistantMessage.content}`;
+
+        const titleResponse = await ai.generate({
+            model: 'googleai/gemini-pro',
+            prompt: titleGenerationPrompt,
+            output: {
+                schema: TitlePromptSchema,
+            }
+        });
+        
+        title = titleResponse.output?.title || 'Nova Conversa';
+
+        const result = await pulseService.createConversation(actor, title, updatedMessages);
+        newConversationId = result.id;
+    } else {
+        await pulseService.updateConversation(actor, newConversationId!, updatedMessages);
+    }
+    
+    return {
+        conversationId: newConversationId!,
+        title: title || undefined,
+        response: assistantMessage,
+    };
   }
 );

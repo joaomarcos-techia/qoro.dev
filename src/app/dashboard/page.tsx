@@ -271,7 +271,7 @@ function DashboardContent() {
                     O sistema nervoso central da sua operação, revelando insights para otimização automática e inteligente.
                   </p>
                   <div className="group/button w-full bg-secondary text-secondary-foreground py-2.5 px-4 rounded-full hover:bg-secondary/80 transition-colors flex items-center justify-center text-sm font-medium">
-                    <span>Acessar</span>
+                    <span>Nova Conversa</span>
                     <ArrowRight className="w-4 h-4 ml-2 transform transition-transform duration-300 group-hover/button:translate-x-1" />
                   </div>
                 </div>
@@ -304,7 +304,7 @@ function DashboardContent() {
           )}
 
           {permissions?.qoroFinance && (
-             <Link href="/dashboard/finance/visao-geral">
+             <Link href="/dashboard/finance/relatorios">
               <div className="group bg-card rounded-2xl border border-border hover:border-finance-primary transition-all duration-200 flex flex-col h-full hover:-translate-y-1">
                 <div className="p-6 flex-grow flex flex-col">
                   <div className="flex items-center mb-4">
