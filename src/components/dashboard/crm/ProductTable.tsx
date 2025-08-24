@@ -42,19 +42,21 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, ArrowUpDown, Search, Loader2, ShoppingCart, Edit, Trash2, Copy } from 'lucide-react';
+import { MoreHorizontal, ArrowUpDown, Search, Loader2, ShoppingCart, Edit, Trash2, Copy, Package, Wrench } from 'lucide-react';
 import { listProducts, deleteProduct } from '@/ai/flows/crm-management';
 import type { ProductProfile } from '@/ai/schemas';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 
-const formatCurrency = (value: number | null | undefined) => {
+const formatCurrency = (value: number | null | undefined, pricingModel: 'fixed' | 'per_hour' | undefined) => {
     if (value === null || value === undefined) return '-';
-    return new Intl.NumberFormat('pt-BR', {
+    const formattedValue = new Intl.NumberFormat('pt-BR', {
         style: 'currency',
         currency: 'BRL',
     }).format(value);
+    return pricingModel === 'per_hour' ? `${formattedValue}/h` : formattedValue;
 };
+
 
 interface ProductTableProps {
     onEdit: (product: ProductProfile) => void;
@@ -83,7 +85,7 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
         onRefresh();
     } catch(err: any) {
         console.error("Failed to delete product:", err);
-        setError(err.message || "Não foi possível excluir o produto.");
+        setError(err.message || "Não foi possível excluir o item.");
     }
   };
 
@@ -98,21 +100,30 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
       cell: ({ row }) => <div className="font-medium text-foreground">{row.getValue('name')}</div>,
     },
     {
+        accessorKey: 'pricingModel',
+        header: 'Tipo',
+        cell: ({ row }) => {
+            const model = row.getValue('pricingModel');
+            const isService = model === 'per_hour';
+            return (
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full flex items-center w-fit ${isService ? 'bg-blue-500/20 text-blue-300' : 'bg-teal-500/20 text-teal-300'}`}>
+                   {isService ? <Wrench className="w-3 h-3 mr-1.5"/> : <Package className="w-3 h-3 mr-1.5"/>}
+                   {isService ? 'Serviço' : 'Produto'}
+                </span>
+            )
+        },
+    },
+    {
+      accessorKey: 'price',
+      header: 'Preço',
+      cell: ({ row }) => formatCurrency(row.getValue('price'), row.original.pricingModel),
+    },
+    {
       accessorKey: 'category',
       header: 'Categoria',
       cell: ({ row }) => row.getValue('category') || '-',
     },
     {
-      accessorKey: 'price',
-      header: 'Preço',
-      cell: ({ row }) => formatCurrency(row.getValue('price')),
-    },
-    {
-      accessorKey: 'cost',
-      header: 'Custo',
-      cell: ({ row }) => formatCurrency(row.getValue('cost')),
-    },
-     {
       accessorKey: 'sku',
       header: 'SKU',
       cell: ({ row }) => row.getValue('sku') || '-',
@@ -139,7 +150,7 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
                 <DropdownMenuLabel>Ações</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => onEdit(product)}>
                     <Edit className="mr-2 h-4 w-4" />
-                    Editar Produto
+                    Editar Item
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigator.clipboard.writeText(product.sku || '')}>
                     <Copy className="mr-2 h-4 w-4" />
@@ -149,7 +160,7 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
                 <AlertDialogTrigger asChild>
                     <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400">
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Excluir Produto
+                        Excluir Item
                     </DropdownMenuItem>
                 </AlertDialogTrigger>
               </DropdownMenuContent>
@@ -158,7 +169,7 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                     <AlertDialogDescription>
-                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o produto <span className='font-bold'>{product.name}</span>.
+                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o item <span className='font-bold'>{product.name}</span>.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -211,7 +222,7 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <Loader2 className="w-12 h-12 text-primary animate-spin" />
-        <p className="mt-4 text-muted-foreground">Carregando produtos...</p>
+        <p className="mt-4 text-muted-foreground">Carregando itens...</p>
       </div>
     );
   }
@@ -224,8 +235,8 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
     return (
         <div className="flex flex-col items-center justify-center text-center min-h-[400px]">
             <ShoppingCart className="w-16 h-16 text-muted-foreground/30 mb-4" />
-            <h3 className="text-xl font-bold text-foreground">Nenhum produto cadastrado</h3>
-            <p className="text-muted-foreground mt-2">Comece adicionando seu primeiro produto para vê-lo aqui.</p>
+            <h3 className="text-xl font-bold text-foreground">Nenhum item cadastrado</h3>
+            <p className="text-muted-foreground mt-2">Comece adicionando um produto ou serviço para vê-lo aqui.</p>
         </div>
     )
   }
@@ -233,7 +244,7 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
   return (
     <div>
        <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-foreground">Sua Lista de Produtos</h2>
+            <h2 className="text-xl font-bold text-foreground">Seu Catálogo de Itens</h2>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input

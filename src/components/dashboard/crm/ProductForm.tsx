@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { ProductSchema, ProductProfile, UpdateProductSchema } from '@/ai/schemas
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type ProductFormProps = {
   onProductAction: () => void;
@@ -37,6 +38,8 @@ export function ProductForm({ onProductAction, product }: ProductFormProps) {
   const {
     register,
     handleSubmit,
+    control,
+    watch,
     reset,
     formState: { errors },
   } = useForm<z.infer<typeof ProductSchema>>({
@@ -53,10 +56,14 @@ export function ProductForm({ onProductAction, product }: ProductFormProps) {
           category: '',
           sku: '',
           price: 0,
-          cost: 0
+          cost: 0,
+          pricingModel: 'fixed',
+          durationHours: 1,
       });
     }
   }, [product, reset]);
+
+  const pricingModel = watch('pricingModel');
 
   const onSubmit = async (data: z.infer<typeof ProductSchema>) => {
     if (!currentUser) {
@@ -74,7 +81,7 @@ export function ProductForm({ onProductAction, product }: ProductFormProps) {
       onProductAction();
     } catch (err) {
       console.error(err);
-      setError(`Falha ao ${isEditMode ? 'atualizar' : 'criar'} o produto. Tente novamente.`);
+      setError(`Falha ao ${isEditMode ? 'atualizar' : 'criar'} o item. Tente novamente.`);
     } finally {
       setIsLoading(false);
     }
@@ -84,31 +91,55 @@ export function ProductForm({ onProductAction, product }: ProductFormProps) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="name">Nome do Produto*</Label>
-          <Input id="name" {...register('name')} placeholder="Ex: Assinatura Mensal Pro" />
+          <Label htmlFor="name">Nome do Item*</Label>
+          <Input id="name" {...register('name')} placeholder="Ex: Assinatura Mensal Pro, Consultoria..." />
           {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
         </div>
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="description">Descrição</Label>
-          <Textarea id="description" {...register('description')} placeholder="Detalhes do produto, características, etc." />
+          <Textarea id="description" {...register('description')} placeholder="Detalhes do item, características, entregáveis, etc." />
         </div>
         <div className="space-y-2">
           <Label htmlFor="category">Categoria</Label>
-          <Input id="category" {...register('category')} placeholder="Ex: Software" />
+          <Input id="category" {...register('category')} placeholder="Ex: Software, Consultoria" />
         </div>
         <div className="space-y-2">
           <Label htmlFor="sku">SKU (Código)</Label>
           <Input id="sku" {...register('sku')} placeholder="Ex: PROD-001" />
         </div>
+        
         <div className="space-y-2">
-          <Label htmlFor="price">Preço de Venda (R$)*</Label>
+            <Label>Modelo de Preço*</Label>
+            <Controller name="pricingModel" control={control} render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="fixed">Preço Fixo (Produto)</SelectItem>
+                        <SelectItem value="per_hour">Por Hora (Serviço)</SelectItem>
+                    </SelectContent>
+                </Select>
+            )} />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="price">{pricingModel === 'per_hour' ? 'Preço por Hora (R$)*' : 'Preço de Venda (R$)*'}</Label>
           <Input id="price" type="number" step="0.01" {...register('price')} />
           {errors.price && <p className="text-destructive text-sm">{errors.price.message}</p>}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="cost">Custo (R$)</Label>
-          <Input id="cost" type="number" step="0.01" {...register('cost')} />
-        </div>
+        
+        {pricingModel === 'fixed' && (
+            <div className="space-y-2">
+            <Label htmlFor="cost">Custo (R$)</Label>
+            <Input id="cost" type="number" step="0.01" {...register('cost')} />
+            </div>
+        )}
+        
+        {pricingModel === 'per_hour' && (
+            <div className="space-y-2">
+                <Label htmlFor="durationHours">Duração Estimada (horas)</Label>
+                <Input id="durationHours" type="number" {...register('durationHours')} placeholder="Ex: 8"/>
+            </div>
+        )}
       </div>
        {error && (
             <div className="bg-destructive/20 border-l-4 border-destructive text-destructive-foreground p-4 rounded-lg flex items-center mt-4">
@@ -119,7 +150,7 @@ export function ProductForm({ onProductAction, product }: ProductFormProps) {
       <div className="flex justify-end pt-4">
         <Button type="submit" disabled={isLoading} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
           {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
-          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : 'Salvar Produto')}
+          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : 'Salvar Item')}
         </Button>
       </div>
     </form>

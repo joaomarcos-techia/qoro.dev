@@ -50,9 +50,9 @@ export default function ProdutosPage() {
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-bold text-foreground">Produtos</h1>
+          <h1 className="text-4xl font-bold text-foreground">Produtos e Serviços</h1>
           <p className="text-muted-foreground">
-            Cadastre e gerencie os produtos que sua empresa vende.
+            Cadastre e gerencie os produtos e serviços que sua empresa oferece.
           </p>
         </div>
         <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
@@ -61,14 +61,14 @@ export default function ProdutosPage() {
               onClick={handleAdd}
               className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
               <PlusCircle className="mr-2 w-5 h-5" />
-              Adicionar Produto
+              Adicionar Item
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-foreground">{selectedProduct ? 'Editar Produto' : 'Adicionar Novo Produto'}</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-foreground">{selectedProduct ? 'Editar Item' : 'Adicionar Novo Item'}</DialogTitle>
               <DialogDescription>
-                {selectedProduct ? 'Altere as informações do produto abaixo.' : 'Preencha as informações abaixo para cadastrar um novo produto no sistema.'}
+                {selectedProduct ? 'Altere as informações do item abaixo.' : 'Preencha as informações para cadastrar um novo produto ou serviço.'}
               </DialogDescription>
             </DialogHeader>
             <ProductForm onProductAction={handleProductAction} product={selectedProduct} />
