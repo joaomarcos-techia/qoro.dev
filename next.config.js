@@ -44,7 +44,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https://placehold.co https://storage.googleapis.com https://firebasestorage.googleapis.com data:; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' *; frame-ancestors 'self' *.google.com;"
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https://placehold.co https://storage.googleapis.com https://firebasestorage.googleapis.com data:; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' * https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; frame-src 'self' https://*.firebaseapp.com;"
           }
         ],
       },
