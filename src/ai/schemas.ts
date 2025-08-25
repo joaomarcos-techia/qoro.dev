@@ -8,8 +8,8 @@ export const SignUpSchema = z.object({
     email: z.string().email(),
     password: z.string().min(6),
     cnpj: z.string().min(1, "O CNPJ é obrigatório."),
-    contactEmail: z.string().email().optional(),
-    contactPhone: z.string().optional(),
+    contactEmail: z.string().email().or(z.literal('')).optional(),
+    contactPhone: z.string().or(z.literal('')).optional(),
 });
 
 export const InviteUserSchema = z.object({
