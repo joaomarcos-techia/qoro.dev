@@ -111,7 +111,7 @@ const PricingCard = ({ plan, currentUser }: { plan: Plan, currentUser: FirebaseU
         try {
             const { url } = await createStripeCheckoutSession({ priceId: plan.stripePriceId, actor: currentUser.uid });
             if (url) {
-                window.location.href = url;
+                window.top!.location.href = url;
             }
         } catch (error) {
             console.error("Failed to create Stripe checkout session:", error);
