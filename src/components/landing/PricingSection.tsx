@@ -39,7 +39,7 @@ const plans: Plan[] = [
   {
     id: 'growth',
     stripePriceId: process.env.NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID, 
-    name: 'Crescimento',
+    name: 'Growth',
     description: 'Profissionalize sua operação. Perfeito para equipes que buscam eficiência e colaboração.',
     price: 'R$ 399',
     priceUnit: '/mês',
@@ -49,9 +49,8 @@ const plans: Plan[] = [
       'QoroCRM: Criação de Orçamentos profissionais',
       'QoroFinance: Gestão de Contas a Pagar e Receber',
       'QoroTask: Visão de Calendário para prazos',
-      'QoroPulse: IA com sugestões proativas de negócio',
     ],
-    buttonText: 'Escolher Crescimento',
+    buttonText: 'Escolher Growth',
     isPopular: true,
   },
   {
@@ -63,7 +62,8 @@ const plans: Plan[] = [
     priceUnit: '/mês',
     priceDetails: 'Inclui até 10 usuários.',
     features: [
-      'Tudo do plano Crescimento, e mais:',
+      'Tudo do plano Growth, e mais:',
+      'QoroPulse: IA com sugestões proativas de negócio',
       'QoroFinance: Gestão de Fornecedores e Conciliação Bancária',
       'Gestão de permissões de usuário por módulo',
       'Relatórios detalhados de CRM e Finanças',
