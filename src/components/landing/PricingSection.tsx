@@ -1,8 +1,12 @@
 
+'use client';
+
 import { Check } from 'lucide-react';
 import Link from 'next/link';
 
 type Plan = {
+  id: 'free' | 'growth' | 'performance'; // Identificador do plano
+  stripePriceId?: string; // ID do preço no Stripe
   name: string;
   description: string;
   price: string;
@@ -11,11 +15,11 @@ type Plan = {
   features: string[];
   buttonText: string;
   isPopular: boolean;
-  signupPath: string;
 };
 
 const plans: Plan[] = [
   {
+    id: 'free',
     name: 'Essencial',
     description: 'Organize seu negócio. Ideal para autônomos e equipes que estão começando.',
     price: 'Grátis',
@@ -30,9 +34,10 @@ const plans: Plan[] = [
     ],
     buttonText: 'Começar Grátis',
     isPopular: false,
-    signupPath: '/signup',
   },
   {
+    id: 'growth',
+    stripePriceId: 'price_growth_plan', 
     name: 'Crescimento',
     description: 'Profissionalize sua operação. Perfeito para equipes que buscam eficiência e colaboração.',
     price: 'R$ 399',
@@ -47,9 +52,10 @@ const plans: Plan[] = [
     ],
     buttonText: 'Escolher Crescimento',
     isPopular: true,
-    signupPath: '/signup',
   },
   {
+    id: 'performance',
+    stripePriceId: 'price_performance_plan',
     name: 'Performance',
     description: 'A plataforma completa para otimização e inteligência competitiva.',
     price: 'R$ 699',
@@ -64,7 +70,6 @@ const plans: Plan[] = [
     ],
     buttonText: 'Escolher Performance',
     isPopular: false,
-    signupPath: '/signup',
   },
 ];
 
@@ -77,7 +82,13 @@ const PricingCard = ({ plan }: { plan: Plan }) => {
     const popularButtonClasses = "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl";
     const normalButtonClasses = "bg-secondary hover:bg-secondary/80 text-white border border-border";
 
-    const CardContent = (
+    const handlePlanSelection = () => {
+        // TODO: Adicionar lógica para chamar a função de checkout do Stripe.
+        // Por enquanto, apenas redireciona para o signup.
+        window.location.href = '/signup';
+    }
+
+    return (
       <div className={`${cardBaseClasses} ${plan.isPopular ? popularClasses : normalClasses} relative`}>
         {plan.isPopular && (
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
@@ -105,15 +116,14 @@ const PricingCard = ({ plan }: { plan: Plan }) => {
             ))}
         </ul>
         
-        <button className={`${buttonBaseClasses} ${plan.isPopular ? popularButtonClasses : normalButtonClasses}`}>
+        <button 
+            onClick={handlePlanSelection}
+            className={`${buttonBaseClasses} ${plan.isPopular ? popularButtonClasses : normalButtonClasses}`}
+        >
             {plan.buttonText}
         </button>
       </div>
     );
-
-    return plan.signupPath.startsWith('http') 
-        ? <a href={plan.signupPath} target="_blank" rel="noopener noreferrer">{CardContent}</a> 
-        : <Link href={plan.signupPath}>{CardContent}</Link>;
 }
 
 export function PricingSection() {
