@@ -51,7 +51,7 @@ const plans: Plan[] = [
   },
   {
     name: 'Performance',
-    description: 'A plataforma completa para otimização, automação e inteligência competitiva.',
+    description: 'A plataforma completa para otimização e inteligência competitiva.',
     price: 'R$ 699',
     priceUnit: '/mês',
     priceDetails: 'Inclui até 10 usuários.',
