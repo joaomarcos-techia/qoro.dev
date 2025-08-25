@@ -373,7 +373,7 @@ export const listQuotes = async (actorUid: string): Promise<QuoteProfile[]> => {
         const parsedData = {
             id: doc.id,
             ...data,
-            validUntil: data.validUntil?.toDate().toISOString(), 
+            validUntil: data.validUntil?.toDate ? data.validUntil.toDate().toISOString() : new Date(data.validUntil).toISOString(),
             createdAt: data.createdAt.toDate().toISOString(),
             updatedAt: data.updatedAt.toDate().toISOString(),
             customerName: customerInfo.name,
