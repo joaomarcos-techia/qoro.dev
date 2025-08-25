@@ -1,12 +1,17 @@
 
 'use client';
 
-import { Check } from 'lucide-react';
-import Link from 'next/link';
+import { Check, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { createStripeCheckoutSession } from '@/ai/flows/billing-flow';
+
 
 type Plan = {
-  id: 'free' | 'growth' | 'performance'; // Identificador do plano
-  stripePriceId?: string; // ID do preço no Stripe
+  id: 'free' | 'growth' | 'performance'; 
+  stripePriceId?: string;
   name: string;
   description: string;
   price: string;
@@ -37,7 +42,7 @@ const plans: Plan[] = [
   },
   {
     id: 'growth',
-    stripePriceId: 'price_growth_plan', 
+    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID, 
     name: 'Crescimento',
     description: 'Profissionalize sua operação. Perfeito para equipes que buscam eficiência e colaboração.',
     price: 'R$ 399',
@@ -55,7 +60,7 @@ const plans: Plan[] = [
   },
   {
     id: 'performance',
-    stripePriceId: 'price_performance_plan',
+    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PERFORMANCE_PLAN_PRICE_ID,
     name: 'Performance',
     description: 'A plataforma completa para otimização e inteligência competitiva.',
     price: 'R$ 699',
@@ -73,19 +78,45 @@ const plans: Plan[] = [
   },
 ];
 
-const PricingCard = ({ plan }: { plan: Plan }) => {
+const PricingCard = ({ plan, currentUser }: { plan: Plan, currentUser: FirebaseUser | null }) => {
+    const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
+
     const cardBaseClasses = "bg-card border rounded-3xl p-8 backdrop-blur-sm transition-all duration-300 hover:-translate-y-2 h-full flex flex-col";
     const popularClasses = "border-2 border-primary shadow-2xl shadow-primary/20 hover:shadow-primary/40";
     const normalClasses = "border-border hover:border-primary";
     
-    const buttonBaseClasses = "w-full py-3 rounded-xl transition-all duration-300 font-semibold mt-auto";
+    const buttonBaseClasses = "w-full py-3 rounded-xl transition-all duration-300 font-semibold mt-auto flex items-center justify-center";
     const popularButtonClasses = "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl";
     const normalButtonClasses = "bg-secondary hover:bg-secondary/80 text-white border border-border";
 
-    const handlePlanSelection = () => {
-        // TODO: Adicionar lógica para chamar a função de checkout do Stripe.
-        // Por enquanto, apenas redireciona para o signup.
-        window.location.href = '/signup';
+    const handlePlanSelection = async () => {
+        setIsLoading(true);
+        if (!currentUser) {
+            router.push('/signup');
+            return;
+        }
+
+        if (plan.id === 'free') {
+            router.push('/signup');
+            return;
+        }
+
+        if (!plan.stripePriceId) {
+            console.error("Stripe Price ID is not configured for this plan.");
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            const { url } = await createStripeCheckoutSession({ priceId: plan.stripePriceId, actor: currentUser.uid });
+            if (url) {
+                window.location.href = url;
+            }
+        } catch (error) {
+            console.error("Failed to create Stripe checkout session:", error);
+            setIsLoading(false);
+        }
     }
 
     return (
@@ -118,15 +149,26 @@ const PricingCard = ({ plan }: { plan: Plan }) => {
         
         <button 
             onClick={handlePlanSelection}
+            disabled={isLoading}
             className={`${buttonBaseClasses} ${plan.isPopular ? popularButtonClasses : normalButtonClasses}`}
         >
-            {plan.buttonText}
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading ? 'Aguarde...' : plan.buttonText}
         </button>
       </div>
     );
 }
 
 export function PricingSection() {
+    const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setCurrentUser(user);
+        });
+        return () => unsubscribe();
+    }, []);
+
     return (
       <section id="precos" className="py-20 bg-black">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -142,7 +184,7 @@ export function PricingSection() {
           <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
             {plans.map(plan => (
               <div key={plan.name}>
-                 <PricingCard plan={plan} />
+                 <PricingCard plan={plan} currentUser={currentUser}/>
               </div>
             ))}
           </div>
