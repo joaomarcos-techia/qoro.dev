@@ -389,6 +389,9 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
           {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : 'Salvar e Gerar PDF')}
         </Button>
       </div>
+    </form>
     </>
   );
 }
+
+    
