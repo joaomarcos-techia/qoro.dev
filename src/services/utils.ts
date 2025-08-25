@@ -1,5 +1,6 @@
 
 import { adminDb } from '@/lib/firebase-admin';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export const getAdminAndOrg = async (actorUid: string) => {
     if (!actorUid) {
@@ -26,8 +27,21 @@ export const getAdminAndOrg = async (actorUid: string) => {
     if (!orgDoc.exists) {
         throw new Error('Organization not found.');
     }
-    const organizationName = orgDoc.data()?.name;
+    const orgData = orgDoc.data()!;
 
+    const subscriptionActive = orgData.stripePriceId && 
+                               orgData.stripeCurrentPeriodEnd && 
+                               (orgData.stripeCurrentPeriodEnd as Timestamp).toDate() > new Date();
 
-    return { userDocRef, userData, organizationId, organizationName, userRole, actorUid };
+    const planId = subscriptionActive ? orgData.stripePriceId : 'free';
+
+    return { 
+        userDocRef, 
+        userData, 
+        organizationId, 
+        organizationName: orgData.name, 
+        userRole, 
+        actorUid,
+        planId // e.g., 'free', 'price_XXXXXXXXXXXXXX'
+    };
 };

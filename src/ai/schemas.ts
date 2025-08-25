@@ -30,6 +30,7 @@ export const UserProfileSchema = z.object({
     organizationId: z.string(),
     role: z.string().optional(),
     permissions: AppPermissionsSchema,
+    planId: z.enum(['free', 'growth', 'performance']).default('free').optional(),
 });
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 
@@ -49,6 +50,11 @@ export const OrganizationProfileSchema = z.object({
     cnpj: z.string().optional().nullable(),
     contactEmail: z.string().email().optional().nullable(),
     contactPhone: z.string().optional().nullable(),
+    // Stripe fields
+    stripeCustomerId: z.string().optional(),
+    stripeSubscriptionId: z.string().optional(),
+    stripePriceId: z.string().optional(),
+    stripeCurrentPeriodEnd: z.date().optional(),
 });
 export type OrganizationProfile = z.infer<typeof OrganizationProfileSchema>;
 
