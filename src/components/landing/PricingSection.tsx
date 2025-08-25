@@ -24,8 +24,9 @@ const plans: Plan[] = [
       'QoroCRM: Gestão de Clientes e Funil de Vendas',
       'QoroTask: Gestão de Tarefas em quadro Kanban',
       'QoroFinance: Visão geral e registro de transações',
-      'QoroPulse: Assistente de IA para perguntas e respostas',
-      'Suporte via comunidade',
+      'Limite de 50 Clientes',
+      'Limite de 100 Tarefas',
+      'Limite de 100 Registros Financeiros',
     ],
     buttonText: 'Começar Grátis',
     isPopular: false,
@@ -38,13 +39,12 @@ const plans: Plan[] = [
     priceUnit: '/mês',
     priceDetails: 'Inclui até 5 usuários.',
     features: [
-      'Tudo do plano Essencial, e mais:',
+      'Tudo do plano Essencial, sem limites de registros',
       'QoroCRM: Criação de Orçamentos profissionais',
       'QoroFinance: Gestão de Contas a Pagar e Receber',
       'QoroTask: Visão de Calendário para prazos',
-      'QoroPulse: IA com sugestões proativas e criação de tarefas',
+      'QoroPulse: IA com sugestões proativas de negócio',
       'Relatórios detalhados de CRM e Finanças',
-      'Suporte prioritário via e-mail e chat',
     ],
     buttonText: 'Escolher Crescimento',
     isPopular: true,
@@ -58,11 +58,10 @@ const plans: Plan[] = [
     priceDetails: 'Inclui até 10 usuários.',
     features: [
       'Tudo do plano Crescimento, e mais:',
-      'QoroCRM: Automação de follow-ups de vendas',
       'QoroFinance: Gestão de Fornecedores e Conciliação Bancária',
-      'QoroPulse: Análise preditiva e automação de fluxos de trabalho',
       'Gestão de permissões de usuário por módulo',
-      'Suporte com gerente de contas dedicado',
+      'Análise Preditiva com IA para otimizar suas vendas e finanças',
+      'Acesso antecipado a novas funcionalidades',
     ],
     buttonText: 'Escolher Performance',
     isPopular: false,
@@ -142,4 +141,3 @@ export function PricingSection() {
       </section>
     );
   }
-
