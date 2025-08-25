@@ -33,7 +33,15 @@ export const getAdminAndOrg = async (actorUid: string) => {
                                orgData.stripeCurrentPeriodEnd && 
                                (orgData.stripeCurrentPeriodEnd as Timestamp).toDate() > new Date();
 
-    const planId = subscriptionActive ? orgData.stripePriceId : 'free';
+    let planId = 'free';
+    if (subscriptionActive) {
+        if (orgData.stripePriceId === process.env.NEXT_PUBLIC_STRIPE_PERFORMANCE_PLAN_PRICE_ID) {
+            planId = 'performance';
+        } else if (orgData.stripePriceId === process.env.NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID) {
+            planId = 'growth';
+        }
+    }
+
 
     return { 
         userDocRef, 
@@ -41,7 +49,7 @@ export const getAdminAndOrg = async (actorUid: string) => {
         organizationId, 
         organizationName: orgData.name, 
         userRole, 
-        actorUid,
-        planId // e.g., 'free', 'price_XXXXXXXXXXXXXX'
+        adminUid: actorUid, // Using actorUid as adminUid for simplicity in this context
+        planId
     };
 };

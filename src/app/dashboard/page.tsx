@@ -13,10 +13,11 @@ import {
   AlertTriangle,
   Lock,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
+import { getOrganizationDetails } from '@/ai/flows/user-management';
 import { getDashboardMetrics as getCrmMetrics } from '@/ai/flows/crm-management';
 import { getDashboardMetrics as getTaskMetrics } from '@/ai/flows/task-management';
 import { getDashboardMetrics as getFinanceMetrics } from '@/ai/flows/finance-management';
@@ -138,47 +139,50 @@ function DashboardContent() {
   const [financeMetrics, setFinanceMetrics] = useState<FinanceMetrics>({ totalBalance: 0 });
 
 
+  const fetchUserAccess = useCallback(async (user: FirebaseUser) => {
+    setIsLoading(prev => ({ ...prev, access: true }));
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      if (!userDoc.exists()) throw new Error('User document not found');
+
+      const userData = userDoc.data();
+      const orgDetails = await getOrganizationDetails({ actor: user.uid });
+
+      const subscriptionActive = orgDetails.stripePriceId && 
+                                 orgDetails.stripeCurrentPeriodEnd && 
+                                 new Date(orgDetails.stripeCurrentPeriodEnd) > new Date();
+
+      let planId: UserAccessInfo['planId'] = 'free';
+      if (subscriptionActive) {
+          if (orgDetails.stripePriceId === process.env.NEXT_PUBLIC_STRIPE_PERFORMANCE_PLAN_PRICE_ID) planId = 'performance';
+          else if (orgDetails.stripePriceId === process.env.NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID) planId = 'growth';
+      }
+
+      setUserAccess({
+          planId,
+          permissions: userData.permissions || { qoroCrm: false, qoroPulse: false, qoroTask: false, qoroFinance: false }
+      });
+    } catch (e) {
+        console.error("Failed to fetch user access info", e);
+        setUserAccess(null);
+    } finally {
+      setIsLoading(prev => ({...prev, access: false}));
+    }
+  }, []);
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
-        setCurrentUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (user: FirebaseUser | null) => {
+      setCurrentUser(user);
       if (user) {
-        try {
-            const userDocRef = doc(db, 'users', user.uid);
-            const userDoc = await getDoc(userDocRef);
-            if (userDoc.exists()) {
-              const userData = userDoc.data();
-
-              const orgDocRef = doc(db, 'organizations', userData.organizationId);
-              const orgDoc = await getDoc(orgDocRef);
-              const orgData = orgDoc.exists() ? orgDoc.data() : {};
-
-              const subscriptionActive = orgData.stripePriceId && 
-                                         orgData.stripeCurrentPeriodEnd && 
-                                         orgData.stripeCurrentPeriodEnd.toDate() > new Date();
-
-              let planId: UserAccessInfo['planId'] = 'free';
-              if (subscriptionActive) {
-                  if (orgData.stripePriceId === 'price_performance_plan') planId = 'performance';
-                  else if (orgData.stripePriceId === 'price_growth_plan') planId = 'growth';
-              }
-              
-              setUserAccess({
-                  planId,
-                  permissions: userData.permissions || { qoroCrm: false, qoroPulse: false, qoroTask: false, qoroFinance: false }
-              });
-            }
-        } catch (e) {
-            console.error("Failed to fetch user access info", e)
-            setUserAccess(null)
-        }
+        fetchUserAccess(user);
       } else {
         setUserAccess(null);
+        setIsLoading(prev => ({...prev, access: false}));
       }
-      setIsLoading(prev => ({...prev, access: false}));
     });
-
     return () => unsubscribe();
-  }, []);
+  }, [fetchUserAccess]);
 
   useEffect(() => {
     async function fetchMetrics() {

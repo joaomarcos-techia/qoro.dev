@@ -91,6 +91,7 @@ const PricingCard = ({ plan }: { plan: Plan }) => {
 
     const handlePlanSelection = async () => {
         setIsLoading(true);
+        // Always redirect to signup with the plan ID
         router.push(`/signup?plan=${plan.id}`);
     }
 

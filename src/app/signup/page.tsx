@@ -29,7 +29,7 @@ export default function SignUpPage() {
     contactPhone: '',
   });
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [successData, setSuccessData] = useState<{ message: string; url?: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const formatCNPJ = (value: string) => {
@@ -74,7 +74,7 @@ export default function SignUpPage() {
       });
 
       if (!plan || plan === 'free') {
-        setSuccess('Conta criada com sucesso! Você será redirecionado para o login.');
+        setSuccessData({ message: 'Conta criada com sucesso! Você será redirecionado para o login.' });
         setTimeout(() => router.push('/login'), 3000);
         return;
       }
@@ -85,7 +85,7 @@ export default function SignUpPage() {
       }
       
       const { url } = await createStripeCheckoutSession({ priceId: priceId, actor: uid });
-      window.open(url, '_blank');
+      setSuccessData({ message: 'Conta criada com sucesso! Verifique seu e-mail e finalize o pagamento para começar.', url });
 
     } catch (err: any) {
       if (err.message && err.message.includes('Este e-mail já está em uso.')) {
@@ -109,11 +109,20 @@ export default function SignUpPage() {
           <p className="text-muted-foreground">Crie sua conta para começar a organizar sua empresa.</p>
         </div>
 
-        {success ? (
+        {successData ? (
           <div className="bg-green-800/20 border-l-4 border-green-500 text-green-300 p-6 rounded-lg flex items-center text-center flex-col">
             <CheckCircle className="w-10 h-10 mb-4 text-green-400" />
             <h3 className="text-xl font-bold text-white mb-2">Conta Criada com Sucesso!</h3>
-            <p className="text-sm font-semibold mb-6">{success}</p>
+            <p className="text-sm font-semibold mb-6">{successData.message}</p>
+            {successData.url && (
+                <a href={successData.url} target="_blank" rel="noopener noreferrer" className="w-full bg-primary text-primary-foreground py-3 rounded-xl hover:bg-primary/90 transition-all duration-200 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
+                    <ArrowRight className="mr-2 w-5 h-5" />
+                    Finalizar Pagamento
+                </a>
+            )}
+             <Link href="/login" className="mt-4 text-sm text-primary hover:underline">
+                Ir para o Login
+              </Link>
           </div>
         ) : (
           <form onSubmit={handleSignUp} className="space-y-8">
@@ -173,7 +182,7 @@ export default function SignUpPage() {
                 className="w-full bg-primary text-primary-foreground py-3 rounded-xl hover:bg-primary/90 transition-all duration-200 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed"
                 >
                 {isLoading && <Loader2 className="animate-spin mr-2 h-5 w-5" />}
-                {isLoading ? 'Aguarde...' : 'Criar conta e Continuar'}
+                {isLoading ? 'Criando conta...' : 'Criar conta e Continuar'}
                 </button>
             </div>
           </form>
