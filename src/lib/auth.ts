@@ -23,13 +23,19 @@ export const signIn = async (email: string, password: string): Promise<User> => 
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
   
-      // For this new flow, we allow login without email verification immediately after signup,
-      // as they are being redirected to Stripe. The verification email is still sent.
-      // A cron job or manual check could later enforce verification for older accounts.
+      if (!user.emailVerified) {
+        // Log out the user immediately if their email is not verified.
+        await firebaseSignOut(auth); 
+        throw new Error('Seu e-mail ainda não foi verificado. Por favor, verifique sua caixa de entrada e clique no link de confirmação antes de fazer o login.');
+      }
       
       return user;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error signing in:", error);
+      // Pass specific error messages through
+      if (error.message.includes('e-mail ainda não foi verificado')) {
+          throw error;
+      }
       throw new Error('E-mail ou senha inválidos. Por favor, tente novamente.');
     }
 };

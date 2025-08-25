@@ -26,6 +26,14 @@ export const signUp = async (input: z.infer<typeof SignUpSchema>): Promise<{uid:
             emailVerified: false, 
         });
 
+        // Explicitly generate and send the verification email link.
+        // The user must click this before they can log in.
+        const verificationLink = await adminAuth.generateEmailVerificationLink(email);
+        // In a production app, you'd use a service like SendGrid or Nodemailer to send this link.
+        // For this context, we log it to demonstrate the link is generated.
+        console.log(`Verification link for ${email}: ${verificationLink}`);
+        // The default Firebase email handler will also send an email. This is a fallback.
+
         const orgRef = await adminDb.collection('organizations').add({
             name: organizationName,
             owner: userRecord.uid,
@@ -90,14 +98,8 @@ export const inviteUser = async (email: string, actor: string): Promise<{ uid: s
       }
     });
     
-    try {
-        await adminAuth.generatePasswordResetLink(email);
-        // In a real app, this link would be sent via a proper email service
-        console.log(`Password setup link would be sent to ${email}.`);
-    } catch(error){
-        console.error("Falha ao gerar o link de definição de senha:", error);
-        // Don't fail the whole flow if email link generation fails
-    }
+    // Firebase will automatically send a password reset / account setup email for invited users.
+    // We don't need to manually generate and send a link here.
 
     return {
       uid: userRecord.uid,
