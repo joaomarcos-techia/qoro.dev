@@ -4,8 +4,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
-import { signIn } from '@/lib/auth';
+import { Mail, Lock, LogIn, AlertCircle, CheckCircle } from 'lucide-react';
+import { signIn, sendPasswordResetEmail } from '@/lib/auth';
 import { Logo } from '@/components/ui/logo';
 
 export default function LoginPage() {
@@ -13,22 +13,45 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState<string | null>(null);
+
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setShowResend(false);
+    setResendSuccess(null);
     setIsLoading(true);
 
     try {
       await signIn(email, password);
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro desconhecido. Tente novamente.');
-      console.error(err);
+      if ((err as any).code === 'auth/email-not-verified') {
+        setError('Seu e-mail ainda não foi verificado.');
+        setShowResend(true);
+      } else {
+        setError(err.message || 'Ocorreu um erro desconhecido. Tente novamente.');
+      }
       setIsLoading(false);
     }
   };
+
+  const handleResendVerification = async () => {
+    setError(null);
+    setIsLoading(true);
+    try {
+        // Firebase uses the password reset flow to also handle verification for new accounts
+        await sendPasswordResetEmail(email);
+        setResendSuccess('Um novo e-mail de verificação/configuração de conta foi enviado. Verifique sua caixa de entrada.');
+        setShowResend(false);
+    } catch (err: any) {
+        setError(err.message);
+    }
+    setIsLoading(false);
+  }
 
   return (
     <main className="flex items-center justify-center min-h-screen bg-black p-4">
@@ -65,11 +88,26 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="bg-destructive/20 border-l-4 border-destructive text-destructive-foreground p-4 rounded-lg flex items-center">
+            <div className="bg-destructive/20 border-l-4 border-destructive text-destructive-foreground p-4 rounded-lg flex items-center text-sm">
               <AlertCircle className="w-5 h-5 mr-3" />
-              <span className="text-sm">{error}</span>
+              <div>
+                {error}
+                {showResend && (
+                    <button type="button" onClick={handleResendVerification} className="font-bold underline hover:text-white mt-1 block">
+                        Reenviar e-mail de verificação
+                    </button>
+                )}
+              </div>
             </div>
           )}
+
+          {resendSuccess && (
+             <div className="bg-green-800/20 border-l-4 border-green-500 text-green-300 p-4 rounded-lg flex items-center text-sm">
+              <CheckCircle className="w-5 h-5 mr-3" />
+              <span>{resendSuccess}</span>
+            </div>
+          )}
+
 
           <button
             type="submit"

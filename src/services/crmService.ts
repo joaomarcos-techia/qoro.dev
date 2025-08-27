@@ -7,7 +7,15 @@ import type { SaleLeadProfile, QuoteProfile } from '@/ai/schemas';
 import { adminDb } from '@/lib/firebase-admin';
 
 export const createCustomer = async (input: z.infer<typeof CustomerSchema>, actorUid: string) => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
+    const { organizationId, planId } = await getAdminAndOrg(actorUid);
+
+    if (planId === 'free') {
+        const query = adminDb.collection('customers').where('companyId', '==', organizationId);
+        const snapshot = await query.get();
+        if (snapshot.size >= 15) {
+            throw new Error('Limite de 15 clientes atingido. Faça upgrade do seu plano para adicionar mais.');
+        }
+    }
 
     const newCustomerData = {
         ...input,
@@ -369,11 +377,10 @@ export const listQuotes = async (actorUid: string): Promise<QuoteProfile[]> => {
         const data = doc.data();
         const customerInfo = customers[data.customerId] || {};
         
-        // Ensure data from firestore is converted to string before parsing
         const parsedData = {
             id: doc.id,
             ...data,
-            validUntil: data.validUntil?.toDate ? data.validUntil.toDate().toISOString() : new Date(data.validUntil).toISOString(),
+            validUntil: data.validUntil?.toDate ? data.validUntil.toDate().toISOString() : null,
             createdAt: data.createdAt.toDate().toISOString(),
             updatedAt: data.updatedAt.toDate().toISOString(),
             customerName: customerInfo.name,

@@ -8,6 +8,7 @@
  * - updateUserPermissions - Updates the application permissions for a specific user.
  * - getOrganizationDetails - Fetches details for the user's organization.
  * - updateOrganizationDetails - Updates details for the user's organization.
+ * - getUserAccessInfo - Fetches user's plan and permissions.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
@@ -17,9 +18,11 @@ import {
     UpdateUserPermissionsSchema, 
     UpdateOrganizationDetailsSchema, 
     OrganizationProfileSchema, 
-    UserProfileSchema
+    UserProfileSchema,
+    UserAccessInfoSchema
 } from '@/ai/schemas';
 import * as orgService from '@/services/organizationService';
+import { getAdminAndOrg } from '@/services/utils';
 import type { UserProfile } from '@/ai/schemas';
 import { UserRecord } from 'firebase-admin/auth';
 
@@ -56,6 +59,18 @@ const updateOrganizationDetailsFlow = ai.defineFlow(
     async (input) => orgService.updateOrganizationDetails(input, input.actor)
 );
 
+const getUserAccessInfoFlow = ai.defineFlow(
+    { name: 'getUserAccessInfoFlow', inputSchema: ActorSchema, outputSchema: UserAccessInfoSchema },
+    async ({ actor }) => {
+        const { planId, userData } = await getAdminAndOrg(actor);
+        const defaultPermissions = { qoroCrm: false, qoroPulse: false, qoroTask: false, qoroFinance: false };
+        return {
+            planId,
+            permissions: { ...defaultPermissions, ...userData.permissions }
+        }
+    }
+);
+
 
 // Exported functions (client-callable wrappers)
 export async function signUp(input: z.infer<typeof SignUpSchema>): Promise<{uid: string}> {
@@ -80,4 +95,8 @@ export async function getOrganizationDetails(input: z.infer<typeof ActorSchema>)
 
 export async function updateOrganizationDetails(input: z.infer<typeof UpdateOrganizationDetailsSchema> & z.infer<typeof ActorSchema>): Promise<{ success: boolean }> {
     return updateOrganizationDetailsFlow(input);
+}
+
+export async function getUserAccessInfo(input: z.infer<typeof ActorSchema>): Promise<z.infer<typeof UserAccessInfoSchema>> {
+    return getUserAccessInfoFlow(input);
 }

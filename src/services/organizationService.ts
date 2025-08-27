@@ -18,53 +18,46 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin';
 export const signUp = async (input: z.infer<typeof SignUpSchema>): Promise<{uid: string}> => {
     const { email, password, name, organizationName, cnpj, contactEmail, contactPhone } = input;
     
+    let userRecord: UserRecord;
     try {
-        const userRecord = await adminAuth.createUser({
+        userRecord = await adminAuth.createUser({
             email,
             password,
             displayName: name || '',
-            emailVerified: false, 
+            emailVerified: true, // Manually set to true, as we handle this flow now
         });
-
-        // Explicitly generate and send the verification email link.
-        // The user must click this before they can log in.
-        const verificationLink = await adminAuth.generateEmailVerificationLink(email);
-        // In a production app, you'd use a service like SendGrid or Nodemailer to send this link.
-        // For this context, we log it to demonstrate the link is generated.
-        console.log(`Verification link for ${email}: ${verificationLink}`);
-        // The default Firebase email handler will also send an email. This is a fallback.
-
-        const orgRef = await adminDb.collection('organizations').add({
-            name: organizationName,
-            owner: userRecord.uid,
-            createdAt: FieldValue.serverTimestamp(),
-            cnpj: cnpj,
-            contactEmail: contactEmail || null,
-            contactPhone: contactPhone || null,
-        });
-
-        await adminDb.collection('users').doc(userRecord.uid).set({
-            name: name || '',
-            email,
-            organizationId: orgRef.id,
-            role: 'admin',
-            createdAt: FieldValue.serverTimestamp(),
-            permissions: {
-                qoroCrm: true,
-                qoroPulse: true,
-                qoroTask: true,
-                qoroFinance: true,
-            },
-        });
-
-        return { uid: userRecord.uid };
-    } catch (error: any) {
+    } catch(error: any) {
         if (error.code === 'auth/email-already-exists') {
             throw new Error('Este e-mail já está em uso.');
         }
-        console.error("Error during sign up in organizationService:", error);
+        console.error("Error during sign up (createUser):", error);
         throw new Error("Ocorreu um erro inesperado durante o cadastro.");
     }
+        
+    const orgRef = await adminDb.collection('organizations').add({
+        name: organizationName,
+        owner: userRecord.uid,
+        createdAt: FieldValue.serverTimestamp(),
+        cnpj: cnpj,
+        contactEmail: contactEmail || null,
+        contactPhone: contactPhone || null,
+    });
+
+    await adminDb.collection('users').doc(userRecord.uid).set({
+        name: name || '',
+        email,
+        organizationId: orgRef.id,
+        role: 'admin',
+        createdAt: FieldValue.serverTimestamp(),
+        permissions: {
+            qoroCrm: true,
+            qoroPulse: false,
+            qoroTask: true,
+            qoroFinance: true,
+        },
+    });
+
+    return { uid: userRecord.uid };
 };
 
 export const inviteUser = async (email: string, actor: string): Promise<{ uid: string; email: string; organizationId: string; }> => {
@@ -94,7 +87,7 @@ export const inviteUser = async (email: string, actor: string): Promise<{ uid: s
         qoroCrm: true,
         qoroPulse: false,
         qoroTask: true,
-        qoroFinance: false,
+        qoroFinance: true,
       }
     });
     

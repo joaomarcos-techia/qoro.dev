@@ -16,12 +16,22 @@ export const InviteUserSchema = z.object({
     email: z.string().email('O e-mail fornecido não é válido.'),
 });
 
-const AppPermissionsSchema = z.object({
+const BaseAppPermissionsSchema = z.object({
     qoroCrm: z.boolean().default(true),
     qoroPulse: z.boolean().default(true),
     qoroTask: z.boolean().default(true),
     qoroFinance: z.boolean().default(true),
-}).optional();
+});
+
+const AppPermissionsSchema = BaseAppPermissionsSchema.optional();
+
+
+export const UserAccessInfoSchema = z.object({
+    planId: z.enum(['free', 'growth', 'performance']),
+    permissions: BaseAppPermissionsSchema,
+});
+export type UserAccessInfo = z.infer<typeof UserAccessInfoSchema>;
+
 
 export const UserProfileSchema = z.object({
     uid: z.string(),
@@ -176,6 +186,7 @@ export const QuoteProfileSchema = QuoteSchema.extend({
     customerName: z.string().optional(),
     organizationName: z.string().optional(),
     status: z.enum(['draft', 'sent', 'accepted', 'rejected', 'expired']),
+    validUntil: z.string().datetime().nullable(),
 });
 export type QuoteProfile = z.infer<typeof QuoteProfileSchema>;
 

@@ -47,7 +47,7 @@ export function TaskCalendar() {
       listTasks({ actor: currentUser.uid })
         .then((tasks) => {
           const calendarEvents = tasks
-            .filter(task => task.dueDate) // Only include tasks with a due date
+            .filter(task => !!task.dueDate) // Only include tasks with a due date
             .map((task): CalendarEvent => ({
               id: task.id,
               title: task.title,

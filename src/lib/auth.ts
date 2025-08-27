@@ -3,6 +3,7 @@
 
 import {
   getAuth,
+  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendEmailVerification,
   User,
@@ -10,13 +11,26 @@ import {
   updatePassword,
   EmailAuthProvider,
   reauthenticateWithCredential,
+  sendPasswordResetEmail as firebaseSendPasswordResetEmail,
 } from 'firebase/auth';
 import { app } from './firebase';
 
 const auth = getAuth(app);
 
-// The signUp logic is now handled by a Genkit flow for security reasons.
-// The client-side signUp function has been removed.
+// New function to handle user creation and email verification on the client-side
+export const createUserAndSendVerification = async (email: string, password: string): Promise<User> => {
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        await sendEmailVerification(user);
+        return user;
+    } catch (error: any) {
+        if (error.code === 'auth/email-already-exists') {
+            throw new Error('Este e-mail já está em uso.');
+        }
+        throw new Error('Ocorreu um erro ao criar o usuário. Tente novamente.');
+    }
+};
 
 export const signIn = async (email: string, password: string): Promise<User> => {
     try {
@@ -24,16 +38,16 @@ export const signIn = async (email: string, password: string): Promise<User> => 
       const user = userCredential.user;
   
       if (!user.emailVerified) {
-        // Log out the user immediately if their email is not verified.
         await firebaseSignOut(auth); 
-        throw new Error('Seu e-mail ainda não foi verificado. Por favor, verifique sua caixa de entrada e clique no link de confirmação antes de fazer o login.');
+        const notVerifiedError = new Error('E-mail não verificado.');
+        (notVerifiedError as any).code = 'auth/email-not-verified';
+        throw notVerifiedError;
       }
       
       return user;
     } catch (error: any) {
       console.error("Error signing in:", error);
-      // Pass specific error messages through
-      if (error.message.includes('e-mail ainda não foi verificado')) {
+      if (error.code === 'auth/email-not-verified') {
           throw error;
       }
       throw new Error('E-mail ou senha inválidos. Por favor, tente novamente.');
@@ -48,6 +62,16 @@ export const signOut = async (): Promise<void> => {
         throw error;
     }
 };
+
+export const sendPasswordResetEmail = async (email: string): Promise<void> => {
+    try {
+        await firebaseSendPasswordResetEmail(auth, email);
+    } catch (error) {
+        console.error("Error sending password reset email:", error);
+        throw new Error("Não foi possível enviar o e-mail. Verifique o endereço e tente novamente.");
+    }
+}
+
 
 export const changePassword = async (currentPassword: string, newPassword: string): Promise<void> => {
     const user = auth.currentUser;

@@ -12,7 +12,15 @@ import { adminDb } from '@/lib/firebase-admin';
 
 
 export const createTask = async (input: z.infer<typeof TaskSchema>, actorUid: string) => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
+    const { organizationId, planId } = await getAdminAndOrg(actorUid);
+
+    if (planId === 'free') {
+        const query = adminDb.collection('tasks').where('companyId', '==', organizationId);
+        const snapshot = await query.get();
+        if (snapshot.size >= 5) {
+            throw new Error('Limite de 5 tarefas atingido. Faça upgrade do seu plano para adicionar mais.');
+        }
+    }
 
     const newTaskData = {
         ...input,

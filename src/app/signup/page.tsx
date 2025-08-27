@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Mail, Lock, AlertCircle, CheckCircle, User, Building, FileText, Phone, ArrowRight, Loader2 } from 'lucide-react';
 import { signUp } from '@/ai/flows/user-management';
 import { createStripeCheckoutSession } from '@/ai/flows/billing-flow';
+import { createUserAndSendVerification } from '@/lib/auth';
 import { Logo } from '@/components/ui/logo';
 
 const planIdToPriceId: Record<string, string | undefined> = {
@@ -68,14 +69,17 @@ export default function SignUpPage() {
     }
 
     try {
-      const { uid } = await signUp({
+      // Step 1: Create the user in Firebase Auth on the client to send the verification email
+      const user = await createUserAndSendVerification(formData.email, formData.password);
+
+      // Step 2: Create the organization and user document in Firestore via the backend flow
+      await signUp({
         ...formData,
         cnpj: formData.cnpj.replace(/\D/g, ''), 
       });
 
       if (!plan || plan === 'free') {
-        setSuccessData({ message: 'Conta criada com sucesso! Você será redirecionado para o login.' });
-        setTimeout(() => router.push('/login'), 3000);
+        setSuccessData({ message: 'Conta criada! Verifique seu e-mail para ativar sua conta e depois faça o login.' });
         return;
       }
       
@@ -84,16 +88,12 @@ export default function SignUpPage() {
           throw new Error('Plano selecionado é inválido ou não foi configurado.');
       }
       
-      const { url } = await createStripeCheckoutSession({ priceId: priceId, actor: uid });
-      setSuccessData({ message: 'Conta criada com sucesso! Verifique seu e-mail e finalize o pagamento para começar.', url });
+      const { url } = await createStripeCheckoutSession({ priceId: priceId, actor: user.uid });
+      setSuccessData({ message: 'Conta criada! Verifique seu e-mail e finalize o pagamento para começar.', url });
 
     } catch (err: any) {
-      if (err.message && err.message.includes('Este e-mail já está em uso.')) {
-        setError('Este e-mail já está em uso. Tente fazer login.');
-      } else {
-        setError(err.message || 'Ocorreu um erro ao criar a conta. Tente novamente.');
-        console.error(err);
-      }
+      setError(err.message || 'Ocorreu um erro ao criar a conta. Tente novamente.');
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -114,15 +114,16 @@ export default function SignUpPage() {
             <CheckCircle className="w-10 h-10 mb-4 text-green-400" />
             <h3 className="text-xl font-bold text-white mb-2">Conta Criada com Sucesso!</h3>
             <p className="text-sm font-semibold mb-6">{successData.message}</p>
-            {successData.url && (
+            {successData.url ? (
                 <a href={successData.url} target="_blank" rel="noopener noreferrer" className="w-full bg-primary text-primary-foreground py-3 rounded-xl hover:bg-primary/90 transition-all duration-200 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
                     <ArrowRight className="mr-2 w-5 h-5" />
                     Finalizar Pagamento
                 </a>
+            ) : (
+                <Link href="/login" className="w-full bg-primary text-primary-foreground py-3 rounded-xl hover:bg-primary/90 transition-all duration-200 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
+                    Ir para o Login
+                </Link>
             )}
-             <Link href="/login" className="mt-4 text-sm text-primary hover:underline">
-                Ir para o Login
-              </Link>
           </div>
         ) : (
           <form onSubmit={handleSignUp} className="space-y-8">

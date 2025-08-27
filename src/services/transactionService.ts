@@ -7,7 +7,15 @@ import { adminDb } from '@/lib/firebase-admin';
 
 
 export const createTransaction = async (input: z.infer<typeof TransactionSchema>, actorUid: string) => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
+    const { organizationId, planId } = await getAdminAndOrg(actorUid);
+
+    if (planId === 'free') {
+        const query = adminDb.collection('transactions').where('companyId', '==', organizationId);
+        const snapshot = await query.get();
+        if (snapshot.size >= 10) {
+            throw new Error('Limite de 10 transações atingido. Faça upgrade do seu plano para adicionar mais.');
+        }
+    }
 
     const accountRef = adminDb.collection('accounts').doc(input.accountId);
     const transactionRef = adminDb.collection('transactions').doc();

@@ -17,22 +17,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import { getOrganizationDetails } from '@/ai/flows/user-management';
+import { getUserAccessInfo } from '@/ai/flows/user-management';
 import { getDashboardMetrics as getCrmMetrics } from '@/ai/flows/crm-management';
 import { getDashboardMetrics as getTaskMetrics } from '@/ai/flows/task-management';
 import { getDashboardMetrics as getFinanceMetrics } from '@/ai/flows/finance-management';
 import { ErrorBoundary } from 'react-error-boundary';
+import { UserAccessInfo } from '@/ai/schemas';
 
-
-interface UserAccessInfo {
-  planId: 'free' | 'growth' | 'performance';
-  permissions: {
-    qoroCrm: boolean;
-    qoroPulse: boolean;
-    qoroTask: boolean;
-    qoroFinance: boolean;
-  }
-}
 
 interface CrmMetrics {
     totalCustomers: number;
@@ -142,27 +133,8 @@ function DashboardContent() {
   const fetchUserAccess = useCallback(async (user: FirebaseUser) => {
     setIsLoading(prev => ({ ...prev, access: true }));
     try {
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
-      if (!userDoc.exists()) throw new Error('User document not found');
-
-      const userData = userDoc.data();
-      const orgDetails = await getOrganizationDetails({ actor: user.uid });
-
-      const subscriptionActive = orgDetails.stripePriceId && 
-                                 orgDetails.stripeCurrentPeriodEnd && 
-                                 new Date(orgDetails.stripeCurrentPeriodEnd) > new Date();
-
-      let planId: UserAccessInfo['planId'] = 'free';
-      if (subscriptionActive) {
-          if (orgDetails.stripePriceId === process.env.NEXT_PUBLIC_STRIPE_PERFORMANCE_PLAN_PRICE_ID) planId = 'performance';
-          else if (orgDetails.stripePriceId === process.env.NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID) planId = 'growth';
-      }
-
-      setUserAccess({
-          planId,
-          permissions: userData.permissions || { qoroCrm: false, qoroPulse: false, qoroTask: false, qoroFinance: false }
-      });
+        const info = await getUserAccessInfo({ actor: user.uid });
+        setUserAccess(info);
     } catch (e) {
         console.error("Failed to fetch user access info", e);
         setUserAccess(null);
@@ -259,6 +231,12 @@ function DashboardContent() {
   const plan = userAccess?.planId ?? 'free';
   const permissions = userAccess?.permissions;
 
+  const planHasCrm = permissions?.qoroCrm;
+  const planHasTask = permissions?.qoroTask;
+  const planHasPulse = userAccess?.planId === 'performance' && permissions?.qoroPulse;
+  const planHasFinance = (userAccess?.planId !== 'free' && permissions?.qoroFinance) || userAccess?.planId === 'free';
+
+
   return (
     <div
       id="dashboard-content"
@@ -277,15 +255,15 @@ function DashboardContent() {
        <div className="mb-12">
             <h3 className="text-xl font-bold text-foreground mb-6">Métricas e Insights Rápidos</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {permissions?.qoroCrm && (
+                {planHasCrm && (
                   <>
                     <MetricCard title="Total de Clientes" value={String(crmMetrics.totalCustomers)} icon={Users} isLoading={isLoading.metrics} error={errors.crm} colorClass='bg-crm-primary' />
                     <MetricCard title="Leads no Funil" value={String(crmMetrics.totalLeads)} icon={TrendingUp} isLoading={isLoading.metrics} error={errors.crm} colorClass='bg-crm-primary' />
                   </>
                 )}
-                {permissions?.qoroTask && <MetricCard title="Tarefas Pendentes" value={String(taskMetrics.pendingTasks)} icon={ListTodo} isLoading={isLoading.metrics} error={errors.task} colorClass='bg-task-primary' />
+                {planHasTask && <MetricCard title="Tarefas Pendentes" value={String(taskMetrics.pendingTasks)} icon={ListTodo} isLoading={isLoading.metrics} error={errors.task} colorClass='bg-task-primary' />
                 }
-                {permissions?.qoroFinance && <MetricCard title="Saldo em Contas" value={formatCurrency(financeMetrics.totalBalance)} icon={DollarSign} isLoading={isLoading.metrics} error={errors.finance} colorClass='bg-finance-primary' />
+                {planHasFinance && <MetricCard title="Saldo em Contas" value={formatCurrency(financeMetrics.totalBalance)} icon={DollarSign} isLoading={isLoading.metrics} error={errors.finance} colorClass='bg-finance-primary' />
                 }
             </div>
              {(errors.crm || errors.task || errors.finance) && (
@@ -308,8 +286,8 @@ function DashboardContent() {
                 icon={Users}
                 color="bg-crm-primary"
                 description="CRM com foco em gestão de funil de vendas e conversão para maximizar seus lucros."
-                isLocked={!permissions?.qoroCrm}
-                ctaText={permissions?.qoroCrm ? "Acessar" : "Permissão necessária"}
+                isLocked={!planHasCrm}
+                ctaText={planHasCrm ? "Acessar" : "Permissão necessária"}
             />
              <AppCard 
                 href="/dashboard/pulse"
@@ -317,8 +295,8 @@ function DashboardContent() {
                 icon={Activity}
                 color="bg-pulse-primary"
                 description="O sistema nervoso central da sua operação, revelando insights para otimização automática e inteligente."
-                isLocked={plan === 'free'}
-                ctaText={plan !== 'free' ? "Nova Conversa" : "Fazer Upgrade"}
+                isLocked={!planHasPulse}
+                ctaText={planHasPulse ? "Nova Conversa" : "Fazer Upgrade"}
             />
             <AppCard 
                 href="/dashboard/task/tarefas"
@@ -326,8 +304,8 @@ function DashboardContent() {
                 icon={CheckSquare}
                 color="bg-task-primary"
                 description="Plataforma leve e poderosa de gestão de tarefas e produtividade para manter sua equipe alinhada e focada."
-                isLocked={!permissions?.qoroTask}
-                ctaText={permissions?.qoroTask ? "Acessar" : "Permissão necessária"}
+                isLocked={!planHasTask}
+                ctaText={planHasTask ? "Acessar" : "Permissão necessária"}
             />
             <AppCard 
                 href="/dashboard/finance/relatorios"
@@ -335,8 +313,8 @@ function DashboardContent() {
                 icon={DollarSign}
                 color="bg-finance-primary"
                 description="Controle financeiro completo para seu negócio, com dashboards claros e relatórios simplificados."
-                isLocked={!permissions?.qoroFinance}
-                ctaText={permissions?.qoroFinance ? "Acessar" : "Permissão necessária"}
+                isLocked={!planHasFinance}
+                ctaText={planHasFinance ? "Acessar" : "Permissão necessária"}
             />
         </div>
       </div>

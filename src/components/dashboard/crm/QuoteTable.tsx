@@ -54,7 +54,7 @@ import { listQuotes, deleteQuote } from '@/ai/flows/crm-management';
 import type { QuoteProfile } from '@/ai/schemas';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { DocumentPDF } from './QuotePDF';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -183,10 +183,10 @@ export function QuoteTable() {
       accessorKey: 'validUntil',
       header: 'Válido Até',
       cell: ({ row }) => {
-          const date = row.getValue('validUntil') as string | Date | null;
-          if (!date) return '-';
-          // Ensure we can handle both string and Date objects before formatting
-          const dateObj = typeof date === 'string' ? parseISO(date) : date;
+          const dateStr = row.getValue('validUntil') as string | null;
+          if (!dateStr) return '-';
+          const dateObj = parseISO(dateStr);
+          if (!isValid(dateObj)) return '-';
           return format(dateObj, "dd/MM/yyyy");
       },
     },

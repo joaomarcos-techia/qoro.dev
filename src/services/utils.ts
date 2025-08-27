@@ -33,7 +33,7 @@ export const getAdminAndOrg = async (actorUid: string) => {
                                orgData.stripeCurrentPeriodEnd && 
                                (orgData.stripeCurrentPeriodEnd as Timestamp).toDate() > new Date();
 
-    let planId = 'free';
+    let planId: 'free' | 'growth' | 'performance' = 'free';
     if (subscriptionActive) {
         if (orgData.stripePriceId === process.env.NEXT_PUBLIC_STRIPE_PERFORMANCE_PLAN_PRICE_ID) {
             planId = 'performance';

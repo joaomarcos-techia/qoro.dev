@@ -11,7 +11,7 @@ import CustomYAxis from '@/components/utils/CustomYAxis';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { DollarSign, Trophy, Users, Target, Loader2, ServerCrash } from 'lucide-react';
-import { format, parseISO, differenceInDays } from 'date-fns';
+import { format, parseISO, differenceInDays, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface CrmReportMetrics {
@@ -67,15 +67,26 @@ export default function RelatoriosPage() {
     const avgRevenuePerDeal = totalWonLeads > 0 ? totalRevenue / totalWonLeads : 0;
     
     const salesCycleDurations = wonLeads
-      .map(lead => differenceInDays(parseISO(lead.updatedAt), parseISO(lead.createdAt)))
+      .map(lead => {
+          const createdAt = parseISO(lead.createdAt);
+          const updatedAt = parseISO(lead.updatedAt);
+          if(isValid(createdAt) && isValid(updatedAt)) {
+              return differenceInDays(updatedAt, createdAt);
+          }
+          return -1; // Invalid date indicator
+      })
       .filter(days => days >= 0);
+
     const avgSalesCycleDays = salesCycleDurations.length > 0
       ? Math.round(salesCycleDurations.reduce((a, b) => a + b, 0) / salesCycleDurations.length)
       : 0;
 
     const revenueByMonth = wonLeads.reduce((acc, lead) => {
-        const month = format(parseISO(lead.updatedAt), 'MMM', { locale: ptBR });
-        acc[month] = (acc[month] || 0) + (lead.value || 0);
+        const updatedAt = parseISO(lead.updatedAt);
+        if(isValid(updatedAt)){
+            const month = format(updatedAt, 'MMM', { locale: ptBR });
+            acc[month] = (acc[month] || 0) + (lead.value || 0);
+        }
         return acc;
     }, {} as Record<string, number>);
     const formattedRevenueByMonth = Object.entries(revenueByMonth).map(([month, revenue]) => ({ month, revenue }));

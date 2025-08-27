@@ -144,7 +144,7 @@ export const stripeWebhookFlow = ai.defineFlow(
         const subscription = event.data.object as Stripe.Subscription;
 
         switch (event.type) {
-            case 'checkout.session.completed':
+            case 'checkout.session.completed': {
                 if (!session.subscription || !session.customer) {
                     throw new Error("Webhook Error: Missing subscription or customer ID in session.");
                 }
@@ -164,8 +164,10 @@ export const stripeWebhookFlow = ai.defineFlow(
                     stripeCurrentPeriodEnd: new Date(completedSubscription.current_period_end * 1000),
                 });
                 break;
-            case 'invoice.payment_succeeded':
+            }
+            case 'invoice.payment_succeeded': {
                 if (subscription.billing_reason === 'subscription_cycle') {
+                     if (!subscription.customer) break;
                     const customer = await stripe.customers.retrieve(subscription.customer.toString()) as Stripe.Customer;
                     const organizationId = customer.metadata.organizationId;
                     await adminDb.collection('organizations').doc(organizationId).update({
@@ -174,21 +176,31 @@ export const stripeWebhookFlow = ai.defineFlow(
                     });
                 }
                 break;
+            }
              case 'customer.subscription.deleted':
-             case 'customer.subscription.updated':
-                const customerId = (subscription.customer as Stripe.Customer)?.id || subscription.customer;
-                const customerDetails = await stripe.customers.retrieve(customerId as string) as Stripe.Customer;
+             case 'customer.subscription.updated': {
+                const customerId = (subscription.customer as Stripe.Customer)?.id || subscription.customer as string;
+                const customerDetails = await stripe.customers.retrieve(customerId) as Stripe.Customer;
                 
-                if (!customerDetails.deleted) {
-                    const organizationId = customerDetails.metadata.organizationId;
+                if (customerDetails.deleted) break;
+                
+                const organizationId = customerDetails.metadata.organizationId;
 
-                    await adminDb.collection('organizations').doc(organizationId).update({
-                       stripePriceId: null,
-                       stripeSubscriptionId: null,
-                       stripeCurrentPeriodEnd: null,
-                   });
+                const updatePayload: any = {
+                    stripePriceId: subscription.items.data[0].price.id,
+                    stripeSubscriptionId: subscription.id,
+                    stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                };
+
+                if (event.type === 'customer.subscription.deleted') {
+                    updatePayload.stripePriceId = null;
+                    updatePayload.stripeSubscriptionId = null;
+                    updatePayload.stripeCurrentPeriodEnd = null;
                 }
+
+                await adminDb.collection('organizations').doc(organizationId).update(updatePayload);
                 break;
+            }
             default:
                 console.log(`Unhandled event type ${event.type}`);
         }
