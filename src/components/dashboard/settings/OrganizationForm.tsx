@@ -53,7 +53,9 @@ export function OrganizationForm() {
                 setIsLoading(prev => ({...prev, page: false }));
             }
         }
-        fetchDetails();
+        if (currentUser) {
+            fetchDetails();
+        }
     }, [currentUser, reset]);
 
     const onSubmit = async (data: z.infer<typeof UpdateOrganizationDetailsSchema>) => {
@@ -97,7 +99,7 @@ export function OrganizationForm() {
     }
 
     return (
-        <div className="bg-card p-8 rounded-2xl border-border max-w-2xl mx-auto">
+        <div className="bg-card p-8 rounded-2xl border border-border max-w-2xl mx-auto">
             <div className="flex items-center mb-6">
                 <div className="p-3 rounded-xl bg-primary text-black mr-4">
                     <Building className="w-6 h-6" />

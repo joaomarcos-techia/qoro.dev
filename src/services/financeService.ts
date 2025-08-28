@@ -84,6 +84,17 @@ export const deleteAccount = async (accountId: string, actorUid: string) => {
     if (!accountDoc.exists || accountDoc.data()?.companyId !== organizationId) {
         throw new Error('Conta não encontrada ou acesso negado.');
     }
+    
+    // Security check: prevent deletion if transactions are associated with the account
+    const transactionsSnapshot = await adminDb.collection('transactions')
+                                            .where('accountId', '==', accountId)
+                                            .limit(1)
+                                            .get();
+
+    if (!transactionsSnapshot.empty) {
+        throw new Error("Não é possível excluir a conta, pois existem transações associadas a ela.");
+    }
+
 
     await accountRef.delete();
 
