@@ -30,15 +30,22 @@ app.use('/api/stripeWebhook', express.raw({ type: 'application/json' }), (req, r
 });
 
 app.post('/api/stripeWebhook', async (req, res) => {
+    // We must acknowledge the event to Stripe immediately to prevent timeouts
+    // and retries, which could lead to a disabled webhook endpoint.
+    // The actual processing can happen in the background.
+    res.json({ received: true });
+
+    // Process the webhook event in the background.
     try {
-        const result = await runFlow(stripeWebhookFlow, (req as any).rawBody, {
+        await runFlow(stripeWebhookFlow, (req as any).rawBody, {
             // Pass headers to the context for signature verification
             headers: req.headers,
         });
-        res.json(result);
+        console.log('Stripe webhook processed successfully.');
     } catch (error: any) {
-        console.error('Stripe webhook error:', error);
-        res.status(400).send(`Webhook Error: ${error.message}`);
+        // Log the error for debugging, but don't send a failure response to Stripe.
+        // A failure response would cause Stripe to retry and eventually disable the webhook.
+        console.error('Stripe webhook processing failed:', error.message);
     }
 });
 
