@@ -290,7 +290,7 @@ function DashboardContent() {
                 description="Plataforma leve e poderosa de gestão de tarefas e produtividade para manter sua equipe alinhada e focada."
             />
             <AppCard 
-                href="/dashboard/finance/relatorios"
+                href="/dashboard/finance/transacoes"
                 title="QoroFinance"
                 icon={DollarSign}
                 color="bg-finance-primary"
