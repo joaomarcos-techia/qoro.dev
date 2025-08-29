@@ -23,7 +23,8 @@ import {
   List,
   GitCompareArrows,
   Target,
-  Loader2
+  Loader2,
+  Package
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Header } from '@/components/dashboard/Header';
@@ -58,7 +59,8 @@ const navItems: Record<string, NavItem[]> = {
         { href: '/dashboard/crm/clientes', label: 'Clientes', icon: Users, requiredPlan: ['free', 'growth', 'performance'] },
         { href: '/dashboard/crm/funil', label: 'Funil', icon: LayoutGrid, requiredPlan: ['free', 'growth', 'performance'] },
         { href: '/dashboard/crm/oportunidades', label: 'Oportunidades', icon: Target, requiredPlan: ['free', 'growth', 'performance'] },
-        { href: '/dashboard/crm/produtos', label: 'Produtos e Serviços', icon: ShoppingCart, requiredPlan: ['free', 'growth', 'performance'] },
+        { href: '/dashboard/crm/produtos', label: 'Produtos', icon: Package, requiredPlan: ['free', 'growth', 'performance'] },
+        { href: '/dashboard/crm/servicos', label: 'Serviços', icon: Wrench, requiredPlan: ['free', 'growth', 'performance'] },
         { href: '/dashboard/crm/orcamentos', label: 'Orçamentos', icon: FileText, requiredPlan: ['growth', 'performance'] },
         { href: '/dashboard/crm/relatorios', label: 'Relatórios', icon: BarChart3, requiredPlan: ['performance'] },
     ],

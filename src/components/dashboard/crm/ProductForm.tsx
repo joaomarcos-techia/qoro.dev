@@ -19,9 +19,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 type ProductFormProps = {
   onProductAction: () => void;
   product?: ProductProfile | null;
+  itemType: 'product' | 'service';
 };
 
-export function ProductForm({ onProductAction, product }: ProductFormProps) {
+export function ProductForm({ onProductAction, product, itemType }: ProductFormProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,11 +58,11 @@ export function ProductForm({ onProductAction, product }: ProductFormProps) {
           sku: '',
           price: 0,
           cost: 0,
-          pricingModel: 'fixed',
+          pricingModel: itemType === 'service' ? 'per_hour' : 'fixed',
           durationHours: 1,
       });
     }
-  }, [product, reset]);
+  }, [product, reset, itemType]);
 
   const pricingModel = watch('pricingModel');
 
@@ -86,18 +87,20 @@ export function ProductForm({ onProductAction, product }: ProductFormProps) {
       setIsLoading(false);
     }
   };
+  
+  const itemTypeLabel = itemType === 'service' ? 'Serviço' : 'Produto';
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="name">Nome do Item*</Label>
-          <Input id="name" {...register('name')} placeholder="Ex: Assinatura Mensal Pro, Consultoria..." />
+          <Label htmlFor="name">Nome do {itemTypeLabel}*</Label>
+          <Input id="name" {...register('name')} placeholder={itemType === 'service' ? "Ex: Consultoria SEO" : "Ex: Assinatura Mensal Pro"} />
           {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
         </div>
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="description">Descrição</Label>
-          <Textarea id="description" {...register('description')} placeholder="Detalhes do item, características, entregáveis, etc." />
+          <Textarea id="description" {...register('description')} placeholder="Detalhes, características, entregáveis, etc." />
         </div>
         <div className="space-y-2">
           <Label htmlFor="category">Categoria</Label>
@@ -108,18 +111,8 @@ export function ProductForm({ onProductAction, product }: ProductFormProps) {
           <Input id="sku" {...register('sku')} placeholder="Ex: PROD-001" />
         </div>
         
-        <div className="space-y-2">
-            <Label>Modelo de Preço*</Label>
-            <Controller name="pricingModel" control={control} render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="fixed">Preço Fixo (Produto)</SelectItem>
-                        <SelectItem value="per_hour">Por Hora (Serviço)</SelectItem>
-                    </SelectContent>
-                </Select>
-            )} />
-        </div>
+        {/* Hidden input for pricing model based on itemType */}
+        <input type="hidden" {...register('pricingModel')} value={itemType === 'service' ? 'per_hour' : 'fixed'} />
         
         <div className="space-y-2">
           <Label htmlFor="price">{pricingModel === 'per_hour' ? 'Preço por Hora (R$)*' : 'Preço de Venda (R$)*'}</Label>
@@ -150,7 +143,7 @@ export function ProductForm({ onProductAction, product }: ProductFormProps) {
       <div className="flex justify-end pt-4">
         <Button type="submit" disabled={isLoading} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
           {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
-          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : 'Salvar Item')}
+          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : `Salvar ${itemTypeLabel}`)}
         </Button>
       </div>
     </form>

@@ -61,9 +61,10 @@ const formatCurrency = (value: number | null | undefined, pricingModel: 'fixed' 
 interface ProductTableProps {
     onEdit: (product: ProductProfile) => void;
     onRefresh: () => void;
+    itemType: 'product' | 'service';
 }
 
-export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
+export function ProductTable({ onEdit, onRefresh, itemType }: ProductTableProps) {
   const [data, setData] = React.useState<ProductProfile[]>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -191,8 +192,11 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
       setIsLoading(true);
       setError(null);
       try {
-        const products = await listProducts({ actor: currentUser.uid });
-        setData(products);
+        const allItems = await listProducts({ actor: currentUser.uid });
+        const filteredItems = allItems.filter(item => {
+            return itemType === 'service' ? item.pricingModel === 'per_hour' : item.pricingModel !== 'per_hour';
+        })
+        setData(filteredItems);
       } catch (err) {
         console.error('Failed to fetch products:', err);
         setError('Não foi possível carregar os produtos.');
@@ -201,7 +205,7 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
       }
     }
     fetchData();
-  }, [currentUser, onRefresh]);
+  }, [currentUser, onRefresh, itemType]);
 
   const table = useReactTable({
     data,
@@ -217,12 +221,14 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
       columnFilters,
     },
   });
+  
+  const itemTypeLabel = itemType === 'service' ? 'Serviços' : 'Produtos';
 
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <Loader2 className="w-12 h-12 text-primary animate-spin" />
-        <p className="mt-4 text-muted-foreground">Carregando itens...</p>
+        <p className="mt-4 text-muted-foreground">Carregando {itemTypeLabel.toLowerCase()}...</p>
       </div>
     );
   }
@@ -235,8 +241,8 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
     return (
         <div className="flex flex-col items-center justify-center text-center min-h-[400px]">
             <ShoppingCart className="w-16 h-16 text-muted-foreground/30 mb-4" />
-            <h3 className="text-xl font-bold text-foreground">Nenhum item cadastrado</h3>
-            <p className="text-muted-foreground mt-2">Comece adicionando um produto ou serviço para vê-lo aqui.</p>
+            <h3 className="text-xl font-bold text-foreground">Nenhum {itemTypeLabel.toLowerCase()} cadastrado</h3>
+            <p className="text-muted-foreground mt-2">Comece adicionando um item para vê-lo aqui.</p>
         </div>
     )
   }
@@ -244,7 +250,7 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
   return (
     <div>
        <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-foreground">Seu Catálogo de Itens</h2>
+            <h2 className="text-xl font-bold text-foreground">Seu Catálogo de {itemTypeLabel}</h2>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input

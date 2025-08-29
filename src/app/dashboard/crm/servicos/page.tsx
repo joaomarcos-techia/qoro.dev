@@ -15,7 +15,7 @@ import {
 import { ProductForm } from '@/components/dashboard/crm/ProductForm';
 import { ProductProfile } from '@/ai/schemas';
 
-export default function ProdutosPage() {
+export default function ServicosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductProfile | null>(null);
   const [refreshCounter, setRefreshCounter] = useState(0);
@@ -50,9 +50,9 @@ export default function ProdutosPage() {
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-bold text-foreground">Produtos</h1>
+          <h1 className="text-4xl font-bold text-foreground">Serviços</h1>
           <p className="text-muted-foreground">
-            Cadastre e gerencie os produtos que sua empresa oferece.
+            Cadastre e gerencie os serviços que sua empresa oferece.
           </p>
         </div>
         <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
@@ -61,23 +61,23 @@ export default function ProdutosPage() {
               onClick={handleAdd}
               className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
               <PlusCircle className="mr-2 w-5 h-5" />
-              Adicionar Produto
+              Adicionar Serviço
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-foreground">{selectedProduct ? 'Editar Produto' : 'Adicionar Novo Produto'}</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-foreground">{selectedProduct ? 'Editar Serviço' : 'Adicionar Novo Serviço'}</DialogTitle>
               <DialogDescription>
-                {selectedProduct ? 'Altere as informações do produto abaixo.' : 'Preencha as informações para cadastrar um novo produto.'}
+                {selectedProduct ? 'Altere as informações do serviço abaixo.' : 'Preencha as informações para cadastrar um novo serviço.'}
               </DialogDescription>
             </DialogHeader>
-            <ProductForm onProductAction={handleProductAction} product={selectedProduct} itemType='product' />
+            <ProductForm onProductAction={handleProductAction} product={selectedProduct} itemType='service' />
           </DialogContent>
         </Dialog>
       </div>
 
       <div className="bg-card p-6 rounded-2xl border-border">
-        <ProductTable key={refreshCounter} onEdit={handleEdit} onRefresh={triggerRefresh} itemType='product'/>
+        <ProductTable key={refreshCounter} onEdit={handleEdit} onRefresh={triggerRefresh} itemType='service' />
       </div>
     </div>
   );
