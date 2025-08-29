@@ -1,9 +1,11 @@
 
+'use client';
+
 import { FeaturesCarousel } from './FeaturesCarousel';
 
 export function AboutSection() {
   return (
-    <section id="sobre" className="py-20 bg-black">
+    <section id="sobre" className="py-20 bg-black overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 md:gap-16 items-center">
           <div className="text-center lg:text-left">
