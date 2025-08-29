@@ -106,7 +106,7 @@ export const listUsers = async (actor: string): Promise<UserProfile[]> => {
     const users: UserProfile[] = [];
     usersSnapshot.forEach(doc => {
         const data = doc.data();
-        const defaultPermissions = { qoroCrm: false, qoroPulse: false, qoroTask: false, qoroFinance: false };
+        const defaultPermissions = { qoroCrm: true, qoroPulse: true, qoroTask: true, qoroFinance: true };
         users.push({
             uid: doc.id,
             email: data.email,
