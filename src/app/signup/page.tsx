@@ -43,10 +43,20 @@ export default function SignUpPage() {
     return value.slice(0, 18); 
   };
 
+  const formatPhone = (value: string) => {
+    if (!value) return "";
+    value = value.replace(/\D/g, '');
+    value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+    value = value.replace(/(\d{5})(\d)/, '$1-$2');
+    return value.slice(0, 15);
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     if (name === 'cnpj') {
         setFormData(prev => ({ ...prev, [name]: formatCNPJ(value) }));
+    } else if (name === 'contactPhone') {
+        setFormData(prev => ({ ...prev, [name]: formatPhone(value) }));
     } else {
         setFormData(prev => ({ ...prev, [name]: value }));
     }
