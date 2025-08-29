@@ -1,4 +1,3 @@
-
 'use client';
 
 import { ArrowRight } from 'lucide-react';
@@ -46,10 +45,10 @@ export function ServicesSection() {
             </h2>
             <div className="space-y-6 text-lg md:text-xl text-white/70 mb-8 leading-relaxed">
                <p>
-                <strong className="text-white">Agentes de IA para Vendas:</strong> Automatize o contato, qualifique leads e agende reuniões 24/7. Deixe a IA trabalhar por você e sua equipe focar em fechar negócios.
+                <strong className="text-white">Agentes de IA e Automação de Processos:</strong> Cansado de tarefas repetitivas? Nós criamos robôs e agentes de IA que automatizam desde o contato com clientes e qualificação de leads até rotinas financeiras e administrativas, liberando sua equipe para focar em estratégia.
               </p>
               <p>
-                <strong className="text-white">Aplicações Personalizadas:</strong> Transformamos seus processos complexos em sistemas simples e eficientes. Desenvolvemos o software exato que sua operação precisa para escalar.
+                <strong className="text-white">Aplicações Personalizadas:</strong> Transformamos seus processos complexos em sistemas simples e eficientes. Desenvolvemos o software exato que sua operação precisa para escalar, totalmente integrado ao seu ecossistema.
               </p>
             </div>
              <a href="http://bit.ly/41Emn3C" target="_blank" rel="noopener noreferrer">
