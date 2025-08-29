@@ -32,8 +32,8 @@ export function ServicesSection() {
                       alt={image.alt}
                       width={800}
                       height={600}
+                      loading="lazy"
                       className="object-contain rounded-xl border-2 border-border"
-                      quality={100}
                     />
                 </div>
               </div>
