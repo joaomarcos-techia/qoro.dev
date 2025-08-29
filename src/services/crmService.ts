@@ -406,7 +406,7 @@ export const updateQuote = async (quoteId: string, input: z.infer<typeof UpdateQ
         updatedAt: FieldValue.serverTimestamp(),
     });
 
-    return { id: quoteId, number: input.number || quoteDoc.data()?.number };
+    return { id: quoteId, number: quoteDoc.data()?.number };
 };
 
 export const deleteQuote = async (quoteId: string, actorUid: string) => {

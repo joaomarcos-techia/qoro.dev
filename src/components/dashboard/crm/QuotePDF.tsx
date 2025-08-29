@@ -1,3 +1,4 @@
+
 'use client';
 import { QuoteProfile } from '@/ai/schemas';
 import React from 'react';
