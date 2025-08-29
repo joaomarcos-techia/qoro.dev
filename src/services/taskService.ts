@@ -22,6 +22,8 @@ export const createTask = async (input: z.infer<typeof TaskSchema>, actorUid: st
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
         completedAt: null,
+        subtasks: input.subtasks || [],
+        comments: input.comments || [],
     };
 
     const taskRef = await adminDb.collection('tasks').add(newTaskData);
@@ -30,7 +32,7 @@ export const createTask = async (input: z.infer<typeof TaskSchema>, actorUid: st
 };
 
 export const updateTask = async (taskId: string, input: z.infer<typeof UpdateTaskSchema>, actorUid: string) => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
+    const { organizationId, userData } = await getAdminAndOrg(actorUid);
     const taskRef = adminDb.collection('tasks').doc(taskId);
 
     const taskDoc = await taskRef.get();
@@ -38,13 +40,30 @@ export const updateTask = async (taskId: string, input: z.infer<typeof UpdateTas
         throw new Error('Tarefa não encontrada ou acesso negado.');
     }
 
-    const { id, ...updateData } = input;
+    const { id, comments, ...updateData } = input;
     
+    // Handle new comments
+    const existingComments = taskDoc.data()?.comments || [];
+    const newComments = comments?.filter(c => !existingComments.some((ec: any) => ec.id === c.id)) || [];
+
+    newComments.forEach(comment => {
+        comment.authorId = actorUid;
+        comment.authorName = userData.name || userData.email;
+        comment.createdAt = new Date();
+    });
+
     await taskRef.update({
         ...updateData,
         dueDate: updateData.dueDate ? new Date(updateData.dueDate) : null,
         updatedAt: FieldValue.serverTimestamp(),
+        comments: FieldValue.arrayUnion(...newComments)
     });
+
+    // Handle subtask updates separately if they are not part of the main update payload
+    if (input.subtasks) {
+        await taskRef.update({ subtasks: input.subtasks });
+    }
+
 
     return { id: taskId };
 };
@@ -87,6 +106,8 @@ export const listTasks = async (actorUid: string): Promise<z.infer<typeof TaskPr
                 createdAt: data.createdAt.toDate().toISOString(),
                 updatedAt: data.updatedAt.toDate().toISOString(),
                 responsibleUserName: responsibleUserInfo?.name,
+                subtasks: data.subtasks || [],
+                comments: (data.comments || []).map((c: any) => ({...c, createdAt: c.createdAt.toDate().toISOString()})),
             });
         });
         
@@ -146,32 +167,34 @@ export const deleteTask = async (taskId: string, actorUid: string) => {
 }
 
 
-export const getDashboardMetrics = async (actorUid: string): Promise<{ totalTasks: number; completedTasks: number; inProgressTasks: number; pendingTasks: number; }> => {
+export const getDashboardMetrics = async (actorUid: string): Promise<{ totalTasks: number; completedTasks: number; inProgressTasks: number; pendingTasks: number; overdueTasks: number; tasksByPriority: Record<string, number> }> => {
     const { organizationId } = await getAdminAndOrg(actorUid);
 
     const tasksRef = adminDb.collection('tasks').where('companyId', '==', organizationId);
+    const tasksSnapshot = await tasksRef.get();
+    const allTasks = tasksSnapshot.docs.map(doc => doc.data());
 
-    const totalPromise = tasksRef.count().get();
-    const completedPromise = tasksRef.where('status', '==', 'done').count().get();
-    const inProgressPromise = tasksRef.where('status', '==', 'in_progress').count().get();
-    const pendingPromise = tasksRef.where('status', '==', 'todo').count().get();
+    const totalTasks = allTasks.length;
+    const completedTasks = allTasks.filter(t => t.status === 'done').length;
+    const inProgressTasks = allTasks.filter(t => t.status === 'in_progress').length;
+    const pendingTasks = allTasks.filter(t => t.status === 'todo').length;
     
-    const [
-        totalSnapshot,
-        completedSnapshot,
-        inProgressSnapshot,
-        pendingSnapshot,
-    ] = await Promise.all([
-        totalPromise, 
-        completedPromise, 
-        inProgressPromise, 
-        pendingPromise
-    ]);
+    const now = new Date();
+    const overdueTasks = allTasks.filter(t => t.status !== 'done' && t.dueDate && t.dueDate.toDate() < now).length;
+
+    const tasksByPriority = allTasks.reduce((acc, task) => {
+        const priority = task.priority || 'medium';
+        acc[priority] = (acc[priority] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
+
 
     return {
-        totalTasks: totalSnapshot.data().count,
-        completedTasks: completedSnapshot.data().count,
-        inProgressTasks: inProgressSnapshot.data().count,
-        pendingTasks: pendingSnapshot.data().count,
+        totalTasks,
+        completedTasks,
+        inProgressTasks,
+        pendingTasks,
+        overdueTasks,
+        tasksByPriority,
     };
 };

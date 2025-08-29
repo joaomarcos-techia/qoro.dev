@@ -42,13 +42,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, ArrowUpDown, Search, Loader2, List, Flag, Calendar, User, Edit, Trash2 } from 'lucide-react';
+import { MoreHorizontal, ArrowUpDown, Search, Loader2, List, Flag, Calendar, User, Edit, Trash2, CheckSquare } from 'lucide-react';
 import type { TaskProfile } from '@/ai/schemas';
 import { format, parseISO, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { deleteTask } from '@/ai/flows/task-management';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { Progress } from '@/components/ui/progress';
 
 const priorityMap: Record<TaskProfile['priority'], { text: string; color: string }> = {
     low: { text: 'Baixa', color: 'bg-green-500/20 text-green-300' },
@@ -96,7 +97,24 @@ export function TaskTable({ data, isLoading, error, onRefresh, onEdit }: { data:
               Título <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
       ),
-      cell: ({ row }) => <div className="font-medium text-foreground">{row.getValue('title')}</div>,
+      cell: ({ row }) => {
+        const task = row.original;
+        const completedSubtasks = task.subtasks?.filter(st => st.isCompleted).length || 0;
+        const totalSubtasks = task.subtasks?.length || 0;
+        const progress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0;
+
+        return (
+            <div>
+                <div className="font-medium text-foreground cursor-pointer hover:underline" onClick={() => onEdit(task)}>{row.getValue('title')}</div>
+                {totalSubtasks > 0 && (
+                    <div className='mt-2 w-32'>
+                        <Progress value={progress} className='h-1'/>
+                        <span className='text-xs text-muted-foreground'>{completedSubtasks} de {totalSubtasks} concluídas</span>
+                    </div>
+                )}
+            </div>
+        )
+      },
     },
     {
         accessorKey: 'status',

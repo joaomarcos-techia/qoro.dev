@@ -16,7 +16,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar, Flag, User, ChevronLeft, ChevronRight, Trash2, Edit } from 'lucide-react';
+import { Calendar, Flag, User, ChevronLeft, ChevronRight, Trash2, Edit, CheckSquare, MessageSquare } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 
 interface TaskKanbanCardProps {
   task: TaskProfile;
@@ -45,27 +46,48 @@ export function TaskKanbanCard({ task, stageIds, onMove, onDelete, onEdit }: Tas
     }
   };
 
+  const completedSubtasks = task.subtasks?.filter(st => st.isCompleted).length || 0;
+  const totalSubtasks = task.subtasks?.length || 0;
+  const subtaskProgress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0;
+  const hasComments = (task.comments?.length || 0) > 0;
 
   return (
-    <div className="bg-card rounded-xl p-4 transition-shadow duration-300 border border-border hover:border-primary/50">
-      <h3 className="font-bold text-foreground text-base mb-3 break-words">{task.title}</h3>
+    <div className="bg-card rounded-xl p-4 transition-shadow duration-300 border border-border hover:border-primary/50 flex flex-col">
+      <h3 className="font-bold text-foreground text-base mb-3 break-words cursor-pointer" onClick={() => onEdit(task)}>{task.title}</h3>
       
-      <div className="space-y-2 text-sm text-muted-foreground min-h-[4rem]">
+      <div className="space-y-2 text-sm text-muted-foreground flex-grow">
         {task.description && <p className="text-xs text-muted-foreground/80 mb-2">{task.description}</p>}
-        {task.dueDate && (
-            <div className="flex items-center">
-                <Calendar className="w-4 h-4 mr-2 text-muted-foreground/70 flex-shrink-0" />
-                <span className="text-xs">
-                    {format(parseISO(task.dueDate.toString()), "dd 'de' MMM, yyyy", { locale: ptBR })}
-                </span>
+        {totalSubtasks > 0 && (
+          <div className="space-y-1">
+            <div className="flex justify-between items-center text-xs">
+                <span className="font-medium text-muted-foreground/80">Checklist</span>
+                <span>{completedSubtasks}/{totalSubtasks}</span>
             </div>
+            <Progress value={subtaskProgress} className="h-1"/>
+          </div>
         )}
-        {task.responsibleUserName && (
-            <div className="flex items-center">
-                <User className="w-4 h-4 mr-2 text-muted-foreground/70 flex-shrink-0" />
-                <span className="text-xs font-medium">{task.responsibleUserName}</span>
-            </div>
-        )}
+        <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1">
+            {task.dueDate && (
+                <div className="flex items-center">
+                    <Calendar className="w-4 h-4 mr-1.5 text-muted-foreground/70 flex-shrink-0" />
+                    <span className="text-xs">
+                        {format(parseISO(task.dueDate.toString()), "dd MMM", { locale: ptBR })}
+                    </span>
+                </div>
+            )}
+            {task.responsibleUserName && (
+                <div className="flex items-center">
+                    <User className="w-4 h-4 mr-1.5 text-muted-foreground/70 flex-shrink-0" />
+                    <span className="text-xs font-medium">{task.responsibleUserName}</span>
+                </div>
+            )}
+            {hasComments && (
+                 <div className="flex items-center">
+                    <MessageSquare className="w-4 h-4 mr-1.5 text-muted-foreground/70 flex-shrink-0" />
+                    <span className="text-xs font-medium">{task.comments?.length}</span>
+                </div>
+            )}
+        </div>
       </div>
       
       <div className="mt-4 pt-3 border-t border-border flex justify-between items-center">

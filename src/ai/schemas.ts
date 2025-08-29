@@ -213,6 +213,29 @@ export type SupplierProfile = z.infer<typeof SupplierProfileSchema>;
 
 
 // Schemas for Task Management
+export const SubtaskSchema = z.object({
+    id: z.string(),
+    text: z.string().min(1, "O texto da subtarefa não pode ser vazio."),
+    isCompleted: z.boolean().default(false),
+});
+export type Subtask = z.infer<typeof SubtaskSchema>;
+
+export const TaskCommentSchema = z.object({
+    id: z.string(),
+    authorId: z.string(),
+    authorName: z.string(),
+    text: z.string().min(1, "O comentário não pode ser vazio."),
+    createdAt: z.union([z.string().datetime(), z.date()]),
+});
+export type TaskComment = z.infer<typeof TaskCommentSchema>;
+
+export const TaskRecurrenceSchema = z.object({
+    frequency: z.enum(['daily', 'weekly', 'monthly']),
+    interval: z.number().min(1),
+}).optional();
+export type TaskRecurrence = z.infer<typeof TaskRecurrenceSchema>;
+
+
 export const TaskSchema = z.object({
   title: z.string().min(1, 'O título é obrigatório.'),
   description: z.string().optional(),
@@ -220,6 +243,9 @@ export const TaskSchema = z.object({
   priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
   dueDate: z.union([z.string().datetime(), z.date(), z.null()]).optional(),
   responsibleUserId: z.string().optional(),
+  subtasks: z.array(SubtaskSchema).optional().default([]),
+  comments: z.array(TaskCommentSchema).optional().default([]),
+  recurrence: TaskRecurrenceSchema,
 });
 
 export const UpdateTaskSchema = TaskSchema.extend({
