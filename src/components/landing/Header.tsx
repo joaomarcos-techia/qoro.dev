@@ -10,13 +10,25 @@ import { cn } from '@/lib/utils';
 
 export function Header() {
   const pathname = usePathname();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [hasScrolled, setHasScrolled] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
+  }, []);
+  
+  if (!isMounted || pathname !== '/') {
+    return null;
+  }
 
+  return <HeaderContent />;
+}
+
+
+function HeaderContent() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [hasScrolled, setHasScrolled] = useState(false);
+
+  useEffect(() => {
     const handleScroll = () => {
       setHasScrolled(window.scrollY > 10);
     };
@@ -48,10 +60,6 @@ export function Header() {
         }
     }
   };
-
-  if (!isMounted || pathname !== '/') {
-    return null;
-  }
 
   return (
     <header className={cn(
