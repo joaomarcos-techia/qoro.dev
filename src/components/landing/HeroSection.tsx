@@ -28,11 +28,6 @@ export function HeroSection() {
           </Link>
         </div>
         
-        <div className="mt-16 md:mt-20 max-w-5xl mx-auto animate-float">
-            <div className="relative rounded-2xl p-2 bg-gradient-to-b from-white/10 to-transparent shadow-2xl shadow-primary/20 animate-fade-in-up" style={{ animationDelay: '900ms' }}>
-                
-            </div>
-        </div>
       </div>
     </section>
   );
