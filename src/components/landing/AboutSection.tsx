@@ -1,3 +1,4 @@
+
 import { FeaturesCarousel } from './FeaturesCarousel';
 
 export function AboutSection() {
@@ -5,7 +6,7 @@ export function AboutSection() {
     <section id="sobre" className="py-20 bg-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
-          <div className="text-left">
+          <div className="text-center lg:text-left">
             <div className="text-sm font-medium text-primary mb-4 tracking-wider uppercase">Construído para Empreendedores como Você</div>
             <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
               Menos tempo gerenciando, mais tempo crescendo.

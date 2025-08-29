@@ -3,6 +3,7 @@
 
 import { Eye, BrainCircuit, Rocket, ShieldCheck, Link, Scaling } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useEffect, useState } from 'react';
 
 const features = [
   {
@@ -44,6 +45,46 @@ const features = [
 ];
 
 export function FeaturesCarousel() {
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    setIsMounted(true);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  if (!isMounted) {
+    return null; // Avoid rendering on the server to prevent hydration mismatch
+  }
+  
+  if (isMobile) {
+    return (
+        <div className="flex overflow-x-auto snap-x snap-mandatory py-4 gap-4">
+            {features.map((feature, index) => {
+                const Icon = feature.icon;
+                return (
+                    <div key={index} className="snap-center flex-shrink-0 w-[250px]">
+                        <div className="relative flex flex-col items-center text-center p-6 bg-secondary/30 rounded-2xl border border-border h-full">
+                            <div className={cn("text-black w-16 h-16 rounded-2xl flex items-center justify-center mb-5 flex-shrink-0 shadow-lg", feature.colorClass)}>
+                                <Icon className="w-7 h-7" />
+                            </div>
+                            <div className="relative z-10 flex flex-col flex-grow">
+                                <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
+                                <p className="text-white/70 text-sm flex-grow">{feature.description}</p>
+                            </div>
+                        </div>
+                    </div>
+                )
+            })}
+        </div>
+    )
+  }
+
   return (
     <div className="w-full inline-flex flex-nowrap overflow-hidden [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-200px),transparent_100%)]">
       <ul className="flex items-stretch justify-center md:justify-start [&_li]:mx-4 animate-infinite-scroll">

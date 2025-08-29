@@ -12,8 +12,11 @@ export function Header() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+
     const handleScroll = () => {
       setHasScrolled(window.scrollY > 10);
     };
@@ -45,8 +48,7 @@ export function Header() {
     }
   };
 
-
-  if (pathname !== '/') {
+  if (!isMounted || pathname !== '/') {
     return null;
   }
 
