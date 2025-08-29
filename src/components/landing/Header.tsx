@@ -29,6 +29,7 @@ export function Header() {
     { href: '/#home', label: 'Início' },
     { href: '/#sobre', label: 'Sobre' },
     { href: '/#precos', label: 'Planos' },
+    { href: '/#depoimentos', label: 'Testemunhos' },
     { href: '/#servicos', label: 'Serviços' },
     { href: '/#contato', label: 'Contato' },
   ];
