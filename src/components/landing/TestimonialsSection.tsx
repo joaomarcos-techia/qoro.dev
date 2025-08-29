@@ -38,11 +38,11 @@ const testimonials = [
     color: 'text-task-primary',
   },
   {
-    quote: "A integração entre os módulos é o que torna a Qoro especial. Registrar uma venda no CRM e ver a previsão financeira ser atualizada automaticamente é o tipo de eficiência que toda pequena empresa precisa para competir no mercado atual.",
-    name: 'Rafael G.',
-    company: 'Sócio, E-commerce Veloz',
+    quote: "Com a Qoro, finalmente saímos das planilhas. A automação entre o financeiro e o CRM nos economiza pelo menos 10 horas de trabalho manual por semana. É a clareza que precisávamos para tomar decisões.",
+    name: 'Lucas F.',
+    company: 'Diretor, LF Consultoria',
     avatar: 'https://picsum.photos/100/100?random=5',
-    highlight: 'Plataforma 100% Integrada',
+    highlight: '10h/semana economizadas',
     color: 'text-primary',
   }
 ];
