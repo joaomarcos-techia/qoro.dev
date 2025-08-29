@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, AlertCircle, CheckCircle, Building, FileText, Mail, Phone, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 
 
 export function OrganizationForm() {
@@ -151,7 +152,7 @@ export function OrganizationForm() {
                 
                 <div className="flex justify-between items-center pt-4">
                      <div>
-                        {organization?.stripeSubscriptionId && (
+                        {organization?.stripeSubscriptionId ? (
                              <Button 
                                 type="button" 
                                 variant="outline"
@@ -162,6 +163,13 @@ export function OrganizationForm() {
                                 Gerenciar Assinatura
                                 <ExternalLink className="ml-2 w-4 h-4"/>
                             </Button>
+                        ) : (
+                            <Link href="/#precos">
+                                <Button type="button" variant="outline">
+                                    Fazer Upgrade de Plano
+                                    <ExternalLink className="ml-2 w-4 h-4"/>
+                                </Button>
+                            </Link>
                         )}
                      </div>
                      <Button 

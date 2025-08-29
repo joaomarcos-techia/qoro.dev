@@ -4,11 +4,13 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Mail, Send, KeyRound, UserPlus, Building, AlertCircle, CheckCircle, ArrowLeft, User, Shield, Users, Loader2 } from 'lucide-react';
 import { inviteUser, listUsers, updateUserPermissions } from '@/ai/flows/user-management';
+import { changePassword } from '@/lib/auth';
 import { UserProfile } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { OrganizationForm } from '@/components/dashboard/settings/OrganizationForm';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 type AppPermission = 'qoroCrm' | 'qoroPulse' | 'qoroTask' | 'qoroFinance';
 
@@ -22,7 +24,7 @@ const appPermissionsMap: Record<AppPermission, string> = {
 export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('account');
     const [inviteEmail, setInviteEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [passwords, setPasswords] = useState({ current: '', new: ''});
     const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
     const [isLoading, setIsLoading] = useState({ invite: false, password: false, users: true, permissions: '' });
     const [feedback, setFeedback] = useState<{ type: 'error' | 'success', message: string, context: string } | null>(null);
@@ -66,6 +68,26 @@ export default function SettingsPage() {
         setFeedback(null); // Clear feedback when changing tabs
     };
 
+    const handlePasswordChange = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!passwords.current || !passwords.new) {
+            setFeedback({type: 'error', message: 'Por favor, preencha a senha atual e a nova senha.', context: 'password'});
+            return;
+        }
+        setIsLoading(prev => ({ ...prev, password: true }));
+        clearFeedback('password');
+        try {
+            await changePassword(passwords.current, passwords.new);
+            setFeedback({ type: 'success', message: 'Senha alterada com sucesso!', context: 'password' });
+            setPasswords({ current: '', new: '' });
+        } catch (error: any) {
+            setFeedback({ type: 'error', message: error.message, context: 'password' });
+        } finally {
+             setIsLoading(prev => ({ ...prev, password: false }));
+        }
+
+    };
+
     const handleInviteUser = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!currentUser) return;
@@ -98,7 +120,6 @@ export default function SettingsPage() {
     
         try {
             await updateUserPermissions({ userId, permissions: updatedPermissions, actor: currentUser.uid });
-            // Update state only on success
             setUsers(prevUsers => 
                 prevUsers.map(u => 
                     u.uid === userId ? { ...u, permissions: updatedPermissions } : u
@@ -143,78 +164,71 @@ export default function SettingsPage() {
                 </button>
             </div>
 
-            {/* Content Area */}
             <div>
                 {activeTab === 'account' && (
                     <div className="bg-card p-8 rounded-2xl border border-border max-w-lg mx-auto">
                         <div className="flex items-center mb-6">
-                            <div className="p-3 rounded-xl bg-primary text-black mr-4">
-                                <User className="w-6 h-6" />
-                            </div>
+                            <div className="p-3 rounded-xl bg-primary text-black mr-4"><User className="w-6 h-6" /></div>
                             <h3 className="text-xl font-bold text-foreground">Minha Conta</h3>
                         </div>
-                         <div className="space-y-4">
-                             <div className="relative">
+                        <form onSubmit={handlePasswordChange} className="space-y-4">
+                            <div className="relative">
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                                 <Input type="email" value={currentUser?.email || 'Carregando...'} disabled className="w-full pl-12 pr-4 py-3 bg-secondary rounded-xl border-border cursor-not-allowed"/>
                             </div>
-                             <div className="relative">
+                            <div className="relative">
                                 <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                                <Input type="password" placeholder="Nova Senha" className="w-full pl-12 pr-4 py-3 bg-secondary rounded-xl border-border focus:ring-2 focus:ring-primary transition-all duration-200"/>
+                                <Input type="password" placeholder="Senha Atual" value={passwords.current} onChange={(e) => setPasswords(p => ({...p, current: e.target.value}))} className="w-full pl-12 pr-4 py-3 bg-secondary rounded-xl border-border"/>
                             </div>
-                         </div>
+                            <div className="relative">
+                                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                <Input type="password" placeholder="Nova Senha" value={passwords.new} onChange={(e) => setPasswords(p => ({...p, new: e.target.value}))} className="w-full pl-12 pr-4 py-3 bg-secondary rounded-xl border-border"/>
+                            </div>
+                             {feedback && feedback.context === 'password' && (
+                                <div className={`p-3 rounded-lg flex items-center text-sm ${feedback.type === 'success' ? 'bg-green-800/20 text-green-300' : 'bg-red-800/20 text-red-300'}`}>
+                                    <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0" />
+                                    <span>{feedback.message}</span>
+                                </div>
+                            )}
+                            <div className="flex justify-end pt-2">
+                                <Button type="submit" disabled={isLoading.password} className="bg-primary text-primary-foreground px-6 py-2 rounded-xl hover:bg-primary/90">
+                                    {isLoading.password && <Loader2 className="w-4 h-4 mr-2 animate-spin"/>}
+                                    {isLoading.password ? 'Salvando...' : 'Alterar Senha'}
+                                </Button>
+                            </div>
+                        </form>
                     </div>
                 )}
                 {activeTab === 'users' && (
                     <div>
-                        {/* Invite User Section */}
                         <div className="bg-card p-8 rounded-2xl border border-border mb-8">
                             <div className="flex items-start">
-                                <div className="p-3 rounded-xl bg-primary text-black mr-6">
-                                    <UserPlus className="w-6 h-6" />
-                                </div>
+                                <div className="p-3 rounded-xl bg-primary text-black mr-6"><UserPlus className="w-6 h-6" /></div>
                                 <div className="flex-grow">
                                     <h3 className="text-xl font-bold text-foreground mb-1">Convidar novo usuário</h3>
                                     <p className="text-muted-foreground mb-6">O membro convidado receberá um e-mail para definir sua senha e acessar a organização.</p>
                                     <form onSubmit={handleInviteUser} className="flex items-center gap-4">
                                         <div className="relative flex-grow">
                                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                                            <Input
-                                                type="email"
-                                                placeholder="E-mail do convidado"
-                                                value={inviteEmail}
-                                                onChange={(e) => {setInviteEmail(e.target.value); clearFeedback('invite');}}
-                                                required
-                                                className="w-full pl-12 pr-4 py-3 bg-secondary rounded-xl border-border focus:ring-2 focus:ring-primary transition-all duration-200"
-                                            />
+                                            <Input type="email" placeholder="E-mail do convidado" value={inviteEmail} onChange={(e) => {setInviteEmail(e.target.value); clearFeedback('invite');}} required className="w-full pl-12 pr-4 py-3 bg-secondary rounded-xl border-border"/>
                                         </div>
-                                        <button
-                                            type="submit"
-                                            disabled={isLoading.invite}
-                                            className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 transition-all duration-200 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed"
-                                        >
-                                            <Send className="mr-2 w-5 h-5" />
-                                            {isLoading.invite ? 'Enviando...' : 'Enviar Convite'}
+                                        <button type="submit" disabled={isLoading.invite} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 font-semibold disabled:opacity-75">
+                                            {isLoading.invite ? <Loader2 className="w-5 h-5 animate-spin"/> : <Send className="w-5 h-5" />}
                                         </button>
                                     </form>
                                     {feedback && feedback.context === 'invite' && (
-                                        <div className={`mt-4 p-4 rounded-lg flex items-center text-sm ${feedback.type === 'success' ? 'bg-green-800/20 border-l-4 border-green-500 text-green-300' : 'bg-red-800/20 border-l-4 border-red-500 text-red-300'}`}>
-                                            {feedback.type === 'success' ? <CheckCircle className="w-5 h-5 mr-3" /> : <AlertCircle className="w-5 h-5 mr-3" />}
-                                            <span>{feedback.message}</span>
+                                        <div className={`mt-4 p-4 rounded-lg flex items-center text-sm ${feedback.type === 'success' ? 'bg-green-800/20 border-green-500' : 'bg-red-800/20 border-red-500'}`}>
+                                            <AlertCircle className="w-5 h-5 mr-3" /><span>{feedback.message}</span>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         </div>
 
-                        {/* User List Section */}
                         <div className="bg-card p-8 rounded-2xl border border-border">
                              <h3 className="text-xl font-bold text-foreground mb-6">Usuários da Organização</h3>
                              {isLoading.users ? (
-                                 <div className="flex justify-center items-center py-8">
-                                     <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                                     <p className="ml-4 text-muted-foreground">Carregando usuários...</p>
-                                 </div>
+                                 <div className="flex justify-center items-center py-8"><Loader2 className="w-8 h-8 text-primary animate-spin" /><p className="ml-4 text-muted-foreground">Carregando usuários...</p></div>
                              ) : (
                                 <div className="space-y-4">
                                     {users.map(user => (
@@ -230,19 +244,14 @@ export default function SettingsPage() {
                                                     const isSelf = user.uid === currentUser?.uid;
                                                     return (
                                                         <label key={perm} className={`flex items-center space-x-2 text-sm ${isSelf ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
-                                                            <input
-                                                                type="checkbox"
-                                                                className="form-checkbox h-5 w-5 rounded text-primary focus:ring-primary border-gray-600 bg-secondary"
-                                                                checked={!!user.permissions?.[perm]}
-                                                                onChange={(e) => handlePermissionChange(user.uid, perm, e.target.checked)}
-                                                                disabled={isLoading.permissions === user.uid || isSelf}
-                                                            />
+                                                            <input type="checkbox" className="form-checkbox h-5 w-5 rounded text-primary focus:ring-primary border-gray-600 bg-secondary" checked={!!user.permissions?.[perm]} onChange={(e) => handlePermissionChange(user.uid, perm, e.target.checked)} disabled={isLoading.permissions === user.uid || isSelf} />
                                                             <span>{appPermissionsMap[perm]}</span>
                                                         </label>
                                                     )
                                                 })}
                                                 {isLoading.permissions === user.uid && <Loader2 className="absolute -right-7 w-5 h-5 text-primary animate-spin" />}
                                             </div>
+                                             {feedback && feedback.context === `permissions-${user.uid}` && <p className='text-red-400 text-xs mt-2'>{feedback.message}</p>}
                                         </div>
                                     ))}
                                 </div>
@@ -250,9 +259,7 @@ export default function SettingsPage() {
                         </div>
                     </div>
                 )}
-                 {activeTab === 'organization' && (
-                     <OrganizationForm />
-                )}
+                 {activeTab === 'organization' && <OrganizationForm />}
             </div>
         </div>
     );
