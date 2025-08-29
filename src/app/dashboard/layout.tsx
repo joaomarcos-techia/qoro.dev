@@ -130,7 +130,7 @@ export default function DashboardLayout({
         )
     }
 
-    if (currentModule === 'home' || !accessInfo) {
+    if (!hasModuleSidebar || !accessInfo) {
         return null;
     }
     
