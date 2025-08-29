@@ -83,40 +83,36 @@ const AppCard = ({
     icon: Icon, 
     color, 
     description, 
-    isLocked,
-    ctaText
 }: { 
     href: string;
     title: string; 
     icon: React.ElementType; 
     color: string; 
     description: string;
-    isLocked: boolean;
-    ctaText: string;
 }) => {
-    const cardContent = (
-      <div className={`group bg-card rounded-2xl border border-border ${isLocked ? 'cursor-not-allowed' : 'hover:border-primary/50 hover:-translate-y-1'} transition-all duration-200 flex flex-col h-full`}>
-        <div className="p-6 flex-grow flex flex-col">
-          <div className="flex items-center mb-4">
-            <div className={`p-3 rounded-xl ${color} text-black mr-4 ${!isLocked && 'group-hover:scale-110'} transition-transform duration-300 shadow-lg`}>
-              {isLocked ? <Lock className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
+    return (
+      <Link href={href}>
+        <div className="group bg-card rounded-2xl border border-border hover:border-primary/50 hover:-translate-y-1 transition-all duration-200 flex flex-col h-full">
+            <div className="p-6 flex-grow flex flex-col">
+            <div className="flex items-center mb-4">
+                <div className={`p-3 rounded-xl ${color} text-black mr-4 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                <Icon className="w-6 h-6" />
+                </div>
+                <div>
+                <h4 className="text-lg font-bold text-foreground">{title}</h4>
+                </div>
             </div>
-            <div>
-              <h4 className="text-lg font-bold text-foreground">{title}</h4>
+            <p className="text-sm text-muted-foreground mb-6 flex-grow">
+                {description}
+            </p>
+            <div className="group/button w-full bg-secondary text-secondary-foreground hover:bg-secondary/80 py-2.5 px-4 rounded-full transition-colors flex items-center justify-center text-sm font-medium">
+                <span>Acessar</span>
+                <ArrowRight className="w-4 h-4 ml-2 transform transition-transform duration-300 group-hover/button:translate-x-1" />
             </div>
-          </div>
-          <p className={`text-sm ${isLocked ? 'text-muted-foreground/60' : 'text-muted-foreground'} mb-6 flex-grow`}>
-            {description}
-          </p>
-          <div className={`group/button w-full ${isLocked ? 'bg-secondary/50 text-muted-foreground/70' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'} py-2.5 px-4 rounded-full transition-colors flex items-center justify-center text-sm font-medium`}>
-            <span>{ctaText}</span>
-            <ArrowRight className="w-4 h-4 ml-2 transform transition-transform duration-300 group-hover/button:translate-x-1" />
-          </div>
+            </div>
         </div>
-      </div>
+      </Link>
     );
-
-    return isLocked ? <Link href="/#precos">{cardContent}</Link> : <Link href={href}>{cardContent}</Link>;
 }
 
 
@@ -158,48 +154,42 @@ function DashboardContent() {
 
   useEffect(() => {
     async function fetchMetrics() {
-        if (!currentUser || !userAccess) return;
+        if (!currentUser) return;
 
         setIsLoading(prev => ({...prev, metrics: true}));
         setErrors({ crm: false, task: false, finance: false });
 
         const promises = [];
 
-        if (userAccess.permissions.qoroCrm) {
-            promises.push(
-                getCrmMetrics({ actor: currentUser.uid })
-                    .then(data => ({ type: 'crm', data }))
-                    .catch(err => { 
-                        console.error("CRM Metrics Error:", err);
-                        setErrors(e => ({...e, crm: true})); 
-                        return { type: 'crm', data: null }; 
-                    })
-            );
-        }
+        promises.push(
+            getCrmMetrics({ actor: currentUser.uid })
+                .then(data => ({ type: 'crm', data }))
+                .catch(err => { 
+                    console.error("CRM Metrics Error:", err);
+                    setErrors(e => ({...e, crm: true})); 
+                    return { type: 'crm', data: null }; 
+                })
+        );
 
-        if (userAccess.permissions.qoroTask) {
-             promises.push(
-                getTaskMetrics({ actor: currentUser.uid })
-                    .then(data => ({ type: 'task', data }))
-                    .catch(err => { 
-                        console.error("Task Metrics Error:", err);
-                        setErrors(e => ({...e, task: true})); 
-                        return { type: 'task', data: null }; 
-                    })
-            );
-        }
-
-        if (userAccess.permissions.qoroFinance) {
-            promises.push(
-                getFinanceMetrics({ actor: currentUser.uid })
-                    .then(data => ({ type: 'finance', data }))
-                    .catch(err => { 
-                        console.error("Finance Metrics Error:", err);
-                        setErrors(e => ({...e, finance: true})); 
-                        return { type: 'finance', data: null }; 
-                    })
-            );
-        }
+        promises.push(
+            getTaskMetrics({ actor: currentUser.uid })
+                .then(data => ({ type: 'task', data }))
+                .catch(err => { 
+                    console.error("Task Metrics Error:", err);
+                    setErrors(e => ({...e, task: true})); 
+                    return { type: 'task', data: null }; 
+                })
+        );
+        
+        promises.push(
+            getFinanceMetrics({ actor: currentUser.uid })
+                .then(data => ({ type: 'finance', data }))
+                .catch(err => { 
+                    console.error("Finance Metrics Error:", err);
+                    setErrors(e => ({...e, finance: true})); 
+                    return { type: 'finance', data: null }; 
+                })
+        );
         
         const results = await Promise.all(promises);
 
@@ -215,10 +205,10 @@ function DashboardContent() {
         setIsLoading(prev => ({...prev, metrics: false}));
     }
     
-    if (currentUser && userAccess) {
+    if (currentUser) {
         fetchMetrics();
     }
-  }, [currentUser, userAccess]);
+  }, [currentUser]);
 
   if (isLoading.access) {
     return (
@@ -228,8 +218,7 @@ function DashboardContent() {
     )
   }
   
-  const permissions = userAccess?.permissions;
-  if (!permissions) {
+  if (!currentUser) {
     return (
         <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
           <div className="text-center">
@@ -260,16 +249,10 @@ function DashboardContent() {
        <div className="mb-12">
             <h3 className="text-xl font-bold text-foreground mb-6">Métricas e Insights Rápidos</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {permissions.qoroCrm && (
-                  <>
-                    <MetricCard title="Total de Clientes" value={String(crmMetrics.totalCustomers)} icon={Users} isLoading={isLoading.metrics} error={errors.crm} colorClass='bg-crm-primary' />
-                    <MetricCard title="Leads no Funil" value={String(crmMetrics.totalLeads)} icon={TrendingUp} isLoading={isLoading.metrics} error={errors.crm} colorClass='bg-crm-primary' />
-                  </>
-                )}
-                {permissions.qoroTask && <MetricCard title="Tarefas Pendentes" value={String(taskMetrics.pendingTasks)} icon={ListTodo} isLoading={isLoading.metrics} error={errors.task} colorClass='bg-task-primary' />
-                }
-                {permissions.qoroFinance && <MetricCard title="Saldo em Contas" value={formatCurrency(financeMetrics.totalBalance)} icon={DollarSign} isLoading={isLoading.metrics} error={errors.finance} colorClass='bg-finance-primary' />
-                }
+                <MetricCard title="Total de Clientes" value={String(crmMetrics.totalCustomers)} icon={Users} isLoading={isLoading.metrics} error={errors.crm} colorClass='bg-crm-primary' />
+                <MetricCard title="Leads no Funil" value={String(crmMetrics.totalLeads)} icon={TrendingUp} isLoading={isLoading.metrics} error={errors.crm} colorClass='bg-crm-primary' />
+                <MetricCard title="Tarefas Pendentes" value={String(taskMetrics.pendingTasks)} icon={ListTodo} isLoading={isLoading.metrics} error={errors.task} colorClass='bg-task-primary' />
+                <MetricCard title="Saldo em Contas" value={formatCurrency(financeMetrics.totalBalance)} icon={DollarSign} isLoading={isLoading.metrics} error={errors.finance} colorClass='bg-finance-primary' />
             </div>
              {(errors.crm || errors.task || errors.finance) && (
                 <div className="mt-4 p-4 bg-yellow-800/20 border-l-4 border-yellow-500 text-yellow-300 rounded-lg text-sm">
@@ -291,8 +274,6 @@ function DashboardContent() {
                 icon={Users}
                 color="bg-crm-primary"
                 description="CRM com foco em gestão de funil de vendas e conversão para maximizar seus lucros."
-                isLocked={!permissions.qoroCrm}
-                ctaText={permissions.qoroCrm ? "Acessar" : "Permissão necessária"}
             />
              <AppCard 
                 href="/dashboard/pulse"
@@ -300,8 +281,6 @@ function DashboardContent() {
                 icon={Activity}
                 color="bg-pulse-primary"
                 description="O sistema nervoso central da sua operação, revelando insights para otimização automática e inteligente."
-                isLocked={!permissions.qoroPulse}
-                ctaText={permissions.qoroPulse ? "Nova Conversa" : "Fazer Upgrade"}
             />
             <AppCard 
                 href="/dashboard/task/tarefas"
@@ -309,8 +288,6 @@ function DashboardContent() {
                 icon={CheckSquare}
                 color="bg-task-primary"
                 description="Plataforma leve e poderosa de gestão de tarefas e produtividade para manter sua equipe alinhada e focada."
-                isLocked={!permissions.qoroTask}
-                ctaText={permissions.qoroTask ? "Acessar" : "Permissão necessária"}
             />
             <AppCard 
                 href="/dashboard/finance/relatorios"
@@ -318,8 +295,6 @@ function DashboardContent() {
                 icon={DollarSign}
                 color="bg-finance-primary"
                 description="Controle financeiro completo para seu negócio, com dashboards claros e relatórios simplificados."
-                isLocked={!permissions.qoroFinance}
-                ctaText={permissions.qoroFinance ? "Acessar" : "Permissão necessária"}
             />
         </div>
       </div>

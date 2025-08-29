@@ -40,7 +40,6 @@ interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
-  requiredPlan: ('free' | 'growth' | 'performance')[];
 }
 
 interface NavGroup {
@@ -56,26 +55,26 @@ const navConfig: Record<string, NavGroup> = {
 
 const navItems: Record<string, NavItem[]> = {
     crm: [
-        { href: '/dashboard/crm/clientes', label: 'Clientes', icon: Users, requiredPlan: ['free', 'growth', 'performance'] },
-        { href: '/dashboard/crm/funil', label: 'Funil', icon: LayoutGrid, requiredPlan: ['free', 'growth', 'performance'] },
-        { href: '/dashboard/crm/oportunidades', label: 'Oportunidades', icon: Target, requiredPlan: ['free', 'growth', 'performance'] },
-        { href: '/dashboard/crm/produtos', label: 'Produtos', icon: Package, requiredPlan: ['free', 'growth', 'performance'] },
-        { href: '/dashboard/crm/servicos', label: 'Serviços', icon: Wrench, requiredPlan: ['free', 'growth', 'performance'] },
-        { href: '/dashboard/crm/orcamentos', label: 'Orçamentos', icon: FileText, requiredPlan: ['free', 'growth', 'performance'] },
-        { href: '/dashboard/crm/relatorios', label: 'Relatórios', icon: BarChart3, requiredPlan: ['performance'] },
+        { href: '/dashboard/crm/clientes', label: 'Clientes', icon: Users },
+        { href: '/dashboard/crm/funil', label: 'Funil', icon: LayoutGrid },
+        { href: '/dashboard/crm/oportunidades', label: 'Oportunidades', icon: Target },
+        { href: '/dashboard/crm/produtos', label: 'Produtos', icon: Package },
+        { href: '/dashboard/crm/servicos', label: 'Serviços', icon: Wrench },
+        { href: '/dashboard/crm/orcamentos', label: 'Orçamentos', icon: FileText },
+        { href: '/dashboard/crm/relatorios', label: 'Relatórios', icon: BarChart3 },
     ],
     task: [
-        { href: '/dashboard/task/lista', label: 'Minha Lista', icon: List, requiredPlan: ['free', 'growth', 'performance'] },
-        { href: '/dashboard/task/tarefas', label: 'Quadro', icon: LayoutGrid, requiredPlan: ['free', 'growth', 'performance'] },
-        { href: '/dashboard/task/calendario', label: 'Calendário', icon: Calendar, requiredPlan: ['growth', 'performance'] },
+        { href: '/dashboard/task/lista', label: 'Minha Lista', icon: List },
+        { href: '/dashboard/task/tarefas', label: 'Quadro', icon: LayoutGrid },
+        { href: '/dashboard/task/calendario', label: 'Calendário', icon: Calendar },
     ],
     finance: [
-        { href: '/dashboard/finance/relatorios', label: 'Relatórios', icon: BarChart3, requiredPlan: ['free', 'growth', 'performance'] },
-        { href: '/dashboard/finance/transacoes', label: 'Transações', icon: ArrowLeftRight, requiredPlan: ['free', 'growth', 'performance'] },
-        { href: '/dashboard/finance/contas', label: 'Contas', icon: Landmark, requiredPlan: ['growth', 'performance'] },
-        { href: '/dashboard/finance/contas-a-pagar', label: 'Contas a Pagar/Receber', icon: Receipt, requiredPlan: ['growth', 'performance'] },
-        { href: '/dashboard/finance/fornecedores', label: 'Fornecedores', icon: Truck, requiredPlan: ['performance'] },
-        { href: '/dashboard/finance/conciliacao', label: 'Conciliação', icon: GitCompareArrows, requiredPlan: ['performance'] },
+        { href: '/dashboard/finance/relatorios', label: 'Relatórios', icon: BarChart3 },
+        { href: '/dashboard/finance/transacoes', label: 'Transações', icon: ArrowLeftRight },
+        { href: '/dashboard/finance/contas', label: 'Contas', icon: Landmark },
+        { href: '/dashboard/finance/contas-a-pagar', label: 'Contas a Pagar/Receber', icon: Receipt },
+        { href: '/dashboard/finance/fornecedores', label: 'Fornecedores', icon: Truck },
+        { href: '/dashboard/finance/conciliacao', label: 'Conciliação', icon: GitCompareArrows },
     ],
 }
 
@@ -132,9 +131,7 @@ export default function DashboardLayout({
     }
     
     if (currentModule === 'pulse') {
-        // QoroPulse is only for performance plan
-        if (accessInfo.planId !== 'performance') {
-            // Or render a "locked" state sidebar
+        if (!accessInfo.permissions.qoroPulse) {
             return null; 
         }
         return <PulseSidebar />;
@@ -149,10 +146,6 @@ export default function DashboardLayout({
     
     const { group, icon: GroupIcon } = moduleConfig;
 
-    const visibleItems = moduleItems.filter(item => 
-        item.requiredPlan.includes(accessInfo.planId)
-    );
-    
     return (
         <aside className="w-64 flex-shrink-0 bg-card border-r border-border flex flex-col">
             <div className="p-4 border-b border-border space-y-4">
@@ -169,7 +162,7 @@ export default function DashboardLayout({
             </div>
             <nav className="flex-grow p-4 overflow-y-auto">
                 <ul>
-                    {visibleItems.map((item) => (
+                    {moduleItems.map((item) => (
                     <li key={item.href}>
                         <Link
                         href={item.href}
