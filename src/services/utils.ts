@@ -29,16 +29,23 @@ export const getAdminAndOrg = async (actorUid: string) => {
     }
     const orgData = orgDoc.data()!;
 
-    const subscriptionActive = orgData.stripePriceId && 
-                               orgData.stripeCurrentPeriodEnd && 
-                               (orgData.stripeCurrentPeriodEnd as Timestamp).toDate() > new Date();
-
     let planId: 'free' | 'growth' | 'performance' = 'free';
-    if (subscriptionActive) {
-        if (orgData.stripePriceId === process.env.NEXT_PUBLIC_STRIPE_PERFORMANCE_PLAN_PRICE_ID) {
-            planId = 'performance';
-        } else if (orgData.stripePriceId === process.env.NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID) {
-            planId = 'growth';
+
+    // Developer override for testing purposes
+    if (process.env.DEV_FORCE_PLAN && ['growth', 'performance'].includes(process.env.DEV_FORCE_PLAN)) {
+        planId = process.env.DEV_FORCE_PLAN as 'growth' | 'performance';
+    } else {
+        // Regular Stripe subscription check
+        const subscriptionActive = orgData.stripePriceId && 
+                                   orgData.stripeCurrentPeriodEnd && 
+                                   (orgData.stripeCurrentPeriodEnd as Timestamp).toDate() > new Date();
+
+        if (subscriptionActive) {
+            if (orgData.stripePriceId === process.env.NEXT_PUBLIC_STRIPE_PERFORMANCE_PLAN_PRICE_ID) {
+                planId = 'performance';
+            } else if (orgData.stripePriceId === process.env.NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID) {
+                planId = 'growth';
+            }
         }
     }
 
