@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -16,6 +16,15 @@ import { Label } from '@/components/ui/label';
 import { Loader2, AlertCircle, CheckCircle, Building, FileText, Mail, Phone, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 
+const formatCNPJ = (value: string) => {
+    if (!value) return "";
+    value = value.replace(/\D/g, ''); 
+    value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+    value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+    value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+    value = value.replace(/(\d{4})(\d)/, '$1-$2');
+    return value.slice(0, 18); 
+};
 
 export function OrganizationForm() {
     const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
@@ -27,6 +36,7 @@ export function OrganizationForm() {
         register,
         handleSubmit,
         reset,
+        control,
         formState: { errors },
       } = useForm<z.infer<typeof UpdateOrganizationDetailsSchema>>({
         resolver: zodResolver(UpdateOrganizationDetailsSchema),
@@ -46,7 +56,10 @@ export function OrganizationForm() {
             try {
                 const details = await getOrganizationDetails({ actor: currentUser.uid });
                 setOrganization(details);
-                reset(details); // Populate form with fetched data
+                reset({
+                    ...details,
+                    cnpj: details.cnpj ? formatCNPJ(details.cnpj) : '',
+                }); 
             } catch (error) {
                 console.error("Failed to fetch organization details:", error);
                 setFeedback({ type: 'error', message: 'Não foi possível carregar os dados da organização.' });
@@ -67,7 +80,11 @@ export function OrganizationForm() {
         setIsLoading(prev => ({ ...prev, form: true }));
         setFeedback(null);
         try {
-            await updateOrganizationDetails({ ...data, actor: currentUser.uid });
+            const submissionData = {
+                ...data,
+                cnpj: data.cnpj?.replace(/\D/g, ''),
+            };
+            await updateOrganizationDetails({ ...submissionData, actor: currentUser.uid });
             setFeedback({ type: 'success', message: 'Dados da organização atualizados com sucesso!' });
         } catch (error) {
             console.error(error);
@@ -121,7 +138,18 @@ export function OrganizationForm() {
                         <Label htmlFor="cnpj">CNPJ</Label>
                         <div className="relative">
                             <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                            <Input id="cnpj" {...register('cnpj')} className="pl-12 bg-secondary rounded-xl"/>
+                             <Controller
+                                name="cnpj"
+                                control={control}
+                                render={({ field }) => (
+                                    <Input 
+                                        id="cnpj" 
+                                        {...field}
+                                        onChange={(e) => field.onChange(formatCNPJ(e.target.value))}
+                                        className="pl-12 bg-secondary rounded-xl"
+                                    />
+                                )}
+                            />
                         </div>
                          {errors.cnpj && <p className="text-sm text-destructive">{errors.cnpj.message}</p>}
                     </div>
