@@ -34,10 +34,10 @@ const formatCPF = (value: string) => {
     if (!value) return "";
     return value
       .replace(/\D/g, '') // Remove tudo que não é dígito
+      .slice(0, 11) // Limita a 11 dígitos
       .replace(/(\d{3})(\d)/, '$1.$2') // Coloca ponto após o terceiro dígito
       .replace(/(\d{3})(\d)/, '$1.$2') // Coloca ponto após o sexto dígito
-      .replace(/(\d{3})(\d{1,2})$/, '$1-$2') // Coloca hífen antes dos últimos dois dígitos
-      .slice(0, 14); // Limita ao tamanho máximo de um CPF formatado
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2'); // Coloca hífen antes dos últimos dois dígitos
 };
 
 const formatCNPJ = (value: string) => {
