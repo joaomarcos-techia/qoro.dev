@@ -1,15 +1,15 @@
 
 'use client';
 import { useEffect, useMemo, useState, useTransition } from 'react';
-import { KanbanBoard } from '@/components/dashboard/crm/KanbanBoard';
-import { SaleLeadProfile } from '@/ai/schemas';
-import { listSaleLeads, updateSaleLeadStage } from '@/ai/flows/crm-management';
+import { CustomerKanbanBoard } from '@/components/dashboard/crm/CustomerKanbanBoard';
+import { CustomerProfile } from '@/ai/schemas';
+import { listCustomers, updateCustomerStatus } from '@/ai/flows/crm-management';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Loader2, ServerCrash, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function FunilPage() {
-  const [leads, setLeads] = useState<SaleLeadProfile[]>([]);
+  const [customers, setCustomers] = useState<CustomerProfile[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export default function FunilPage() {
       } else {
         setCurrentUser(null);
         setIsLoading(false);
-        setLeads([]);
+        setCustomers([]);
         setError(null);
       }
     });
@@ -35,11 +35,11 @@ export default function FunilPage() {
     if (currentUser) {
       setIsLoading(true);
       setError(null);
-      listSaleLeads({ actor: currentUser.uid })
-        .then(setLeads)
+      listCustomers({ actor: currentUser.uid })
+        .then(setCustomers)
         .catch((err) => {
           console.error(err);
-          setError('Não foi possível carregar as oportunidades do funil.');
+          setError('Não foi possível carregar os clientes do funil.');
         })
         .finally(() => setIsLoading(false));
     } else if (!auth.currentUser) {
@@ -54,62 +54,63 @@ export default function FunilPage() {
     }, 5000);
   };
 
-
-  const handleMoveLead = (leadId: string, newStage: SaleLeadProfile['stage']) => {
+  const handleMoveCustomer = (customerId: string, newStatus: CustomerProfile['status']) => {
     startTransition(async () => {
         setFeedback(null);
         if (!currentUser) return;
         
-        const originalLeads = [...leads];
+        const originalCustomers = [...customers];
         
         // Optimistic UI update
-        setLeads(prev => prev.map(l => l.id === leadId ? {...l, stage: newStage} : l));
+        setCustomers(prev => prev.map(c => c.id === customerId ? {...c, status: newStatus} : c));
 
         try {
-            await updateSaleLeadStage({ leadId, stage: newStage, actor: currentUser.uid });
-            showTemporaryFeedback("Oportunidade movida com sucesso!");
+            await updateCustomerStatus({ customerId, status: newStatus, actor: currentUser.uid });
+            showTemporaryFeedback("Cliente movido com sucesso!");
         } catch (err) {
-            console.error("Failed to move lead", err);
-            showTemporaryFeedback("Erro ao mover oportunidade.", "error");
-            setLeads(originalLeads); // Revert on failure
+            console.error("Failed to move customer", err);
+            showTemporaryFeedback("Erro ao mover cliente.", "error");
+            setCustomers(originalCustomers); // Revert on failure
         }
     });
   }
 
-  const stageOrder: SaleLeadProfile['stage'][] = [
+  const stageOrder: CustomerProfile['status'][] = [
     'new',
     'initial_contact',
-    'qualified',
+    'qualification',
     'proposal',
     'negotiation',
     'won',
-    'lost'
+    'lost',
+    'archived'
   ];
   
   const stageNames: Record<string, string> = {
       new: 'Novo / Lead Recebido',
       initial_contact: 'Contato Inicial',
-      qualified: 'Qualificação / Diagnóstico',
-      proposal: 'Apresentação / Proposta',
+      qualification: 'Qualificação',
+      proposal: 'Proposta',
       negotiation: 'Negociação',
-      won: 'Ganho (Fechamento)',
-      lost: 'Perdido'
+      won: 'Ganho (Cliente)',
+      lost: 'Perdido',
+      archived: 'Arquivado'
   };
     
   const columns = useMemo(() => {
     return stageOrder.map((stage) => ({
       id: stage,
       title: stageNames[stage],
-      leads: leads.filter((lead) => lead.stage === stage),
+      customers: customers.filter((customer) => customer.status === stage),
     }));
-  }, [leads]);
+  }, [customers]);
 
   const renderContent = () => {
     if (isLoading) {
       return (
         <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)]">
           <Loader2 className="w-12 h-12 text-primary animate-spin" />
-          <p className="mt-4 text-muted-foreground">Carregando funil de oportunidades...</p>
+          <p className="mt-4 text-muted-foreground">Carregando funil de clientes...</p>
         </div>
       );
     }
@@ -124,7 +125,7 @@ export default function FunilPage() {
       );
     }
 
-    return <KanbanBoard columns={columns} onMoveLead={handleMoveLead} />;
+    return <CustomerKanbanBoard columns={columns} onMoveCustomer={handleMoveCustomer} />;
   };
 
   return (
@@ -132,9 +133,9 @@ export default function FunilPage() {
       <div className="flex-shrink-0">
         <div className="flex justify-between items-center mb-6">
             <div>
-            <h1 className="text-4xl font-bold text-foreground">Funil de Vendas</h1>
+            <h1 className="text-4xl font-bold text-foreground">Funil de Clientes</h1>
             <p className="text-muted-foreground">
-                Visualize e gerencie a jornada das suas oportunidades pelas fases de negociação.
+                Visualize e gerencie a jornada dos seus clientes pelas fases de negociação.
             </p>
             </div>
              {isPending && <Loader2 className="w-6 h-6 text-primary animate-spin" />}
