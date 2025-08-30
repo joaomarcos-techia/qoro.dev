@@ -57,6 +57,26 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { CustomerForm } from './CustomerForm';
 
 
+const formatCPF = (value: string) => {
+    if (!value) return "-";
+    const cleaned = value.replace(/\D/g, '');
+    if (cleaned.length !== 11) return value; // Return original if not a valid CPF length
+    return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+};
+
+const formatPhone = (value: string) => {
+    if (!value) return "-";
+    const cleaned = value.replace(/\D/g, '');
+    if (cleaned.length === 11) {
+        return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    }
+    if (cleaned.length === 10) {
+        return cleaned.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+    }
+    return value; // Return original if not a valid phone length
+};
+
+
 export function CustomerTable() {
   const [data, setData] = React.useState<CustomerProfile[]>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -133,12 +153,12 @@ export function CustomerTable() {
      {
       accessorKey: 'cpf',
       header: 'CPF',
-      cell: ({ row }) => row.getValue('cpf') || '-',
+      cell: ({ row }) => formatCPF(row.getValue('cpf')),
     },
     {
       accessorKey: 'phone',
       header: 'Telefone',
-      cell: ({ row }) => row.getValue('phone') || '-',
+      cell: ({ row }) => formatPhone(row.getValue('phone')),
     },
     {
       accessorKey: 'status',

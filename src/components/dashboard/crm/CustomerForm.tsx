@@ -284,5 +284,3 @@ export function CustomerForm({ onCustomerAction, customer }: CustomerFormProps) 
     </form>
   );
 }
-
-    
