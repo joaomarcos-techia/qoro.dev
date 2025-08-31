@@ -38,6 +38,8 @@ export function CustomerKanbanCard({ customer, stageIds, onMove }: KanbanCardPro
     onMove(customer.id, 'archived');
   }
 
+  const isTerminalStage = customer.status === 'won' || customer.status === 'lost';
+
   return (
     <div className="bg-card rounded-xl p-4 transition-shadow duration-300 border border-border hover:border-primary/50">
       <h3 className="font-bold text-foreground text-base mb-3 break-words">{customer.name}</h3>
@@ -68,7 +70,7 @@ export function CustomerKanbanCard({ customer, stageIds, onMove }: KanbanCardPro
             <ChevronLeft className="w-4 h-4" />
         </Button>
         
-        {customer.status === 'lost' ? (
+        {isTerminalStage ? (
              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleArchive} title="Arquivar Cliente">
                 <Archive className="w-4 h-4" />
             </Button>
