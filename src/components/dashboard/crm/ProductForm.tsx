@@ -42,6 +42,7 @@ export function ProductForm({ onProductAction, product, itemType }: ProductFormP
     control,
     watch,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<z.infer<typeof ProductSchema>>({
     resolver: zodResolver(ProductSchema),
@@ -65,6 +66,18 @@ export function ProductForm({ onProductAction, product, itemType }: ProductFormP
   }, [product, reset, itemType]);
 
   const pricingModel = watch('pricingModel');
+
+  const handleNumericInput = (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof z.infer<typeof ProductSchema>) => {
+    const value = e.target.value;
+    // Permite números, um ponto ou uma vírgula. Remove caracteres inválidos.
+    const numericValue = value.replace(/[^0-9.,]/g, '').replace(',', '.');
+    // Garante que haja apenas um ponto decimal
+    const parts = numericValue.split('.');
+    const formattedValue = parts.length > 2 ? `${parts[0]}.${parts.slice(1).join('')}` : numericValue;
+
+    setValue(fieldName, formattedValue as any, { shouldValidate: true });
+  };
+
 
   const onSubmit = async (data: z.infer<typeof ProductSchema>) => {
     if (!currentUser) {
@@ -116,21 +129,40 @@ export function ProductForm({ onProductAction, product, itemType }: ProductFormP
         
         <div className="space-y-2">
           <Label htmlFor="price">{pricingModel === 'per_hour' ? 'Preço por Hora (R$)*' : 'Preço de Venda (R$)*'}</Label>
-          <Input id="price" type="text" inputMode='decimal' {...register('price')} />
+          <Input 
+            id="price" 
+            type="text" 
+            inputMode='decimal' 
+            {...register('price')}
+            onChange={(e) => handleNumericInput(e, 'price')}
+          />
           {errors.price && <p className="text-destructive text-sm">{errors.price.message}</p>}
         </div>
         
         {pricingModel === 'fixed' && (
             <div className="space-y-2">
-            <Label htmlFor="cost">Custo (R$)</Label>
-            <Input id="cost" type="text" inputMode='decimal' {...register('cost')} />
+              <Label htmlFor="cost">Custo (R$)</Label>
+              <Input 
+                id="cost" 
+                type="text" 
+                inputMode='decimal' 
+                {...register('cost')} 
+                onChange={(e) => handleNumericInput(e, 'cost')}
+              />
             </div>
         )}
         
         {pricingModel === 'per_hour' && (
             <div className="space-y-2">
                 <Label htmlFor="durationHours">Duração Estimada (horas)</Label>
-                <Input id="durationHours" type="text" inputMode='decimal' {...register('durationHours')} placeholder="Ex: 8"/>
+                <Input 
+                    id="durationHours" 
+                    type="text" 
+                    inputMode='decimal' 
+                    {...register('durationHours')} 
+                    onChange={(e) => handleNumericInput(e, 'durationHours')}
+                    placeholder="Ex: 8"
+                />
             </div>
         )}
       </div>
