@@ -1,10 +1,25 @@
 
 'use client';
 
+import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { GitCompareArrows, Upload } from 'lucide-react';
 
 export default function ConciliacaoPage() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      console.log('Arquivo selecionado:', file.name);
+      // Aqui viria a lógica para processar o arquivo OFX
+      alert(`Arquivo "${file.name}" selecionado. A lógica para processamento ainda será implementada.`);
+    }
+  };
 
   return (
     <div>
@@ -15,7 +30,16 @@ export default function ConciliacaoPage() {
             Compare suas transações com o extrato bancário para garantir que tudo esteja correto.
           </p>
         </div>
-        <Button className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+          accept=".ofx"
+        />
+        <Button 
+          onClick={handleFileImportClick}
+          className="bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
             <Upload className="mr-2 w-5 h-5" />
             Importar Extrato (OFX)
         </Button>
