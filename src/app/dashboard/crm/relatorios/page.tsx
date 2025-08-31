@@ -4,23 +4,31 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getDashboardMetrics } from '@/ai/flows/crm-management';
-import { CustomerProfile } from '@/ai/schemas';
+import { listQuotes } from '@/ai/flows/crm-management';
+import { CustomerProfile, QuoteProfile } from '@/ai/schemas';
 import { Bar, BarChart as BarChartPrimitive, CartesianGrid, Pie, PieChart as PieChartPrimitive, Cell } from 'recharts';
 import CustomXAxis from '@/components/utils/CustomXAxis';
 import CustomYAxis from '@/components/utils/CustomYAxis';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { DollarSign, Trophy, Users, Target, Loader2, ServerCrash } from 'lucide-react';
-import { format, parseISO, differenceInDays, isValid } from 'date-fns';
+import { DollarSign, Trophy, Users, Target, Loader2, ServerCrash, Calendar as CalendarIcon } from 'lucide-react';
+import { format, parseISO, differenceInDays, isValid, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { DateRange } from 'react-day-picker';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
 
 interface CrmReportMetrics {
   totalRevenue: number;
-  totalWonLeads: number;
+  totalWonDeals: number;
   avgRevenuePerDeal: number;
   avgSalesCycleDays: number;
   revenueByMonth: { month: string; revenue: number }[];
   leadsBySource: { name: string; value: number; fill: string }[];
+  winLossRatio: { name: string; value: number; fill: string }[];
 }
 
 const chartConfig = {
@@ -52,6 +60,11 @@ export default function RelatoriosPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [date, setDate] = useState<DateRange | undefined>({
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date()),
+  });
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -59,29 +72,57 @@ export default function RelatoriosPage() {
     return () => unsubscribe();
   }, []);
 
-  const calculateMetrics = useCallback((customers: CustomerProfile[]): CrmReportMetrics => {
-    // This function will need to be updated once opportunities/sales are tracked.
-    // For now, it will use placeholder or customer-based data.
-    const wonCustomers = customers.filter(c => c.status === 'won');
+  const calculateMetrics = useCallback((customers: CustomerProfile[], quotes: QuoteProfile[], range: DateRange): CrmReportMetrics => {
+    const startDate = range.from || new Date(0);
+    const endDate = range.to || new Date();
 
-    // Placeholder data
-    const totalRevenue = wonCustomers.length * 1500; // Placeholder
-    const totalWonLeads = wonCustomers.length;
-    const avgRevenuePerDeal = totalWonLeads > 0 ? totalRevenue / totalWonLeads : 0;
-    const avgSalesCycleDays = 25; // Placeholder
+    const filteredQuotes = quotes.filter(q => {
+        const quoteDate = parseISO(q.updatedAt);
+        return isValid(quoteDate) && quoteDate >= startDate && quoteDate <= endDate;
+    });
 
-    const revenueByMonthData = wonCustomers.reduce((acc, customer) => {
-        const createdAt = parseISO(customer.createdAt);
-        if(isValid(createdAt)){
-            const month = format(createdAt, 'MMM', { locale: ptBR });
-            acc[month] = (acc[month] || 0) + 1500; // Placeholder
+    const filteredCustomers = customers.filter(c => {
+        const customerDate = parseISO(c.createdAt);
+        return isValid(customerDate) && customerDate >= startDate && customerDate <= endDate;
+    });
+
+    const acceptedQuotes = filteredQuotes.filter(q => q.status === 'accepted');
+    const wonCustomers = customers.filter(c => c.status === 'won' && isValid(parseISO(c.createdAt)) && parseISO(c.createdAt) >= startDate && parseISO(c.createdAt) <= endDate);
+    const lostCustomers = customers.filter(c => c.status === 'lost' && isValid(parseISO(c.createdAt)) && parseISO(c.createdAt) >= startDate && parseISO(c.createdAt) <= endDate);
+
+    const totalRevenue = acceptedQuotes.reduce((acc, q) => acc + q.total, 0);
+    const totalWonDeals = acceptedQuotes.length;
+    const avgRevenuePerDeal = totalWonDeals > 0 ? totalRevenue / totalWonDeals : 0;
+
+    const salesCycleDurations = wonCustomers
+        .map(c => {
+            const createdAt = parseISO(c.createdAt);
+            const quote = quotes.find(q => q.customerId === c.id && q.status === 'accepted');
+            if (quote) {
+                const wonAt = parseISO(quote.updatedAt);
+                return differenceInDays(wonAt, createdAt);
+            }
+            return null;
+        })
+        .filter((days): days is number => days !== null && days >= 0);
+
+    const avgSalesCycleDays = salesCycleDurations.length > 0
+        ? Math.round(salesCycleDurations.reduce((a, b) => a + b, 0) / salesCycleDurations.length)
+        : 0;
+
+    const revenueByMonthData = acceptedQuotes.reduce((acc, quote) => {
+        const updatedAt = parseISO(quote.updatedAt);
+        if(isValid(updatedAt)){
+            const month = format(updatedAt, 'MMM/yy', { locale: ptBR });
+            acc[month] = (acc[month] || 0) + quote.total;
         }
         return acc;
     }, {} as Record<string, number>);
 
-    const revenueByMonth = Object.entries(revenueByMonthData).map(([month, revenue]) => ({ month, revenue }));
+    const revenueByMonth = Object.entries(revenueByMonthData).map(([month, revenue]) => ({ month, revenue })).reverse();
 
-    const leadsBySourceData = customers.reduce((acc, customer) => {
+
+    const leadsBySourceData = filteredCustomers.reduce((acc, customer) => {
         const source = customer.source || 'Desconhecida';
         acc[source] = (acc[source] || 0) + 1;
         return acc;
@@ -90,29 +131,39 @@ export default function RelatoriosPage() {
     const leadsBySource = Object.entries(leadsBySourceData).map(([name, value], i) => ({
         name,
         value,
-        fill: `hsl(var(--chart-${i % 5 + 1}))`
+        fill: `hsl(var(--chart-${(i % 5) + 1}))`
     }));
+
+    const winLossRatio = [
+        { name: 'Ganhos', value: wonCustomers.length, fill: 'hsl(var(--chart-2))' },
+        { name: 'Perdidos', value: lostCustomers.length, fill: 'hsl(var(--chart-1))' },
+    ];
+
 
     return {
         totalRevenue,
-        totalWonLeads,
+        totalWonDeals,
         avgRevenuePerDeal,
         avgSalesCycleDays,
         revenueByMonth,
-        leadsBySource
+        leadsBySource,
+        winLossRatio
     };
   }, []);
 
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || !date?.from || !date.to) return;
 
     const fetchAndSetMetrics = async () => {
         setIsLoading(true);
         setError(null);
         try {
-            const { customers } = await getDashboardMetrics({ actor: currentUser.uid });
-            const calculatedMetrics = calculateMetrics(customers);
+            const [crmData, quotesData] = await Promise.all([
+                getDashboardMetrics({ actor: currentUser.uid }),
+                listQuotes({ actor: currentUser.uid })
+            ]);
+            const calculatedMetrics = calculateMetrics(crmData.customers, quotesData, date);
             setMetrics(calculatedMetrics);
         } catch (err) {
             console.error("Erro ao buscar dados para relatórios:", err);
@@ -123,7 +174,7 @@ export default function RelatoriosPage() {
     }
     
     fetchAndSetMetrics();
-  }, [currentUser, calculateMetrics]);
+  }, [currentUser, calculateMetrics, date]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }).format(value);
@@ -151,8 +202,8 @@ export default function RelatoriosPage() {
     return (
         <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <MetricCard title="Receita Total (Ganha)" value={metrics?.totalRevenue ?? 0} icon={DollarSign} isLoading={isLoading} format={formatCurrency} />
-                <MetricCard title="Negócios Ganhos" value={metrics?.totalWonLeads ?? 0} icon={Trophy} isLoading={isLoading} />
+                <MetricCard title="Receita (Período)" value={metrics?.totalRevenue ?? 0} icon={DollarSign} isLoading={isLoading} format={formatCurrency} />
+                <MetricCard title="Negócios Ganhos" value={metrics?.totalWonDeals ?? 0} icon={Trophy} isLoading={isLoading} />
                 <MetricCard title="Ticket Médio" value={metrics?.avgRevenuePerDeal ?? 0} icon={Target} isLoading={isLoading} format={formatCurrency}/>
                 <MetricCard title="Ciclo Médio de Venda" value={`${metrics?.avgSalesCycleDays ?? 0} dias`} icon={Users} isLoading={isLoading} />
             </div>
@@ -161,7 +212,7 @@ export default function RelatoriosPage() {
                 <Card className="lg:col-span-3 bg-card p-6 rounded-2xl border-border">
                     <CardHeader>
                         <CardTitle>Receita por Mês</CardTitle>
-                        <CardDescription>Receita de negócios ganhos nos últimos meses.</CardDescription>
+                        <CardDescription>Receita de negócios ganhos no período selecionado.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
@@ -178,7 +229,7 @@ export default function RelatoriosPage() {
                 <Card className="lg:col-span-2 bg-card p-6 rounded-2xl border-border">
                     <CardHeader>
                         <CardTitle>Origem dos Clientes</CardTitle>
-                        <CardDescription>Distribuição de clientes por canal de aquisição.</CardDescription>
+                        <CardDescription>Distribuição de clientes por canal no período.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex justify-center">
                         <ChartContainer config={chartConfig} className="min-h-[300px] w-full max-w-[300px]">
@@ -194,6 +245,24 @@ export default function RelatoriosPage() {
                     </CardContent>
                 </Card>
             </div>
+             <Card className="lg:col-span-2 bg-card p-6 rounded-2xl border-border">
+                <CardHeader>
+                    <CardTitle>Taxa de Ganhos vs. Perdidos</CardTitle>
+                    <CardDescription>Relação de clientes ganhos e perdidos no período.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center">
+                    <ChartContainer config={chartConfig} className="min-h-[300px] w-full max-w-[300px]">
+                        <PieChartPrimitive>
+                            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                            <Pie data={metrics?.winLossRatio} dataKey="value" nameKey="name" innerRadius={60} strokeWidth={5}>
+                                {metrics?.winLossRatio.map((entry) => (
+                                    <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                                ))}
+                            </Pie>
+                        </PieChartPrimitive>
+                    </ChartContainer>
+                </CardContent>
+            </Card>
         </div>
     );
   };
@@ -207,8 +276,47 @@ export default function RelatoriosPage() {
                 Analise o desempenho de suas vendas, clientes e atividades.
                 </p>
             </div>
+             <Popover>
+                <PopoverTrigger asChild>
+                    <Button
+                    id="date"
+                    variant={"outline"}
+                    className={cn(
+                        "w-[300px] justify-start text-left font-normal",
+                        !date && "text-muted-foreground"
+                    )}
+                    >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date?.from ? (
+                        date.to ? (
+                        <>
+                            {format(date.from, "PPP", { locale: ptBR })} -{" "}
+                            {format(date.to, "PPP", { locale: ptBR })}
+                        </>
+                        ) : (
+                        format(date.from, "PPP", { locale: ptBR })
+                        )
+                    ) : (
+                        <span>Escolha um período</span>
+                    )}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={date?.from}
+                    selected={date}
+                    onSelect={setDate}
+                    numberOfMonths={2}
+                    locale={ptBR}
+                    />
+                </PopoverContent>
+            </Popover>
         </div>
         {renderContent()}
     </div>
   );
 }
+
+    
