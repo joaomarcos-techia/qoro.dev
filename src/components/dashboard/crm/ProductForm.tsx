@@ -115,18 +115,31 @@ export function ProductForm({ onProductAction, product, itemType }: ProductFormP
           <Label htmlFor="description">Descrição</Label>
           <Textarea id="description" {...register('description')} placeholder="Detalhes, características, entregáveis, etc." />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="category">Categoria</Label>
-          <Input id="category" {...register('category')} placeholder="Ex: Software, Consultoria" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="sku">SKU (Código)</Label>
-          <Input id="sku" {...register('sku')} placeholder="Ex: PROD-001" />
-        </div>
-        
-        {/* Hidden input for pricing model based on itemType */}
-        <input type="hidden" {...register('pricingModel')} value={itemType === 'service' ? 'per_hour' : 'fixed'} />
-        
+
+        {itemType === 'service' ? (
+             <div className="space-y-2">
+                <Label>Modelo de Preço*</Label>
+                <Controller
+                  name="pricingModel"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o modelo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="per_hour">Preço por Hora</SelectItem>
+                        <SelectItem value="fixed">Preço Fixo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+            </div>
+        ) : (
+            // Hidden input for product pricing model
+            <input type="hidden" {...register('pricingModel')} value="fixed" />
+        )}
+       
         <div className="space-y-2">
           <Label htmlFor="price">{pricingModel === 'per_hour' ? 'Preço por Hora (R$)*' : 'Preço de Venda (R$)*'}</Label>
           <Input 
@@ -165,6 +178,15 @@ export function ProductForm({ onProductAction, product, itemType }: ProductFormP
                 />
             </div>
         )}
+
+        <div className="space-y-2">
+          <Label htmlFor="category">Categoria</Label>
+          <Input id="category" {...register('category')} placeholder="Ex: Software, Consultoria" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="sku">SKU (Código)</Label>
+          <Input id="sku" {...register('sku')} placeholder="Ex: PROD-001" />
+        </div>
       </div>
        {error && (
             <div className="bg-destructive/20 border-l-4 border-destructive text-destructive-foreground p-4 rounded-lg flex items-center mt-4">
