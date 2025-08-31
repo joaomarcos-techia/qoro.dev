@@ -51,7 +51,7 @@ export const DocumentPDF = React.forwardRef<HTMLDivElement, DocumentPDFProps>(({
                 .notes-section { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; }
                 .notes-section h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; }
                 .notes-section p { white-space: pre-wrap; font-size: 0.8rem; color: #4b5563; }
-                .pdf-footer { position: absolute; bottom: 15mm; left: 15mm; right: 15mm; text-align: center; font-size: 0.75rem; color: #9ca3af; border-top: 1px solid #f3f4f6; padding-top: 0.5rem; }
+                .pdf-footer { position: absolute; bottom: 15mm; left: 15mm; right: 15mm; text-align: center; font-size: 0.75rem; color: #9ca3af; border-top: 1px solid #f3f4f6; padding-top: 0.5rem; word-spacing: normal; }
             `}</style>
             <div className="pdf-container">
                 <header className="pdf-header">
