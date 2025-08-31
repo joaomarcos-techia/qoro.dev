@@ -1,12 +1,13 @@
 
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { GitCompareArrows, Upload } from 'lucide-react';
+import { GitCompareArrows, Upload, FileCheck } from 'lucide-react';
 
 export default function ConciliacaoPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleFileImportClick = () => {
     fileInputRef.current?.click();
@@ -16,8 +17,8 @@ export default function ConciliacaoPage() {
     const file = event.target.files?.[0];
     if (file) {
       console.log('Arquivo selecionado:', file.name);
-      // Aqui viria a lógica para processar o arquivo OFX
-      alert(`Arquivo "${file.name}" selecionado. A lógica para processamento ainda será implementada.`);
+      setSelectedFile(file);
+      // A lógica para processar o arquivo OFX viria aqui
     }
   };
 
@@ -44,6 +45,13 @@ export default function ConciliacaoPage() {
             Importar Extrato (OFX)
         </Button>
       </div>
+      
+      {selectedFile && (
+        <div className="mb-6 p-4 bg-green-800/20 text-green-300 border border-green-500/30 rounded-lg flex items-center">
+            <FileCheck className="w-5 h-5 mr-3" />
+            <span>Arquivo <strong>{selectedFile.name}</strong> selecionado com sucesso. Pronto para processamento.</span>
+        </div>
+      )}
 
       <div className="bg-card p-6 rounded-2xl border-border">
         <div className="flex flex-col items-center justify-center text-center min-h-[400px]">
