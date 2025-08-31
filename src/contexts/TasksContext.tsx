@@ -1,5 +1,6 @@
 
 'use client';
+
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { listTasks } from '@/ai/flows/task-management';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
