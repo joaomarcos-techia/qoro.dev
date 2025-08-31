@@ -97,7 +97,7 @@ export default function FunilPage() {
       qualification: 'Qualificação',
       proposal: 'Proposta',
       negotiation: 'Negociação',
-      won: 'Ganho (Cliente)',
+      won: 'Ganho (Fechamento)',
       lost: 'Perdido',
       archived: 'Arquivado'
   };
