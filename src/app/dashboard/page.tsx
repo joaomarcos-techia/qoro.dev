@@ -193,7 +193,7 @@ function DashboardContent() {
 
         results.forEach(result => {
             if (result.data) {
-                if (result.type === 'crm') setCrmMetrics({ totalCustomers: result.data.customers.length, totalLeads: result.data.leads.length });
+                if (result.type === 'crm') setCrmMetrics({ totalCustomers: result.data.customers.length, totalLeads: 0 }); // totalLeads is removed
                 if (result.type === 'task') setTaskMetrics({ pendingTasks: result.data.pendingTasks });
                 if (result.type === 'finance') setFinanceMetrics({ totalBalance: result.data.totalBalance });
             }
@@ -248,7 +248,7 @@ function DashboardContent() {
             <h3 className="text-xl font-bold text-foreground mb-6">Métricas e Insights Rápidos</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <MetricCard title="Total de Clientes" value={String(crmMetrics.totalCustomers)} icon={Users} isLoading={isLoading.metrics} error={errors.crm} colorClass='bg-crm-primary' />
-                <MetricCard title="Leads no Funil" value={String(crmMetrics.totalLeads)} icon={TrendingUp} isLoading={isLoading.metrics} error={errors.crm} colorClass='bg-crm-primary' />
+                <MetricCard title="Clientes no Funil" value={String(crmMetrics.totalLeads)} icon={TrendingUp} isLoading={isLoading.metrics} error={errors.crm} colorClass='bg-crm-primary' />
                 <MetricCard title="Tarefas Pendentes" value={String(taskMetrics.pendingTasks)} icon={ListTodo} isLoading={isLoading.metrics} error={errors.task} colorClass='bg-task-primary' />
                 <MetricCard title="Saldo em Contas" value={formatCurrency(financeMetrics.totalBalance)} icon={DollarSign} isLoading={isLoading.metrics} error={errors.finance} colorClass='bg-finance-primary' />
             </div>
@@ -307,5 +307,3 @@ export default function Dashboard() {
         </ErrorBoundary>
     )
 }
-
-    

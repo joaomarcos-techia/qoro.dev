@@ -9,7 +9,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { AskPulseInputSchema, AskPulseOutputSchema, PulseMessage, PulseMessageSchema } from '@/ai/schemas';
-import { listCustomersTool, listSaleLeadsTool } from '@/ai/tools/crm-tools';
+import { listCustomersTool } from '@/ai/tools/crm-tools';
 import { createTaskTool, listTasksTool } from '@/ai/tools/task-tools';
 import { listAccountsTool, getFinanceSummaryTool } from '@/ai/tools/finance-tools';
 import { listSuppliersTool } from '@/ai/tools/supplier-tools';
@@ -95,7 +95,7 @@ IMPORTANTE: A conversa ainda não tem um título e a mensagem atual NÃO é uma 
         config: {
           temperature: 0.7,
         },
-        tools: [listCustomersTool, listSaleLeadsTool, listTasksTool, createTaskTool, listAccountsTool, getFinanceSummaryTool, listSuppliersTool],
+        tools: [listCustomersTool, listTasksTool, createTaskTool, listAccountsTool, getFinanceSummaryTool, listSuppliersTool],
         toolConfig: {
           context: { actor },
         },

@@ -110,28 +110,6 @@ export const CustomerProfileSchema = CustomerSchema.extend({
 });
 export type CustomerProfile = z.infer<typeof CustomerProfileSchema>;
 
-export const SaleLeadSchema = z.object({
-    customerId: z.string().min(1, "É necessário selecionar um cliente."),
-    title: z.string().min(1, "O título é obrigatório."),
-    value: z.coerce.number().min(0, "O valor deve ser um número positivo."),
-    stage: z.enum(['new', 'initial_contact', 'qualified', 'proposal', 'negotiation', 'won', 'lost']),
-    priority: z.enum(['low', 'medium', 'high']),
-    expectedCloseDate: z.string().datetime(),
-});
-
-export const UpdateSaleLeadSchema = SaleLeadSchema.extend({
-    id: z.string(),
-});
-
-export const SaleLeadProfileSchema = SaleLeadSchema.extend({
-    id: z.string(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-    customerName: z.string().optional(), 
-    customerEmail: z.string().email().optional(), 
-});
-export type SaleLeadProfile = z.infer<typeof SaleLeadProfileSchema>;
-
 export const ProductSchema = z.object({
     name: z.string().min(1, 'Nome do produto é obrigatório.'),
     description: z.string().optional(),

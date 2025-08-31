@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getDashboardMetrics } from '@/ai/flows/crm-management';
-import { CustomerProfile, SaleLeadProfile } from '@/ai/schemas';
+import { CustomerProfile } from '@/ai/schemas';
 import { Bar, BarChart as BarChartPrimitive, CartesianGrid, Pie, PieChart as PieChartPrimitive, Cell } from 'recharts';
 import CustomXAxis from '@/components/utils/CustomXAxis';
 import CustomYAxis from '@/components/utils/CustomYAxis';
@@ -59,44 +59,35 @@ export default function RelatoriosPage() {
     return () => unsubscribe();
   }, []);
 
-  const calculateMetrics = useCallback((customers: CustomerProfile[], leads: SaleLeadProfile[]): CrmReportMetrics => {
-    const wonLeads = leads.filter(lead => lead.stage === 'won');
-    
-    const totalRevenue = wonLeads.reduce((acc, lead) => acc + (lead.value || 0), 0);
-    const totalWonLeads = wonLeads.length;
+  const calculateMetrics = useCallback((customers: CustomerProfile[]): CrmReportMetrics => {
+    // This function will need to be updated once opportunities/sales are tracked.
+    // For now, it will use placeholder or customer-based data.
+    const wonCustomers = customers.filter(c => c.status === 'won');
+
+    // Placeholder data
+    const totalRevenue = wonCustomers.length * 1500; // Placeholder
+    const totalWonLeads = wonCustomers.length;
     const avgRevenuePerDeal = totalWonLeads > 0 ? totalRevenue / totalWonLeads : 0;
-    
-    const salesCycleDurations = wonLeads
-      .map(lead => {
-          const createdAt = parseISO(lead.createdAt);
-          const updatedAt = parseISO(lead.updatedAt);
-          if(isValid(createdAt) && isValid(updatedAt)) {
-              return differenceInDays(updatedAt, createdAt);
-          }
-          return -1; // Invalid date indicator
-      })
-      .filter(days => days >= 0);
+    const avgSalesCycleDays = 25; // Placeholder
 
-    const avgSalesCycleDays = salesCycleDurations.length > 0
-      ? Math.round(salesCycleDurations.reduce((a, b) => a + b, 0) / salesCycleDurations.length)
-      : 0;
-
-    const revenueByMonth = wonLeads.reduce((acc, lead) => {
-        const updatedAt = parseISO(lead.updatedAt);
-        if(isValid(updatedAt)){
-            const month = format(updatedAt, 'MMM', { locale: ptBR });
-            acc[month] = (acc[month] || 0) + (lead.value || 0);
+    const revenueByMonthData = wonCustomers.reduce((acc, customer) => {
+        const createdAt = parseISO(customer.createdAt);
+        if(isValid(createdAt)){
+            const month = format(createdAt, 'MMM', { locale: ptBR });
+            acc[month] = (acc[month] || 0) + 1500; // Placeholder
         }
         return acc;
     }, {} as Record<string, number>);
-    const formattedRevenueByMonth = Object.entries(revenueByMonth).map(([month, revenue]) => ({ month, revenue }));
 
-    const leadsBySource = customers.reduce((acc, customer) => {
+    const revenueByMonth = Object.entries(revenueByMonthData).map(([month, revenue]) => ({ month, revenue }));
+
+    const leadsBySourceData = customers.reduce((acc, customer) => {
         const source = customer.source || 'Desconhecida';
         acc[source] = (acc[source] || 0) + 1;
         return acc;
     }, {} as Record<string, number>);
-    const formattedLeadsBySource = Object.entries(leadsBySource).map(([name, value], i) => ({
+    
+    const leadsBySource = Object.entries(leadsBySourceData).map(([name, value], i) => ({
         name,
         value,
         fill: `hsl(var(--chart-${i % 5 + 1}))`
@@ -107,8 +98,8 @@ export default function RelatoriosPage() {
         totalWonLeads,
         avgRevenuePerDeal,
         avgSalesCycleDays,
-        revenueByMonth: formattedRevenueByMonth,
-        leadsBySource: formattedLeadsBySource
+        revenueByMonth,
+        leadsBySource
     };
   }, []);
 
@@ -120,8 +111,8 @@ export default function RelatoriosPage() {
         setIsLoading(true);
         setError(null);
         try {
-            const { customers, leads } = await getDashboardMetrics({ actor: currentUser.uid });
-            const calculatedMetrics = calculateMetrics(customers, leads);
+            const { customers } = await getDashboardMetrics({ actor: currentUser.uid });
+            const calculatedMetrics = calculateMetrics(customers);
             setMetrics(calculatedMetrics);
         } catch (err) {
             console.error("Erro ao buscar dados para relatórios:", err);

@@ -1,9 +1,9 @@
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { CustomerSchema, CustomerProfileSchema, SaleLeadProfileSchema, SaleLeadSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema, UpdateSaleLeadSchema } from '@/ai/schemas';
+import { CustomerSchema, CustomerProfileSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
-import type { SaleLeadProfile, QuoteProfile } from '@/ai/schemas';
+import type { QuoteProfile } from '@/ai/schemas';
 import { adminDb } from '@/lib/firebase-admin';
 
 export const createCustomer = async (input: z.infer<typeof CustomerSchema>, actorUid: string) => {
@@ -100,15 +100,11 @@ export const deleteCustomer = async (customerId: string, actorUid: string) => {
         throw new Error('Cliente não encontrado ou acesso negado.');
     }
 
-    const salesPipelineQuery = adminDb.collection('sales_pipeline').where('customerId', '==', customerId).limit(1).get();
     const quotesQuery = adminDb.collection('quotes').where('customerId', '==', customerId).limit(1).get();
     const transactionsQuery = adminDb.collection('transactions').where('customerId', '==', customerId).limit(1).get();
 
-    const [salesPipelineSnapshot, quotesSnapshot, transactionsSnapshot] = await Promise.all([salesPipelineQuery, quotesQuery, transactionsQuery]);
+    const [quotesSnapshot, transactionsSnapshot] = await Promise.all([quotesQuery, transactionsQuery]);
 
-    if (!salesPipelineSnapshot.empty) {
-        throw new Error('Não é possível excluir o cliente pois existem oportunidades de venda associadas a ele.');
-    }
     if (!quotesSnapshot.empty) {
         throw new Error('Não é possível excluir o cliente pois existem orçamentos associados a ele.');
     }
@@ -121,126 +117,11 @@ export const deleteCustomer = async (customerId: string, actorUid: string) => {
     return { id: customerId, success: true };
 };
 
-
-export const createSaleLead = async (input: z.infer<typeof SaleLeadSchema>, actorUid: string) => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
-    const newSaleLeadData = {
-        ...input,
-        companyId: organizationId,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-    };
-    const saleLeadRef = await adminDb.collection('sales_pipeline').add(newSaleLeadData);
-    return { id: saleLeadRef.id };
-};
-
-export const updateSaleLead = async (leadId: string, input: z.infer<typeof UpdateSaleLeadSchema>, actorUid: string) => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
-    const leadRef = adminDb.collection('sales_pipeline').doc(leadId);
-
-    const leadDoc = await leadRef.get();
-    if (!leadDoc.exists || leadDoc.data()?.companyId !== organizationId) {
-        throw new Error('Oportunidade não encontrada ou acesso negado.');
-    }
-
-    const { id, ...updateData } = input;
-
-    await leadRef.update({
-        ...updateData,
-        updatedAt: FieldValue.serverTimestamp(),
-    });
-
-    return { id: leadId };
-};
-
-export const deleteSaleLead = async (leadId: string, actorUid: string) => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
-    const leadRef = adminDb.collection('sales_pipeline').doc(leadId);
-
-    const leadDoc = await leadRef.get();
-    if (!leadDoc.exists || leadDoc.data()?.companyId !== organizationId) {
-        throw new Error('Oportunidade não encontrada ou acesso negado.');
-    }
-
-    await leadRef.delete();
-
-    return { id: leadId, success: true };
-};
-
-
-export const listSaleLeads = async (actorUid: string): Promise<SaleLeadProfile[]> => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
-
-    const leadsSnapshot = await adminDb.collection('sales_pipeline')
-        .where('companyId', '==', organizationId)
-        .get();
-
-    if (leadsSnapshot.empty) {
-        return [];
-    }
-
-    const customerIds = [...new Set(leadsSnapshot.docs.map(doc => doc.data().customerId).filter(id => id))];
-    const customers: Record<string, { name?: string, email?: string }> = {};
-
-    if (customerIds.length > 0) {
-        const customersSnapshot = await adminDb.collection('customers').where('__name__', 'in', customerIds).get();
-        customersSnapshot.forEach(doc => {
-            customers[doc.id] = {
-                name: doc.data().name,
-                email: doc.data().email,
-            };
-        });
-    }
-
-    const leads: SaleLeadProfile[] = leadsSnapshot.docs.map(doc => {
-        const data = doc.data();
-        const customerInfo = customers[data.customerId] || {};
-        
-        const parsedData = SaleLeadProfileSchema.parse({
-            id: doc.id,
-            ...data,
-            expectedCloseDate: data.expectedCloseDate,
-            createdAt: data.createdAt.toDate().toISOString(),
-            updatedAt: data.updatedAt.toDate().toISOString(),
-            customerName: customerInfo.name,
-            customerEmail: customerInfo.email
-        });
-        
-        return parsedData;
-    });
-
-    return leads;
-};
-
-export const updateSaleLeadStage = async (
-    leadId: string, 
-    stage: z.infer<typeof SaleLeadProfileSchema>['stage'], 
-    actorUid: string
-) => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
-    const leadRef = adminDb.collection('sales_pipeline').doc(leadId);
-    
-    const leadDoc = await leadRef.get();
-    if (!leadDoc.exists || leadDoc.data()?.companyId !== organizationId) {
-        throw new Error('Oportunidade não encontrada ou acesso negado.');
-    }
-
-    await leadRef.update({
-        stage: stage,
-        updatedAt: FieldValue.serverTimestamp(),
-    });
-
-    return { id: leadId, stage };
-};
-
-
-export const getDashboardMetrics = async (actorUid: string): Promise<{ customers: z.infer<typeof CustomerProfileSchema>[], leads: SaleLeadProfile[] }> => {
+export const getDashboardMetrics = async (actorUid: string): Promise<{ customers: z.infer<typeof CustomerProfileSchema>[] }> => {
     const customers = await listCustomers(actorUid);
-    const leads = await listSaleLeads(actorUid);
     
     return {
         customers,
-        leads,
     };
 };
 
