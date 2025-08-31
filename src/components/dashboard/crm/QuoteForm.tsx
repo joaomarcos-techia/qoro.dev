@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -205,6 +205,16 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
     setItemSearch('');
   }
 
+  const handleNumericInput = (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof FormValues) => {
+    const value = e.target.value;
+    const numericValue = value.replace(/[^0-9.,]/g, '').replace(',', '.');
+    const parts = numericValue.split('.');
+    const formattedValue = parts.length > 2 ? `${parts[0]}.${parts.slice(1).join('')}` : numericValue;
+
+    setValue(fieldName as any, formattedValue, { shouldValidate: true });
+  };
+
+
   const onSubmit = async (data: FormValues) => {
     if (!currentUser) {
       setError('Você precisa estar autenticado para criar um orçamento.');
@@ -366,7 +376,13 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
                 <div className="flex justify-between items-center">
                     <Label>Desconto (%)</Label>
                     <div className="relative w-28">
-                         <Input type="number" step="0.01" className="pr-7" {...register('discount', {valueAsNumber: true})}/>
+                        <Input 
+                            type="text" 
+                            inputMode="decimal"
+                            className="pr-7" 
+                            {...register('discount', {setValueAs: v => v ? parseFloat(v) : 0})}
+                            onChange={(e) => handleNumericInput(e, 'discount')}
+                        />
                          <Percent className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"/>
                     </div>
                 </div>
@@ -402,3 +418,5 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
     </>
   );
 }
+
+    
