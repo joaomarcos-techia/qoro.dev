@@ -26,6 +26,7 @@ const formatPhone = (value?: string) => {
 export function CustomerKanbanCard({ customer, stageIds, onMove }: KanbanCardProps) {
   
   const currentStageIndex = stageIds.findIndex(id => id === customer.status);
+  const isLostStage = customer.status === 'lost';
 
   const handleMove = (direction: 'prev' | 'next') => {
     const newIndex = direction === 'next' ? currentStageIndex + 1 : currentStageIndex - 1;
@@ -37,8 +38,6 @@ export function CustomerKanbanCard({ customer, stageIds, onMove }: KanbanCardPro
   const handleArchive = () => {
     onMove(customer.id, 'archived');
   }
-
-  const isTerminalStage = customer.status === 'won' || customer.status === 'lost';
 
   return (
     <div className="bg-card rounded-xl p-4 transition-shadow duration-300 border border-border hover:border-primary/50">
@@ -70,15 +69,15 @@ export function CustomerKanbanCard({ customer, stageIds, onMove }: KanbanCardPro
             <ChevronLeft className="w-4 h-4" />
         </Button>
         
-        {isTerminalStage && (
-             <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-red-400" onClick={handleArchive} title="Arquivar Cliente">
+        {isLostStage ? (
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-red-400" onClick={handleArchive} title="Arquivar Cliente">
                 <Archive className="w-4 h-4" />
             </Button>
+        ) : (
+             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMove('next')} disabled={currentStageIndex >= stageIds.length - 1}>
+                <ChevronRight className="w-4 h-4" />
+            </Button>
         )}
-        
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMove('next')} disabled={currentStageIndex >= stageIds.length - 1}>
-            <ChevronRight className="w-4 h-4" />
-        </Button>
       </div>
     </div>
   );
