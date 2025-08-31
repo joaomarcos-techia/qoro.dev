@@ -89,7 +89,6 @@ export const listTasks = async (actorUid: string): Promise<z.infer<typeof TaskPr
             const dueDate = data.dueDate ? data.dueDate.toDate().toISOString() : null;
             const completedAt = data.completedAt ? data.completedAt.toDate().toISOString() : null;
             
-            // Simplified: Return responsibleUserId directly. The frontend will map it to a name.
             return TaskProfileSchema.parse({
                 id: doc.id,
                 ...data,

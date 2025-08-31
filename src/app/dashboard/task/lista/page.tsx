@@ -86,10 +86,6 @@ export default function ListaPage() {
   return (
     <div>
        <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
-          <DialogTrigger asChild>
-            {/* O gatilho agora é o botão principal da página */}
-            <span />
-          </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle className="text-2xl font-bold text-foreground">{selectedTask ? 'Editar Tarefa' : 'Criar Nova Tarefa'}</DialogTitle>
