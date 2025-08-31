@@ -21,12 +21,20 @@ type SupplierFormProps = {
 
 const formatCNPJ = (value: string) => {
     if (!value) return "";
-    value = value.replace(/\D/g, '');
+    value = value.replace(/\D/g, ''); 
     value = value.replace(/^(\d{2})(\d)/, '$1.$2');
     value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
     value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
     value = value.replace(/(\d{4})(\d)/, '$1-$2');
-    return value.slice(0, 18);
+    return value.slice(0, 18); 
+};
+
+const formatPhone = (value: string) => {
+    if (!value) return "";
+    value = value.replace(/\D/g, '');
+    value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+    value = value.replace(/(\d{5})(\d)/, '$1-$2');
+    return value.slice(0, 15);
 };
 
 export function SupplierForm({ onAction, supplier }: SupplierFormProps) {
@@ -55,7 +63,11 @@ export function SupplierForm({ onAction, supplier }: SupplierFormProps) {
 
   useEffect(() => {
     if (supplier) {
-        reset(supplier);
+        reset({
+          ...supplier,
+          cnpj: supplier.cnpj ? formatCNPJ(supplier.cnpj) : '',
+          phone: supplier.phone ? formatPhone(supplier.phone) : '',
+        });
     } else {
         reset({
             name: '',
@@ -76,7 +88,11 @@ export function SupplierForm({ onAction, supplier }: SupplierFormProps) {
     setIsLoading(true);
     setError(null);
     try {
-      const submissionData = { ...data, cnpj: data.cnpj?.replace(/\D/g, '') };
+      const submissionData = { 
+          ...data, 
+          cnpj: data.cnpj?.replace(/\D/g, ''),
+          phone: data.phone?.replace(/\D/g, ''),
+      };
       if (isEditMode) {
         await updateSupplier({ ...submissionData, id: supplier.id, actor: currentUser.uid });
       } else {
@@ -106,7 +122,17 @@ export function SupplierForm({ onAction, supplier }: SupplierFormProps) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">Telefone</Label>
-          <Input id="phone" {...register('phone')} />
+           <Controller
+            name="phone"
+            control={control}
+            render={({ field }) => (
+                <Input
+                    id="phone"
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                />
+            )}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="cnpj">CNPJ</Label>
