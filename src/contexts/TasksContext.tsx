@@ -26,10 +26,6 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
-      if (!user) {
-        setTasks([]);
-        setLoading(false);
-      }
     });
     return () => unsubscribe();
   }, []);
@@ -39,7 +35,9 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    // Define an async function inside the effect
     const fetchTasks = async () => {
+      // If there is no user, we clear the tasks and stop loading.
       if (!currentUser) {
         setTasks([]);
         setLoading(false);
@@ -49,9 +47,15 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('🔄 Tentando carregar tarefas...');
       setLoading(true);
       setError(null);
+
       try {
         const result = await listTasks({ actor: currentUser.uid });
-        const sortedTasks = result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        // Sort tasks by creation date, newest first
+        const sortedTasks = result.sort((a, b) => {
+            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return dateB - dateA;
+        });
         setTasks(sortedTasks);
         console.log('✅ Tarefas carregadas com sucesso');
       } catch (err: any) {
@@ -62,6 +66,7 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
     
+    // Call the async function
     fetchTasks();
   }, [currentUser, refreshTrigger]);
   
