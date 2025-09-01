@@ -26,7 +26,6 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
-       // Quando o usuário desloga, limpa os dados.
       if (!user) {
         setTasks([]);
         setLoading(false);
@@ -39,36 +38,32 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
     setRefreshTrigger(prev => prev + 1);
   }, []);
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      // Guarda para não fazer nada se não houver usuário.
-      // O useEffect será re-executado quando o usuário mudar.
-      if (!currentUser) {
-        setLoading(false); // Garante que o estado de loading não fique preso.
-        return;
-      }
-      
-      console.log('🔄 Tentando carregar tarefas...');
-      setLoading(true);
-      setError(null);
-
-      try {
-        const result = await listTasks({ actor: currentUser.uid });
-        const sortedTasks = result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setTasks(sortedTasks);
-        console.log('✅ Tarefas carregadas com sucesso');
-      } catch (err: any) {
-        console.error('❌ Erro ao carregar tarefas no contexto:', err);
-        setError(err.message || 'Erro no servidor. Tente novamente em alguns minutos.');
-      } finally {
+  const fetchTasks = useCallback(async () => {
+    if (!currentUser) {
+        setTasks([]);
         setLoading(false);
-      }
-    };
+        return;
+    }
+    
+    console.log('🔄 Tentando carregar tarefas...');
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await listTasks({ actor: currentUser.uid });
+      const sortedTasks = result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setTasks(sortedTasks);
+      console.log('✅ Tarefas carregadas com sucesso');
+    } catch (err: any) {
+      console.error('❌ Erro ao carregar tarefas no contexto:', err);
+      setError(err.message || 'Erro no servidor. Tente novamente em alguns minutos.');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser]);
 
+  useEffect(() => {
     fetchTasks();
-  // A dependência em currentUser garante que a busca ocorra quando o usuário logar.
-  // A dependência em refreshTrigger garante que a busca ocorra ao chamar refreshTasks().
-  }, [currentUser, refreshTrigger]);
+  }, [fetchTasks, refreshTrigger]);
   
   return (
     <TasksContext.Provider value={{ tasks, loading, error, refreshTasks }}>
