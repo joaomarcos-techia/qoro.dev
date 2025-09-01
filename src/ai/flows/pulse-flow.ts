@@ -8,7 +8,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { AskPulseInputSchema, AskPulseOutputSchema, PulseMessage, PulseMessageSchema } from '@/ai/schemas';
+import { AskPulseInputSchema, AskPulseOutputSchema, PulseMessageSchema } from '@/ai/schemas';
 import { listCustomersTool } from '@/ai/tools/crm-tools';
 import { createTaskTool, listTasksTool } from '@/ai/tools/task-tools';
 import { listAccountsTool, getFinanceSummaryTool } from '@/ai/tools/finance-tools';
@@ -45,8 +45,9 @@ const pulseFlow = ai.defineFlow(
     if (conversationId) {
         existingConversation = await pulseService.getConversation({ conversationId, actor });
     }
-    // A conversa não tem título se o campo `title` for nulo, indefinido ou uma string vazia.
-    const hasTitle = !!existingConversation?.title;
+    
+    // A conversa não tem título se o campo `title` for nulo, indefinido ou uma string vazia ou "Nova Conversa"
+    const hasTitle = !!existingConversation?.title && existingConversation.title !== 'Nova Conversa';
 
     const history: MessageData[] = messages.slice(0, -1).map(message => ({
         role: message.role as 'user' | 'model',
@@ -56,8 +57,10 @@ const pulseFlow = ai.defineFlow(
     const lastMessage = messages[messages.length - 1];
     const prompt = lastMessage.content;
     
-    // A saudação só deve ser considerada na primeira mensagem para evitar que o título não seja gerado.
-    const isGreetingOnFirstMessage = messages.length <= 1 && /^(oi|olá|ola|hello|hi|hey|bom dia|boa tarde|boa noite)/i.test(prompt.trim());
+    const isGreeting = messages.length <= 1 && /^(oi|olá|ola|hello|hi|hey|bom dia|boa tarde|boa noite)/i.test(prompt.trim());
+
+    // Tenta gerar o título se a conversa não tiver um e a mensagem não for uma saudação simples.
+    const shouldGenerateTitle = !hasTitle && !isGreeting;
 
     let systemPrompt = `Você é o QoroPulse— um agente de inteligência estratégica interna. Seu papel é agir como o cérebro analítico da empresa: interpretar dados comerciais, financeiros e operacionais para fornecer respostas inteligentes, acionáveis e estrategicamente valiosas ao empreendedor.
 
@@ -80,12 +83,14 @@ Transformar dados empresariais em decisões estratégicas com impacto real. Iden
 - Use perguntas estratégicas para provocar reflexão e visão de dono.
 - Quando solicitado insight livre, analise indicadores e comportamento recente para identificar oportunidades, riscos ou desvios relevantes.`;
     
-    const shouldGenerateTitle = !hasTitle && !isGreetingOnFirstMessage;
-
     if (shouldGenerateTitle) {
         systemPrompt += `
         
-IMPORTANTE: A conversa ainda não tem um título. Baseado na pergunta do usuário, você DEVE gerar um título curto e conciso (máximo 5 palavras) para a conversa no campo "title" do JSON de saída.`;
+IMPORTANTE: A conversa ainda não tem um título. Baseado na pergunta do usuário, você DEVE gerar um título curto e conciso (máximo 5 palavras) para a conversa e retorná-lo no campo "title" do JSON de saída.`;
+    } else {
+        systemPrompt += `
+        
+IMPORTANTE: A conversa já possui um título. Não gere um novo título. O campo "title" no JSON de saída NÃO DEVE ser definido.`;
     }
 
     const llmResponse = await ai.generate({
@@ -118,14 +123,14 @@ IMPORTANTE: A conversa ainda não tem um título. Baseado na pergunta do usuári
     
     const updatedMessages = [...messages, assistantMessage];
     let currentConversationId = conversationId;
-    let finalTitle = existingConversation?.title || undefined;
+    let finalTitle = existingConversation?.title || 'Nova Conversa';
 
     if (shouldGenerateTitle && output.title) {
       finalTitle = output.title;
     }
 
     if (!conversationId) {
-        const result = await pulseService.createConversation(actor, finalTitle || '', updatedMessages);
+        const result = await pulseService.createConversation(actor, finalTitle, updatedMessages);
         currentConversationId = result.id;
     } else {
         await pulseService.updateConversation(actor, conversationId, updatedMessages, finalTitle);
@@ -133,7 +138,7 @@ IMPORTANTE: A conversa ainda não tem um título. Baseado na pergunta do usuári
     
     return {
         conversationId: currentConversationId!,
-        title: finalTitle,
+        title: finalTitle === 'Nova Conversa' ? undefined : finalTitle,
         response: assistantMessage,
     };
   }
