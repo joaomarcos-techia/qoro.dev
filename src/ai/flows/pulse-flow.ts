@@ -46,7 +46,6 @@ const pulseFlow = ai.defineFlow(
         existingConversation = await pulseService.getConversation({ conversationId, actor });
     }
     
-    // A conversa não tem título se o campo `title` for nulo, indefinido ou uma string vazia ou "Nova Conversa"
     const hasTitle = !!existingConversation?.title && existingConversation.title !== 'Nova Conversa';
 
     const history: MessageData[] = messages.slice(0, -1).map(message => ({
@@ -59,7 +58,6 @@ const pulseFlow = ai.defineFlow(
     
     const isGreeting = messages.length <= 1 && /^(oi|olá|ola|hello|hi|hey|bom dia|boa tarde|boa noite)/i.test(prompt.trim());
 
-    // Tenta gerar o título se a conversa não tiver um e a mensagem não for uma saudação simples.
     const shouldGenerateTitle = !hasTitle && !isGreeting;
 
     let systemPrompt = `Você é o QoroPulse— um agente de inteligência estratégica interna. Seu papel é agir como o cérebro analítico da empresa: interpretar dados comerciais, financeiros e operacionais para fornecer respostas inteligentes, acionáveis e estrategicamente valiosas ao empreendedor.
@@ -123,17 +121,17 @@ IMPORTANTE: A conversa já possui um título. Não gere um novo título. O campo
     
     const updatedMessages = [...messages, assistantMessage];
     let currentConversationId = conversationId;
-    let finalTitle = existingConversation?.title || 'Nova Conversa';
+    let finalTitle = existingConversation?.title;
 
     if (shouldGenerateTitle && output.title) {
       finalTitle = output.title;
     }
 
-    if (!conversationId) {
-        const result = await pulseService.createConversation(actor, finalTitle, updatedMessages);
+    if (!currentConversationId) {
+        const result = await pulseService.createConversation(actor, finalTitle || 'Nova Conversa', updatedMessages);
         currentConversationId = result.id;
     } else {
-        await pulseService.updateConversation(actor, conversationId, updatedMessages, finalTitle);
+        await pulseService.updateConversation(actor, currentConversationId, updatedMessages, finalTitle);
     }
     
     return {
