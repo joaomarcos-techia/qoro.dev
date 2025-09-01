@@ -23,7 +23,6 @@ export function Header() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { loadTasks } = useTasks();
 
   const fetchUserProfile = useCallback(async (user: FirebaseUser) => {
     setIsLoading(true);
@@ -44,7 +43,6 @@ export function Header() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         fetchUserProfile(user);
-        // REMOVED: loadTasks call was here causing issues.
       } else {
         setIsLoading(false);
         setUserProfile(null);

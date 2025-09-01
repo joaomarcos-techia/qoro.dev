@@ -47,8 +47,10 @@ export default function ListaPage() {
   }, [currentUser, loadTasks]);
 
   useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
+    if (currentUser) {
+      fetchAllData();
+    }
+  }, [currentUser, fetchAllData]);
 
   const handleModalOpenChange = (open: boolean) => {
     setIsModalOpen(open);
