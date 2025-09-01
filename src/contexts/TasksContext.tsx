@@ -78,7 +78,9 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       console.log('🔄 Tentando carregar tarefas...');
       const result = await listTasks({ actor: actorUid });
-      setTasks(result);
+      // Sort tasks on the client-side after fetching
+      const sortedTasks = result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setTasks(sortedTasks);
       circuitBreaker.recordSuccess();
       console.log('✅ Tarefas carregadas com sucesso');
       
