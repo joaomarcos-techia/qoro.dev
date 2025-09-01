@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
@@ -25,6 +26,7 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
+       // When user logs out, clear data and stop loading.
       if (!user) {
         setTasks([]);
         setLoading(false);
@@ -33,31 +35,35 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
-  const fetchTasks = useCallback(async () => {
-    if (!currentUser) {
-      setLoading(false);
-      setTasks([]);
-      return;
-    }
-    
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await listTasks({ actor: currentUser.uid });
-      const sortedTasks = result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setTasks(sortedTasks);
-    } catch (err: any) {
-      console.error('❌ Erro ao carregar tarefas no contexto:', err);
-      setError(err.message || 'Erro no servidor. Tente novamente em alguns minutos.');
-    } finally {
-      setLoading(false);
-    }
-  }, [currentUser]);
-
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks, refreshTrigger]);
+    // This function will only run when currentUser or refreshTrigger changes.
+    const fetchTasks = async () => {
+      // Guard clause: If there is no user, do nothing.
+      if (!currentUser) {
+        setLoading(false); // Ensure loading is false if there's no user
+        return;
+      }
+      
+      console.log('🔄 Tentando carregar tarefas...');
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await listTasks({ actor: currentUser.uid });
+        const sortedTasks = result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setTasks(sortedTasks);
+        console.log('✅ Tarefas carregadas com sucesso');
+      } catch (err: any) {
+        console.error('❌ Erro ao carregar tarefas no contexto:', err);
+        setError(err.message || 'Erro no servidor. Tente novamente em alguns minutos.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchTasks();
+  }, [currentUser, refreshTrigger]); // This effect now correctly depends on the user and the trigger.
+
+  // This function is now stable and will not cause re-renders.
   const refreshTasks = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
   }, []);
