@@ -192,4 +192,3 @@ export const getDashboardMetrics = async (actorUid: string): Promise<{ totalTask
         throw new Error("Falha ao carregar as métricas de tarefas.");
     }
 };
-
