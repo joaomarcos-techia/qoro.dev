@@ -71,7 +71,7 @@ export const listTasks = async (actorUid: string): Promise<z.infer<typeof TaskPr
     const { organizationId } = await getAdminAndOrg(actorUid);
     
     try {
-        // SIMPLIFIED QUERY: Removed .orderBy to prevent index-related errors.
+        // REMOVED ORDERBY TO PREVENT INDEX ERRORS. SORTING IS NOW DONE ON CLIENT.
         const tasksQuery = adminDb.collection('tasks')
             .where('companyId', '==', organizationId);
                                  
@@ -153,10 +153,10 @@ export const deleteTask = async (taskId: string, actorUid: string) => {
 }
 
 
-export const getDashboardMetrics = async (actorUid: string): Promise<{ totalTasks: number; completedTasks: number; inProgressTasks: number; pendingTasks: number; overdueTasks: number; tasksByPriority: Record<string, number> }> => {
+export const getDashboardMetrics = async (actorUid: string) => {
     const { organizationId } = await getAdminAndOrg(actorUid);
     const tasksRef = adminDb.collection('tasks').where('companyId', '==', organizationId);
-
+    
     try {
         const allTasksSnapshot = await tasksRef.get();
         const allTasks = allTasksSnapshot.docs.map(doc => doc.data());
@@ -165,6 +165,8 @@ export const getDashboardMetrics = async (actorUid: string): Promise<{ totalTask
         const completedTasks = allTasks.filter(t => t.status === 'done').length;
         const inProgressTasks = allTasks.filter(t => t.status === 'in_progress').length;
         const pendingTasks = allTasks.filter(t => ['todo', 'review'].includes(t.status)).length;
+        
+        // This calculation is now done on the client side to avoid complex queries
         const overdueTasks = allTasks.filter(t => t.status !== 'done' && t.dueDate && t.dueDate.toDate() < new Date()).length;
 
         const tasksByPriority = allTasks.reduce((acc, task) => {
@@ -181,9 +183,9 @@ export const getDashboardMetrics = async (actorUid: string): Promise<{ totalTask
             overdueTasks,
             tasksByPriority,
         };
-
     } catch (error) {
         console.error("Error fetching task dashboard metrics:", error);
         throw new Error("Falha ao carregar as métricas de tarefas.");
     }
 };
+
