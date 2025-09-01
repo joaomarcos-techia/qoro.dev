@@ -13,7 +13,7 @@ interface TasksContextType {
   refreshTasks: () => void;
 }
 
-const TasksContext = createContext<TasksType | null>(null);
+const TasksContext = createContext<TasksContextType | null>(null);
 
 export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
   const [tasks, setTasks] = useState<TaskProfile[]>([]);
@@ -35,31 +35,31 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
+  const fetchTasks = useCallback(async () => {
     if (!currentUser) {
       setLoading(false);
       return;
     }
 
-    const loadTasks = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        console.log('🔄 Tentando carregar tarefas...');
-        const result = await listTasks({ actor: currentUser.uid });
-        const sortedTasks = result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setTasks(sortedTasks);
-        console.log('✅ Tarefas carregadas com sucesso');
-      } catch (err: any) {
-        console.error('❌ Erro ao carregar tarefas no contexto:', err);
-        setError(err.message || 'Erro no servidor. Tente novamente em alguns minutos.');
-      } finally {
-        setLoading(false);
-      }
-    };
+    setLoading(true);
+    setError(null);
+    try {
+      console.log('🔄 Tentando carregar tarefas...');
+      const result = await listTasks({ actor: currentUser.uid });
+      const sortedTasks = result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setTasks(sortedTasks);
+      console.log('✅ Tarefas carregadas com sucesso');
+    } catch (err: any) {
+      console.error('❌ Erro ao carregar tarefas no contexto:', err);
+      setError(err.message || 'Erro no servidor. Tente novamente em alguns minutos.');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser]);
 
-    loadTasks();
-  }, [currentUser, refreshTrigger]);
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks, refreshTrigger]);
 
   const refreshTasks = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);

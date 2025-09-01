@@ -13,7 +13,7 @@ import {
 import { TaskForm } from '@/components/dashboard/task/TaskForm';
 import { TaskTable } from '@/components/dashboard/task/TaskTable';
 import { TaskProfile, UserProfile } from '@/ai/schemas';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useTasks } from '@/contexts/TasksContext';
 import { listUsers } from '@/ai/flows/user-management';
@@ -24,7 +24,7 @@ export default function ListaPage() {
   const { tasks, loading, error, refreshTasks } = useTasks();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
