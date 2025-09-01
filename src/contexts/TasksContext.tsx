@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
@@ -60,10 +59,8 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
 
   const loadTasks = useCallback(async (actorUid: string) => {
-    if (loading) {
-      console.log('⏳ Carregamento já em progresso - ignorando nova tentativa');
-      return;
-    }
+    // A verificação `loading` foi removida daqui para evitar dependência no useCallback.
+    // A lógica de bloqueio de chamada múltipla ainda funciona porque o botão/trigger fica desabilitado com o estado `loading`.
     
     if (!circuitBreaker.canAttempt()) {
       const timeLeft = Math.ceil(circuitBreaker.getTimeUntilNextAttempt() / 1000);
@@ -92,7 +89,7 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  }, [loading]);
+  }, []); // Array de dependências VAZIO para garantir que a função NUNCA seja recriada.
 
   const resetError = useCallback(() => {
     setError(null);

@@ -1,202 +1,216 @@
-
 'use server';
 /**
  * @fileOverview Task management services.
  */
-
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { TaskSchema, TaskProfileSchema, UpdateTaskSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import { adminDb } from '@/lib/firebase-admin';
 
-
-export const createTask = async (input: z.infer<typeof TaskSchema>, actorUid: string) => {
+export const createTask = async (
+  input: z.infer<typeof TaskSchema>, 
+  actorUid: string
+) => {
+  try {
     const { organizationId } = await getAdminAndOrg(actorUid);
-
     const newTaskData = {
-        ...input,
-        dueDate: input.dueDate ? new Date(input.dueDate) : null,
-        creatorId: actorUid,
-        companyId: organizationId,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-        completedAt: null,
-        subtasks: input.subtasks || [],
-        comments: input.comments || [],
-        recurrence: input.recurrence || null,
+      ...input,
+      dueDate: input.dueDate ? new Date(input.dueDate) : null,
+      creatorId: actorUid,
+      companyId: organizationId,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      completedAt: null,
+      subtasks: input.subtasks || [],
+      comments: input.comments || [],
+      recurrence: input.recurrence || null,
     };
-
     const taskRef = await adminDb.collection('tasks').add(newTaskData);
-
     return { id: taskRef.id };
+  } catch (error) {
+    console.error('🚨 Erro em createTask:', error);
+    throw new Error('Falha ao criar a tarefa.');
+  }
 };
 
-export const updateTask = async (taskId: string, input: z.infer<typeof UpdateTaskSchema>, actorUid: string) => {
+export const updateTask = async (
+  taskId: string, 
+  input: z.infer<typeof UpdateTaskSchema>, 
+  actorUid: string
+) => {
+  try {
     const { organizationId, userData } = await getAdminAndOrg(actorUid);
     const taskRef = adminDb.collection('tasks').doc(taskId);
-
     const taskDoc = await taskRef.get();
-    if (!taskDoc.exists || taskDoc.data()?.companyId !== organizationId) {
-        throw new Error('Tarefa não encontrada ou acesso negado.');
+    const data = taskDoc.data() || {};
+
+    if (!taskDoc.exists || data.companyId !== organizationId) {
+      throw new Error('Tarefa não encontrada ou acesso negado.');
     }
 
     const { id, comments, ...updateData } = input;
-    
-    const existingComments = taskDoc.data()?.comments || [];
-    const newComments = comments?.filter(c => !existingComments.some((ec: any) => ec.id === c.id)) || [];
+    const existingComments = Array.isArray(data.comments) ? data.comments : [];
+    const newComments = (comments || []).filter(c =>
+      !existingComments.some((ec: any) => ec.id === c.id)
+    );
 
-    newComments.forEach(comment => {
-        comment.authorId = actorUid;
-        comment.authorName = userData.name || userData.email;
-        comment.createdAt = new Date();
+    newComments.forEach(c => {
+      c.authorId = actorUid;
+      c.authorName = userData.name || userData.email;
+      c.createdAt = new Date();
     });
 
     await taskRef.update({
-        ...updateData,
-        dueDate: updateData.dueDate ? new Date(updateData.dueDate) : null,
-        updatedAt: FieldValue.serverTimestamp(),
-        comments: FieldValue.arrayUnion(...newComments)
+      ...updateData,
+      dueDate: updateData.dueDate ? new Date(updateData.dueDate) : null,
+      updatedAt: FieldValue.serverTimestamp(),
+      ...(newComments.length > 0 ? { comments: FieldValue.arrayUnion(...newComments) } : {})
     });
 
     if (input.subtasks) {
-        await taskRef.update({ subtasks: input.subtasks });
+      await taskRef.update({ subtasks: input.subtasks });
     }
-
 
     return { id: taskId };
+  } catch (error) {
+    console.error('🚨 Erro em updateTask:', error);
+    throw new Error('Falha ao atualizar a tarefa.');
+  }
 };
 
-export const listTasks = async (actorUid: string): Promise<z.infer<typeof TaskProfileSchema>[]> => {
+export const listTasks = async (
+  actorUid: string
+): Promise<z.infer<typeof TaskProfileSchema>[]> => {
+  try {
     const { organizationId } = await getAdminAndOrg(actorUid);
+    const snapshot = await adminDb.collection('tasks')
+      .where('companyId', '==', organizationId)
+      .get();
 
-    try {
-        const tasksQuery = adminDb.collection('tasks')
-            .where('companyId', '==', organizationId);
+    if (snapshot.empty) return [];
 
-        const tasksSnapshot = await tasksQuery.get();
+    const tasks = snapshot.docs.flatMap(doc => {
+      const data = doc.data() as any;
+      try {
+        const safe = (path: any) => path?.toDate?.().toISOString() ?? null;
 
-        if (tasksSnapshot.empty) {
-            return [];
-        }
+        return [TaskProfileSchema.parse({
+          id: doc.id,
+          ...data,
+          dueDate: safe(data.dueDate),
+          completedAt: safe(data.completedAt),
+          creatorId: data.creatorId,
+          createdAt: safe(data.createdAt),
+          updatedAt: safe(data.updatedAt),
+          responsibleUserId: data.responsibleUserId ?? undefined,
+          subtasks: Array.isArray(data.subtasks) ? data.subtasks : [],
+          comments: Array.isArray(data.comments) 
+            ? data.comments.map((c: any) => ({
+                ...c,
+                createdAt: safe(c.createdAt),
+              })) 
+            : [],
+        })];
+      } catch (err) {
+        console.error('❌ Erro ao parsear tarefa:', doc.id, err);
+        return [];
+      }
+    });
 
-        const tasks: z.infer<typeof TaskProfileSchema>[] = tasksSnapshot.docs.flatMap(doc => {
-            const data = doc.data();
-
-            try {
-                const dueDate = data.dueDate?.toDate().toISOString() ?? null;
-                const completedAt = data.completedAt?.toDate().toISOString() ?? null;
-
-                return [TaskProfileSchema.parse({
-                    id: doc.id,
-                    ...data,
-                    dueDate,
-                    completedAt,
-                    creatorId: data.creatorId,
-                    createdAt: data.createdAt?.toDate().toISOString() ?? null,
-                    updatedAt: data.updatedAt?.toDate().toISOString() ?? null,
-                    responsibleUserId: data.responsibleUserId || undefined,
-                    subtasks: data.subtasks || [],
-                    comments: (data.comments || []).map((c: any) => ({
-                        ...c,
-                        createdAt: c.createdAt?.toDate().toISOString() ?? null,
-                    })),
-                })];
-            } catch (err) {
-                console.error("❌ Erro ao parsear task:", doc.id, err);
-                return []; // Ignora esta task com erro
-            }
-        });
-
-        return tasks;
-
-    } catch (error: any) {
-        console.error("🔥 Erro crítico em listTasks:", error, error.stack);
-        throw new Error("Falha ao carregar tarefas. Ocorreu um erro no servidor.");
-    }
+    return tasks;
+  } catch (error) {
+    console.error('🔥 Erro crítico em listTasks:', error);
+    throw new Error('Falha ao carregar tarefas.');
+  }
 };
 
 export const updateTaskStatus = async (
-    taskId: string, 
-    status: z.infer<typeof TaskProfileSchema>['status'], 
-    actorUid: string
+  taskId: string, 
+  status: z.infer<typeof TaskProfileSchema>['status'], 
+  actorUid: string
 ) => {
+  try {
     const { organizationId } = await getAdminAndOrg(actorUid);
     const taskRef = adminDb.collection('tasks').doc(taskId);
-    
     const taskDoc = await taskRef.get();
-    if (!taskDoc.exists || taskDoc.data()?.companyId !== organizationId) {
-        throw new Error('Tarefa não encontrada ou acesso negado.');
+    const data = taskDoc.data() || {};
+
+    if (!taskDoc.exists || data.companyId !== organizationId) {
+      throw new Error('Tarefa não encontrada ou acesso negado.');
     }
 
-    const updateData: { status: string, completedAt?: FieldValue | null, updatedAt: FieldValue } = {
-        status: status,
-        updatedAt: FieldValue.serverTimestamp(),
+    const updatePayload: any = {
+      status,
+      updatedAt: FieldValue.serverTimestamp(),
+      completedAt: status === 'done' ? FieldValue.serverTimestamp() : null,
     };
 
-    if (status === 'done') {
-        updateData.completedAt = FieldValue.serverTimestamp();
-    } else {
-        updateData.completedAt = null;
-    }
-
-    await taskRef.update(updateData);
+    await taskRef.update(updatePayload);
 
     return { id: taskId, status };
+  } catch (error) {
+    console.error('🚨 Erro em updateTaskStatus:', error);
+    throw new Error('Falha ao atualizar status da tarefa.');
+  }
 };
 
-export const deleteTask = async (taskId: string, actorUid: string) => {
+export const deleteTask = async (
+  taskId: string, 
+  actorUid: string
+) => {
+  try {
     const { organizationId } = await getAdminAndOrg(actorUid);
     const taskRef = adminDb.collection('tasks').doc(taskId);
-    
     const taskDoc = await taskRef.get();
-    if (!taskDoc.exists || taskDoc.data()?.companyId !== organizationId) {
-        throw new Error('Tarefa não encontrada ou acesso negado.');
+    const data = taskDoc.data() || {};
+
+    if (!taskDoc.exists || data.companyId !== organizationId) {
+      throw new Error('Tarefa não encontrada ou acesso negado.');
     }
 
     await taskRef.delete();
-
     return { id: taskId, success: true };
-}
-
+  } catch (error) {
+    console.error('🚨 Erro em deleteTask:', error);
+    throw new Error('Falha ao excluir a tarefa.');
+  }
+};
 
 export const getDashboardMetrics = async (actorUid: string) => {
+  try {
     const { organizationId } = await getAdminAndOrg(actorUid);
-    const tasksRef = adminDb.collection('tasks').where('companyId', '==', organizationId);
-    
-    try {
-        const totalTasksSnapshot = await tasksRef.count().get();
-        const completedTasksSnapshot = await tasksRef.where('status', '==', 'done').count().get();
-        const inProgressTasksSnapshot = await tasksRef.where('status', '==', 'in_progress').count().get();
-        const pendingTasksSnapshot = await tasksRef.where('status', 'in', ['todo', 'review']).count().get();
-        
-        // This part remains tricky without an index, so we handle it on the client
-        // or accept a potentially less performant query for this specific metric.
-        // For now, we will perform it on all tasks fetched separately.
-        const allTasksForOverdueCheck = await tasksRef.get();
-        const overdueTasks = allTasksForOverdueCheck.docs.filter(doc => {
-            const data = doc.data();
-            return data.status !== 'done' && data.dueDate && data.dueDate.toDate() < new Date()
-        }).length;
-        
-        // This is inefficient but avoids complex indexed queries.
-        const tasksByPriority = allTasksForOverdueCheck.docs.reduce((acc, doc) => {
-            const task = doc.data();
-            const priority = task.priority || 'medium';
-            acc[priority] = (acc[priority] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
+    const baseRef = adminDb.collection('tasks').where('companyId', '==', organizationId);
 
-        return {
-            totalTasks: totalTasksSnapshot.data().count,
-            completedTasks: completedTasksSnapshot.data().count,
-            inProgressTasks: inProgressTasksSnapshot.data().count,
-            pendingTasks: pendingTasksSnapshot.data().count,
-            overdueTasks,
-            tasksByPriority,
-        };
-    } catch (error) {
-        console.error("Error fetching task dashboard metrics:", error);
-        throw new Error("Falha ao carregar as métricas de tarefas.");
-    }
+    const [totalSnap, doneSnap, inProgSnap, pendingSnap, allSnap] = await Promise.all([
+      baseRef.count().get(),
+      baseRef.where('status', '==', 'done').count().get(),
+      baseRef.where('status', '==', 'in_progress').count().get(),
+      baseRef.where('status', 'in', ['todo', 'review']).count().get(),
+      baseRef.get(),
+    ]);
+
+    const allDocs = allSnap.docs.map(d => d.data() as any);
+    const overdueTasks = allDocs.filter(d =>
+      d.status !== 'done' && d.dueDate?.toDate?.() < new Date()
+    ).length;
+
+    const tasksByPriority = allDocs.reduce((acc: Record<string, number>, d) => {
+      const prio = d.priority || 'medium';
+      acc[prio] = (acc[prio] || 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      totalTasks: totalSnap.data().count,
+      completedTasks: doneSnap.data().count,
+      inProgressTasks: inProgSnap.data().count,
+      pendingTasks: pendingSnap.data().count,
+      overdueTasks,
+      tasksByPriority,
+    };
+  } catch (error) {
+    console.error('🚨 Erro em getDashboardMetrics:', error);
+    throw new Error('Falha ao carregar métricas.');
+  }
 };
