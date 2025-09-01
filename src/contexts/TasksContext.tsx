@@ -26,7 +26,7 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
-       // When user logs out, clear data and stop loading.
+       // Quando o usuário desloga, limpa os dados.
       if (!user) {
         setTasks([]);
         setLoading(false);
@@ -35,18 +35,23 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
+  const refreshTasks = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
+
   useEffect(() => {
-    // This function will only run when currentUser or refreshTrigger changes.
     const fetchTasks = async () => {
-      // Guard clause: If there is no user, do nothing.
+      // Guarda para não fazer nada se não houver usuário.
+      // O useEffect será re-executado quando o usuário mudar.
       if (!currentUser) {
-        setLoading(false); // Ensure loading is false if there's no user
+        setLoading(false); // Garante que o estado de loading não fique preso.
         return;
       }
       
       console.log('🔄 Tentando carregar tarefas...');
       setLoading(true);
       setError(null);
+
       try {
         const result = await listTasks({ actor: currentUser.uid });
         const sortedTasks = result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -61,12 +66,9 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     fetchTasks();
-  }, [currentUser, refreshTrigger]); // This effect now correctly depends on the user and the trigger.
-
-  // This function is now stable and will not cause re-renders.
-  const refreshTasks = useCallback(() => {
-    setRefreshTrigger(prev => prev + 1);
-  }, []);
+  // A dependência em currentUser garante que a busca ocorra quando o usuário logar.
+  // A dependência em refreshTrigger garante que a busca ocorra ao chamar refreshTasks().
+  }, [currentUser, refreshTrigger]);
   
   return (
     <TasksContext.Provider value={{ tasks, loading, error, refreshTasks }}>
