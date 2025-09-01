@@ -38,11 +38,9 @@ function HeaderContent() {
   }, []);
 
   const navLinks = [
-    { href: '/#home', label: 'Início' },
     { href: '/#sobre', label: 'Sobre' },
+    { href: '/#para-quem', label: 'Para Quem é?' },
     { href: '/#precos', label: 'Planos' },
-    { href: '/#depoimentos', label: 'Testemunhos' },
-    { href: '/#servicos', label: 'Serviços' },
     { href: '/#contato', label: 'Contato' },
   ];
   
