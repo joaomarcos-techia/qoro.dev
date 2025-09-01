@@ -73,8 +73,6 @@ export const listTasks = async (actorUid: string): Promise<z.infer<typeof TaskPr
     const { organizationId } = await getAdminAndOrg(actorUid);
     
     try {
-        // SIMPLIFIED QUERY: Removed orderBy to prevent index requirement issues.
-        // Sorting will be handled on the client-side.
         const tasksQuery = adminDb.collection('tasks')
             .where('companyId', '==', organizationId);
                                  
@@ -156,34 +154,55 @@ export const deleteTask = async (taskId: string, actorUid: string) => {
 
 
 export const getDashboardMetrics = async (actorUid: string): Promise<{ totalTasks: number; completedTasks: number; inProgressTasks: number; pendingTasks: number; overdueTasks: number; tasksByPriority: Record<string, number> }> => {
-    try {
-        const allTasks = await listTasks(actorUid);
+    const { organizationId } = await getAdminAndOrg(actorUid);
+    const tasksRef = adminDb.collection('tasks').where('companyId', '==', organizationId);
 
-        const totalTasks = allTasks.length;
-        const completedTasks = allTasks.filter(t => t.status === 'done').length;
-        const inProgressTasks = allTasks.filter(t => t.status === 'in_progress').length;
-        const pendingTasks = allTasks.filter(t => t.status === 'todo' || t.status === 'review').length;
-        const overdueTasks = allTasks.filter(t => {
-            if (t.status === 'done' || !t.dueDate) return false;
-            try {
-                return new Date(t.dueDate) < new Date();
-            } catch {
-                return false;
-            }
-        }).length;
+    try {
+        const totalPromise = tasksRef.count().get();
+        const completedPromise = tasksRef.where('status', '==', 'done').count().get();
+        const inProgressPromise = tasksRef.where('status', '==', 'in_progress').count().get();
+        const pendingPromise = tasksRef.where('status', 'in', ['todo', 'review']).count().get();
         
-        const tasksByPriority = allTasks.reduce((acc, task) => {
+        // Firestore doesn't support inequality filters on different fields,
+        // so we fetch overdue tasks and filter in memory. This is less efficient
+        // but avoids complex index requirements.
+        const overduePromise = tasksRef
+            .where('status', '!=', 'done')
+            .where('dueDate', '<', new Date())
+            .get();
+
+        // For priority, we must fetch all tasks and aggregate.
+        const allTasksPromise = tasksRef.get();
+
+        const [
+            totalSnapshot,
+            completedSnapshot,
+            inProgressSnapshot,
+            pendingSnapshot,
+            overdueSnapshot,
+            allTasksSnapshot,
+        ] = await Promise.all([
+            totalPromise,
+            completedPromise,
+            inProgressPromise,
+            pendingPromise,
+            overduePromise,
+            allTasksPromise,
+        ]);
+
+        const tasksByPriority = allTasksSnapshot.docs.reduce((acc, doc) => {
+            const task = doc.data();
             const priority = task.priority || 'medium';
             acc[priority] = (acc[priority] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
 
         return {
-            totalTasks,
-            completedTasks,
-            inProgressTasks,
-            pendingTasks,
-            overdueTasks,
+            totalTasks: totalSnapshot.data().count,
+            completedTasks: completedSnapshot.data().count,
+            inProgressTasks: inProgressSnapshot.data().count,
+            pendingTasks: pendingSnapshot.data().count,
+            overdueTasks: overdueSnapshot.size,
             tasksByPriority,
         };
 
