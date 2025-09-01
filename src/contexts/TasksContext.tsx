@@ -24,40 +24,36 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    // Apenas monitora o estado de autenticação
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
+      if (!user) {
+        // Clear data and stop loading if user logs out
+        setTasks([]);
+        setLoading(false);
+      }
     });
     return () => unsubscribe();
   }, []);
 
   const refreshTasks = useCallback(() => {
-    // Função estável para disparar a atualização
     setRefreshTrigger(prev => prev + 1);
   }, []);
 
   useEffect(() => {
-    // Este useEffect é o único responsável por buscar os dados.
-    // Ele executa quando o usuário muda (login/logout) ou quando o refresh é acionado.
     const fetchTasks = async () => {
       if (!currentUser) {
-        setTasks([]);
+        // Don't attempt to fetch if there is no user
         setLoading(false);
         return;
       }
       
       setLoading(true);
       setError(null);
-      console.log('🔄 Tentando carregar tarefas...');
+      console.log(`🔄 Tentando carregar tarefas... (Trigger: ${refreshTrigger})`);
       try {
         const result = await listTasks({ actor: currentUser.uid });
-        const sortedTasks = result.sort((a, b) => {
-            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-            return dateB - dateA;
-        });
-        setTasks(sortedTasks);
-        console.log('✅ Tarefas carregadas com sucesso');
+        setTasks(result);
+        console.log(`✅ Tarefas carregadas com sucesso: ${result.length}`);
       } catch (err: any) {
         console.error('❌ Erro ao carregar tarefas no contexto:', err);
         setError(err.message || 'Erro no servidor. Tente novamente em alguns minutos.');
@@ -67,6 +63,7 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
     
+    // This effect runs whenever the user logs in/out or when refreshTasks is called.
     fetchTasks();
   }, [currentUser, refreshTrigger]);
   

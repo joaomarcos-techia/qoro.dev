@@ -1,8 +1,9 @@
+
 'use server';
 /**
  * @fileOverview Task management services.
  */
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { TaskSchema, TaskProfileSchema, UpdateTaskSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
@@ -61,11 +62,16 @@ export const updateTask = async (
       c.createdAt = new Date();
     });
 
+    const commentsWithISODates = newComments.map(c => ({
+        ...c,
+        createdAt: (c.createdAt as Date).toISOString(),
+    }));
+
     await taskRef.update({
       ...updateData,
       dueDate: updateData.dueDate ? new Date(updateData.dueDate) : null,
       updatedAt: FieldValue.serverTimestamp(),
-      ...(newComments.length > 0 ? { comments: FieldValue.arrayUnion(...newComments) } : {})
+      ...(commentsWithISODates.length > 0 ? { comments: FieldValue.arrayUnion(...commentsWithISODates) } : {})
     });
 
     if (input.subtasks) {
@@ -79,6 +85,18 @@ export const updateTask = async (
   }
 };
 
+const toISOStringSafe = (date: any): string | null => {
+  if (!date) return null;
+  if (date instanceof Timestamp) return date.toDate().toISOString();
+  if (date instanceof Date) return date.toISOString();
+  try {
+    const parsed = new Date(date);
+    if (!isNaN(parsed.getTime())) return parsed.toISOString();
+  } catch (e) {}
+  return null;
+};
+
+
 export const listTasks = async (
   actorUid: string
 ): Promise<z.infer<typeof TaskProfileSchema>[]> => {
@@ -86,37 +104,38 @@ export const listTasks = async (
     const { organizationId } = await getAdminAndOrg(actorUid);
     const snapshot = await adminDb.collection('tasks')
       .where('companyId', '==', organizationId)
+      .orderBy('createdAt', 'desc')
       .get();
 
     if (snapshot.empty) return [];
 
-    const tasks = snapshot.docs.flatMap(doc => {
-      const data = doc.data() as any;
-      try {
-        const safe = (path: any) => path?.toDate?.().toISOString() ?? null;
-
-        return [TaskProfileSchema.parse({
-          id: doc.id,
-          ...data,
-          dueDate: safe(data.dueDate),
-          completedAt: safe(data.completedAt),
-          creatorId: data.creatorId,
-          createdAt: safe(data.createdAt),
-          updatedAt: safe(data.updatedAt),
-          responsibleUserId: data.responsibleUserId ?? undefined,
-          subtasks: Array.isArray(data.subtasks) ? data.subtasks : [],
-          comments: Array.isArray(data.comments) 
-            ? data.comments.map((c: any) => ({
-                ...c,
-                createdAt: safe(c.createdAt),
-              })) 
-            : [],
-        })];
-      } catch (err) {
-        console.error('❌ Erro ao parsear tarefa:', doc.id, err);
-        return [];
-      }
-    });
+    const tasks = snapshot.docs
+      .map(doc => {
+        const data = doc.data() as any;
+        try {
+          const parsedData = {
+            id: doc.id,
+            ...data,
+            createdAt: toISOStringSafe(data.createdAt),
+            updatedAt: toISOStringSafe(data.updatedAt),
+            dueDate: toISOStringSafe(data.dueDate),
+            completedAt: toISOStringSafe(data.completedAt),
+            responsibleUserId: data.responsibleUserId || undefined,
+            subtasks: Array.isArray(data.subtasks) ? data.subtasks : [],
+            comments: Array.isArray(data.comments) 
+              ? data.comments.map((c: any) => ({
+                  ...c,
+                  createdAt: toISOStringSafe(c.createdAt),
+                })) 
+              : [],
+          };
+          return TaskProfileSchema.parse(parsedData);
+        } catch (err) {
+          console.error('❌ Erro ao parsear tarefa:', doc.id, err);
+          return null; // Retorna null se uma tarefa específica falhar no parse
+        }
+      })
+      .filter((task): task is z.infer<typeof TaskProfileSchema> => task !== null); // Filtra os nulos
 
     return tasks;
   } catch (error) {
