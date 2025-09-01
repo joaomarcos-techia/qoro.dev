@@ -60,15 +60,16 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
 
   const loadTasks = useCallback(async (actorUid: string) => {
-    if (!circuitBreaker.canAttempt()) {
-      const timeLeft = Math.ceil(circuitBreaker.getTimeUntilNextAttempt() / 1000);
-      setError(`Muitas tentativas falharam. Aguarde ${timeLeft}s.`);
-      console.log(`⛔ Circuit breaker bloqueou tentativa. ${timeLeft}s restantes.`);
-      return;
-    }
-
     if (loading) {
       console.log('⏳ Carregamento já em progresso - ignorando nova tentativa');
+      return;
+    }
+    
+    if (!circuitBreaker.canAttempt()) {
+      const timeLeft = Math.ceil(circuitBreaker.getTimeUntilNextAttempt() / 1000);
+      const errorMessage = `Muitas tentativas falharam. Aguarde ${timeLeft}s.`;
+      setError(errorMessage);
+      console.log(`⛔ Circuit breaker bloqueou tentativa. ${timeLeft}s restantes.`);
       return;
     }
 

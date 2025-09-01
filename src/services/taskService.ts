@@ -71,9 +71,9 @@ export const listTasks = async (actorUid: string): Promise<z.infer<typeof TaskPr
     const { organizationId } = await getAdminAndOrg(actorUid);
     
     try {
-        // REMOVED ORDERBY TO PREVENT INDEX ERRORS. SORTING IS NOW DONE ON CLIENT.
         const tasksQuery = adminDb.collection('tasks')
-            .where('companyId', '==', organizationId);
+            .where('companyId', '==', organizationId)
+            .orderBy('__name__', 'desc'); // Order by document ID for stability, requires no composite index.
                                  
         const tasksSnapshot = await tasksQuery.get();
         
@@ -104,7 +104,6 @@ export const listTasks = async (actorUid: string): Promise<z.infer<typeof TaskPr
         return tasks;
     } catch (error: any) {
         console.error("Critical error in listTasks:", error, error.stack);
-        // Throw a generic error to the client but log the details on the server.
         throw new Error("Falha ao carregar tarefas. Ocorreu um erro no servidor.");
     }
 };
@@ -158,28 +157,33 @@ export const getDashboardMetrics = async (actorUid: string) => {
     const tasksRef = adminDb.collection('tasks').where('companyId', '==', organizationId);
     
     try {
-        const allTasksSnapshot = await tasksRef.get();
-        const allTasks = allTasksSnapshot.docs.map(doc => doc.data());
-
-        const totalTasks = allTasks.length;
-        const completedTasks = allTasks.filter(t => t.status === 'done').length;
-        const inProgressTasks = allTasks.filter(t => t.status === 'in_progress').length;
-        const pendingTasks = allTasks.filter(t => ['todo', 'review'].includes(t.status)).length;
+        const totalTasksSnapshot = await tasksRef.count().get();
+        const completedTasksSnapshot = await tasksRef.where('status', '==', 'done').count().get();
+        const inProgressTasksSnapshot = await tasksRef.where('status', '==', 'in_progress').count().get();
+        const pendingTasksSnapshot = await tasksRef.where('status', 'in', ['todo', 'review']).count().get();
         
-        // This calculation is now done on the client side to avoid complex queries
-        const overdueTasks = allTasks.filter(t => t.status !== 'done' && t.dueDate && t.dueDate.toDate() < new Date()).length;
-
-        const tasksByPriority = allTasks.reduce((acc, task) => {
+        // This part remains tricky without an index, so we handle it on the client
+        // or accept a potentially less performant query for this specific metric.
+        // For now, we will perform it on all tasks fetched separately.
+        const allTasksForOverdueCheck = await tasksRef.get();
+        const overdueTasks = allTasksForOverdueCheck.docs.filter(doc => {
+            const data = doc.data();
+            return data.status !== 'done' && data.dueDate && data.dueDate.toDate() < new Date()
+        }).length;
+        
+        // This is inefficient but avoids complex indexed queries.
+        const tasksByPriority = allTasksForOverdueCheck.docs.reduce((acc, doc) => {
+            const task = doc.data();
             const priority = task.priority || 'medium';
             acc[priority] = (acc[priority] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
 
         return {
-            totalTasks,
-            completedTasks,
-            inProgressTasks,
-            pendingTasks,
+            totalTasks: totalTasksSnapshot.data().count,
+            completedTasks: completedTasksSnapshot.data().count,
+            inProgressTasks: inProgressTasksSnapshot.data().count,
+            pendingTasks: pendingTasksSnapshot.data().count,
             overdueTasks,
             tasksByPriority,
         };
@@ -188,4 +192,3 @@ export const getDashboardMetrics = async (actorUid: string) => {
         throw new Error("Falha ao carregar as métricas de tarefas.");
     }
 };
-
