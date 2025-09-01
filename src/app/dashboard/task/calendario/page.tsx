@@ -1,12 +1,6 @@
-
 'use client';
-import type { Metadata } from 'next';
-import { TaskCalendar } from '@/components/dashboard/task/TaskCalendar';
 
-// This metadata is not used in client components but is good practice.
-// export const metadata: Metadata = {
-//   title: 'QoroTask | Calendário',
-// };
+import { TaskCalendar } from '@/components/dashboard/task/TaskCalendar';
 
 export default function CalendarioPage() {
     return (

@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,7 +21,7 @@ import { listUsers } from '@/ai/flows/user-management';
 export default function ListaPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TaskProfile | null>(null);
-  const { tasks, loading, error, loadTasks } = useTasks();
+  const { tasks, loading, error, refreshTasks } = useTasks();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -34,28 +33,15 @@ export default function ListaPage() {
     return () => unsubscribe();
   }, []);
 
-  // Centralized data fetching logic for this page
-  const fetchAllData = useCallback(() => {
+  useEffect(() => {
     if (currentUser) {
-        // Only call loadTasks if it's not already loading
-        if(!loading) {
-            loadTasks(currentUser.uid);
-        }
-        
         setIsLoadingUsers(true);
         listUsers({ actor: currentUser.uid })
           .then(setUsers)
           .catch((err) => console.error("Failed to load users", err))
           .finally(() => setIsLoadingUsers(false));
     }
-  }, [currentUser, loadTasks, loading]);
-
-  useEffect(() => {
-    // Fetch data when the component mounts and the user is available
-    if (currentUser) {
-      fetchAllData();
-    }
-  }, [currentUser, fetchAllData]);
+  }, [currentUser]);
 
   const handleModalOpenChange = (open: boolean) => {
     setIsModalOpen(open);
@@ -64,12 +50,9 @@ export default function ListaPage() {
     }
   };
 
-  // This function is called after creating/editing a task to refresh the data
   const handleTaskAction = () => {
     handleModalOpenChange(false);
-    if (currentUser) {
-        loadTasks(currentUser.uid); // Force a refresh
-    }
+    refreshTasks();
   };
 
   const handleEditTask = (task: TaskProfile) => {
@@ -118,7 +101,7 @@ export default function ListaPage() {
             users={users} 
             isLoading={loading || isLoadingUsers} 
             error={error} 
-            onRefresh={fetchAllData}
+            onRefresh={refreshTasks}
             onEdit={handleEditTask}
         />
       </div>

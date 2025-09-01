@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useTransition, useCallback } from 'react';
@@ -9,13 +8,13 @@ import { auth } from '@/lib/firebase';
 import { updateTaskStatus, deleteTask } from '@/ai/flows/task-management';
 import { listUsers } from '@/ai/flows/user-management';
 import { TaskProfile, UserProfile } from '@/ai/schemas';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TaskForm } from '@/components/dashboard/task/TaskForm';
 import { Button } from '@/components/ui/button';
 import { useTasks } from '@/contexts/TasksContext';
 
 export default function ProgressoPage() {
-  const { tasks, loading, error, loadTasks } = useTasks();
+  const { tasks, loading, error, refreshTasks } = useTasks();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
@@ -32,21 +31,15 @@ export default function ProgressoPage() {
     return () => unsubscribe();
   }, []);
 
-  const fetchAllData = useCallback(() => {
+  useEffect(() => {
     if (currentUser) {
-        loadTasks(currentUser.uid);
-        
         setIsLoadingUsers(true);
         listUsers({ actor: currentUser.uid })
           .then(setUsers)
           .catch((err) => console.error("Failed to load users", err))
           .finally(() => setIsLoadingUsers(false));
     }
-  }, [currentUser, loadTasks]);
-
-  useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
+  }, [currentUser]);
 
   const showTemporaryFeedback = (message: string, type: 'success' | 'error' = 'success') => {
     setFeedback({ type, message });
@@ -64,9 +57,7 @@ export default function ProgressoPage() {
 
   const handleTaskAction = () => {
     handleModalOpenChange(false);
-    if(currentUser) {
-        loadTasks(currentUser.uid);
-    }
+    refreshTasks();
   };
 
   const handleEditTask = (task: TaskProfile) => {
@@ -85,7 +76,7 @@ export default function ProgressoPage() {
         
         try {
             await updateTaskStatus({ taskId, status: newStatus, actor: currentUser.uid });
-            loadTasks(currentUser.uid);
+            refreshTasks();
             if (newStatus === 'done') {
                 showTemporaryFeedback("Tarefa concluída!");
             }
@@ -102,7 +93,7 @@ export default function ProgressoPage() {
         
         try {
             await deleteTask({ taskId, actor: currentUser.uid });
-            loadTasks(currentUser.uid);
+            refreshTasks();
             showTemporaryFeedback("Tarefa excluída com sucesso.");
         } catch (err) {
             console.error("Failed to delete task", err);
@@ -153,10 +144,6 @@ export default function ProgressoPage() {
   return (
     <div className='h-[calc(100vh-120px)] flex flex-col'>
         <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
-          <DialogTrigger asChild>
-            {/* O gatilho agora é o botão principal da página */}
-            <span />
-          </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle className="text-2xl font-bold text-foreground">{selectedTask ? 'Editar Tarefa' : 'Criar Nova Tarefa'}</DialogTitle>

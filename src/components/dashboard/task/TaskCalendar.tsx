@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,8 +6,6 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import { TaskProfile } from '@/ai/schemas';
 import { Loader2, ServerCrash } from 'lucide-react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 
 interface CalendarEvent {
   id: string;
@@ -31,21 +28,7 @@ const priorityColors: Record<TaskProfile['priority'], { bg: string; border: stri
 };
 
 export function TaskCalendar() {
-  const { tasks, loading, error, loadTasks } = useTasks();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (currentUser && tasks.length === 0) {
-      loadTasks(currentUser.uid);
-    }
-  }, [currentUser, tasks.length, loadTasks]);
+  const { tasks, loading, error } = useTasks();
 
   const calendarEvents = tasks
     .filter(task => !!task.dueDate)
@@ -101,9 +84,9 @@ export function TaskCalendar() {
             day:      'Dia',
             list:     'Lista'
         }}
-        height="auto" // Ensures the calendar fits within its container
+        height="auto"
         eventDisplay="block"
-        eventTimeFormat={{ // Hides the time for all-day events
+        eventTimeFormat={{
             hour: '2-digit',
             minute: '2-digit',
             meridiem: false

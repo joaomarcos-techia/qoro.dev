@@ -1,108 +1,72 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { listTasks } from '@/ai/flows/task-management';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { TaskProfile } from '@/ai/schemas';
 
-
 interface TasksContextType {
   tasks: TaskProfile[];
   loading: boolean;
   error: string | null;
-  loadTasks: (actorUid: string) => Promise<void>;
-  resetError: () => void;
+  refreshTasks: () => void;
 }
 
-const TasksContext = createContext<TasksContextType | null>(null);
-
-class CircuitBreaker {
-  private failures = 0;
-  private nextAttempt = Date.now();
-  private timeout = 60000; // 1 minuto
-  private maxFailures = 3; 
-
-  canAttempt(): boolean {
-    if (this.failures >= this.maxFailures) {
-      if (Date.now() >= this.nextAttempt) {
-        this.failures = 0; // Reset after timeout
-        return true;
-      }
-      return false;
-    }
-    return true;
-  }
-
-  recordFailure(): void {
-    this.failures++;
-    if (this.failures >= this.maxFailures) {
-      this.nextAttempt = Date.now() + this.timeout;
-      console.log(`🚨 Circuit breaker ativo. Próxima tentativa em ${this.timeout / 1000}s`);
-    }
-  }
-
-  recordSuccess(): void {
-    this.failures = 0;
-  }
-
-  getTimeUntilNextAttempt(): number {
-    return Math.max(0, this.nextAttempt - Date.now());
-  }
-}
-
-const circuitBreaker = new CircuitBreaker();
+const TasksContext = createContext<TasksType | null>(null);
 
 export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
   const [tasks, setTasks] = useState<TaskProfile[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const loadTasks = useCallback(async (actorUid: string) => {
-    // A verificação `loading` foi removida daqui para evitar dependência no useCallback.
-    // A lógica de bloqueio de chamada múltipla ainda funciona porque o botão/trigger fica desabilitado com o estado `loading`.
-    
-    if (!circuitBreaker.canAttempt()) {
-      const timeLeft = Math.ceil(circuitBreaker.getTimeUntilNextAttempt() / 1000);
-      const errorMessage = `Muitas tentativas falharam. Aguarde ${timeLeft}s.`;
-      setError(errorMessage);
-      console.log(`⛔ Circuit breaker bloqueou tentativa. ${timeLeft}s restantes.`);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
+        setTasks([]);
+        setLoading(false);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
-    setError(null);
-    
-    try {
-      console.log('🔄 Tentando carregar tarefas...');
-      const result = await listTasks({ actor: actorUid });
-      // Sort tasks on the client-side after fetching
-      const sortedTasks = result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setTasks(sortedTasks);
-      circuitBreaker.recordSuccess();
-      console.log('✅ Tarefas carregadas com sucesso');
-      
-    } catch (err: any) {
-      console.error('❌ Erro ao carregar tarefas no contexto:', err);
-      circuitBreaker.recordFailure();
-      setError(err.message || 'Erro no servidor. Tente novamente em alguns minutos.');
-    } finally {
-      setLoading(false);
-    }
-  }, []); // Array de dependências VAZIO para garantir que a função NUNCA seja recriada.
+    const loadTasks = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        console.log('🔄 Tentando carregar tarefas...');
+        const result = await listTasks({ actor: currentUser.uid });
+        const sortedTasks = result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setTasks(sortedTasks);
+        console.log('✅ Tarefas carregadas com sucesso');
+      } catch (err: any) {
+        console.error('❌ Erro ao carregar tarefas no contexto:', err);
+        setError(err.message || 'Erro no servidor. Tente novamente em alguns minutos.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const resetError = useCallback(() => {
-    setError(null);
+    loadTasks();
+  }, [currentUser, refreshTrigger]);
+
+  const refreshTasks = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
   }, []);
-
+  
   return (
-    <TasksContext.Provider value={{ 
-      tasks, 
-      loading, 
-      error, 
-      loadTasks, 
-      resetError 
-    }}>
+    <TasksContext.Provider value={{ tasks, loading, error, refreshTasks }}>
       {children}
     </TasksContext.Provider>
   );
