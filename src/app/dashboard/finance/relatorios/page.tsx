@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo, useTransition, useRef, useCallback } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { getDashboardMetrics, listTransactions, getOrganizationDetails } from '@/ai/flows/finance-management';
+import { getDashboardMetrics, listTransactions } from '@/ai/flows/finance-management';
+import { getOrganizationDetails } from '@/ai/flows/user-management';
 import { TransactionProfile, OrganizationProfile } from '@/ai/schemas';
 import { Bar, BarChart as BarChartPrimitive, CartesianGrid, ResponsiveContainer, Pie, PieChart as PieChartPrimitive, Cell } from 'recharts';
 import CustomXAxis from '@/components/utils/CustomXAxis';
@@ -15,7 +16,7 @@ import { DollarSign, ArrowUp, ArrowDown, Landmark, Loader2, ServerCrash, Trendin
 import { DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
@@ -58,10 +59,15 @@ export default function RelatoriosPage() {
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const pdfRef = useRef<HTMLDivElement>(null);
 
-    const [date, setDate] = useState<DateRange | undefined>({
-        from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-        to: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0),
-    });
+    const [date, setDate] = useState<DateRange | undefined>(undefined);
+
+    useEffect(() => {
+        // Set default date on client-side to avoid hydration mismatch
+        setDate({
+            from: startOfMonth(new Date()),
+            to: endOfMonth(new Date()),
+        });
+    }, []);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -103,7 +109,7 @@ export default function RelatoriosPage() {
     }, []);
 
     useEffect(() => {
-        if (currentUser) {
+        if (currentUser && date) {
             startTransition(() => {
                 setIsLoading(true);
                 setError(null);
@@ -283,3 +289,5 @@ export default function RelatoriosPage() {
         </>
     );
   }
+
+    
