@@ -24,7 +24,8 @@ import {
   GitCompareArrows,
   Target,
   Loader2,
-  Package
+  Package,
+  Home
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Header } from '@/components/dashboard/Header';
@@ -64,6 +65,7 @@ const navItems: Record<string, NavItem[]> = {
         { href: '/dashboard/crm/relatorios', label: 'Relatórios', icon: BarChart3 },
     ],
     task: [
+        { href: '/dashboard/task/visao-geral', label: 'Visão Geral', icon: Home },
         { href: '/dashboard/task/lista', label: 'Minha Lista', icon: List },
         { href: '/dashboard/task/tarefas', label: 'Quadro', icon: LayoutGrid },
         { href: '/dashboard/task/calendario', label: 'Calendário', icon: Calendar },

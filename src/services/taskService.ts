@@ -9,6 +9,27 @@ import { TaskSchema, TaskProfileSchema, UpdateTaskSchema, UserProfile } from '@/
 import { getAdminAndOrg } from './utils';
 import { adminDb } from '@/lib/firebase-admin';
 
+// Helper function to safely convert Firestore Timestamps or ISO strings to a Date object string.
+const toISOStringSafe = (date: any): string | null => {
+    if (!date) return null;
+    if (date instanceof Timestamp) return date.toDate().toISOString();
+    if (date instanceof Date) return date.toISOString();
+    if (typeof date === 'string') {
+        try {
+            const parsedDate = new Date(date);
+            if (!isNaN(parsedDate.getTime())) {
+                return parsedDate.toISOString();
+            }
+        } catch (e) {
+            console.error(`Could not parse date string: ${date}`, e);
+            return null;
+        }
+    }
+    console.warn(`Unsupported date type for conversion: ${typeof date}`);
+    return null;
+};
+
+
 export const createTask = async (
   input: z.infer<typeof TaskSchema>, 
   actorUid: string
@@ -52,10 +73,9 @@ export const updateTask = async (
 
     const { id, comments, ...updateData } = input;
     
-    // Process comments to avoid duplicates and ensure correct authorship
     const existingComments = (Array.isArray(data.comments) ? data.comments : []).map(c => ({
         ...c,
-        createdAt: c.createdAt ? toISOStringSafe(c.createdAt) : new Date().toISOString()
+        createdAt: toISOStringSafe(c.createdAt)
     }));
     
     const newComments = (comments || [])
@@ -73,7 +93,7 @@ export const updateTask = async (
       ...updateData,
       dueDate: updateData.dueDate ? new Date(updateData.dueDate) : null,
       updatedAt: FieldValue.serverTimestamp(),
-      comments: allComments,
+      comments: allComments.map(c => ({...c, createdAt: new Date(c.createdAt!)})), // Convert back to Date for Firestore
     });
 
     if (input.subtasks) {
@@ -85,19 +105,6 @@ export const updateTask = async (
     console.error('🚨 Erro em updateTask:', error);
     throw new Error('Falha ao atualizar a tarefa.');
   }
-};
-
-const toISOStringSafe = (date: any): string | null => {
-  if (!date) return null;
-  if (date instanceof Timestamp) return date.toDate().toISOString();
-  if (date instanceof Date) return date.toISOString();
-  if (typeof date === 'string') {
-    try {
-      const parsed = new Date(date);
-      if (!isNaN(parsed.getTime())) return parsed.toISOString();
-    } catch (e) {}
-  }
-  return null;
 };
 
 
@@ -130,7 +137,6 @@ export const listTasks = async (
             const data = doc.data();
             const responsibleUser = data.responsibleUserId ? users[data.responsibleUserId] : null;
 
-            // Prepare the object with all necessary fields before parsing
             const preProcessedData = {
                 id: doc.id,
                 title: data.title,
@@ -157,7 +163,6 @@ export const listTasks = async (
 
         } catch (err) {
             console.error(`❌ Erro ao processar a tarefa ${doc.id}:`, err);
-            // Ignore a tarefa com erro e continua com as outras
         }
     });
 
@@ -225,15 +230,20 @@ export const deleteTask = async (
   }
 };
 
-export const getDashboardMetrics = async (actorUid: string) => {
-  try {
-    const allTasks = await listTasks(actorUid);
-
+const getBasicMetrics = (allTasks: z.infer<typeof TaskProfileSchema>[]) => {
     const totalTasks = allTasks.length;
     const completedTasks = allTasks.filter(t => t.status === 'done').length;
     const inProgressTasks = allTasks.filter(t => t.status === 'in_progress').length;
-    const pendingTasks = allTasks.filter(t => ['todo', 'review'].includes(t.status) && (t.dueDate ? new Date(t.dueDate) >= new Date() : true)).length;
-    const overdueTasks = allTasks.filter(t => t.status !== 'done' && t.dueDate && new Date(t.dueDate) < new Date()).length;
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const pendingTasks = allTasks.filter(t => 
+        (t.status === 'todo' || t.status === 'in_progress' || t.status === 'review')
+    ).length;
+
+    const overdueTasks = allTasks.filter(t => 
+        t.status !== 'done' && t.dueDate && new Date(t.dueDate) < startOfToday
+    ).length;
     
     const tasksByPriority = allTasks.reduce((acc: Record<string, number>, t) => {
       const prio = t.priority || 'medium';
@@ -241,17 +251,45 @@ export const getDashboardMetrics = async (actorUid: string) => {
       return acc;
     }, {});
 
+    return { totalTasks, completedTasks, inProgressTasks, pendingTasks, overdueTasks, tasksByPriority };
+}
 
-    return {
-      totalTasks,
-      completedTasks,
-      inProgressTasks,
-      pendingTasks,
-      overdueTasks,
-      tasksByPriority,
-    };
+export const getDashboardMetrics = async (actorUid: string) => {
+  try {
+    const allTasks = await listTasks(actorUid);
+    return getBasicMetrics(allTasks);
   } catch (error) {
     console.error('🚨 Erro em getDashboardMetrics (Tasks):', error);
     throw new Error('Falha ao carregar métricas de tarefas.');
   }
+};
+
+export const getOverviewMetrics = async (actorUid: string) => {
+    try {
+        const allTasks = await listTasks(actorUid);
+        const basicMetrics = getBasicMetrics(allTasks);
+        
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const endOfWeek = new Date(startOfToday);
+        endOfWeek.setDate(endOfWeek.getDate() + 7);
+
+        const overdue = allTasks
+            .filter(t => t.status !== 'done' && t.dueDate && new Date(t.dueDate) < startOfToday)
+            .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
+        
+        const dueSoon = allTasks
+            .filter(t => t.status !== 'done' && t.dueDate && new Date(t.dueDate) >= startOfToday && new Date(t.dueDate) <= endOfWeek)
+            .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
+
+        return {
+            ...basicMetrics,
+            overdue,
+            dueSoon
+        };
+
+    } catch (error) {
+        console.error('🚨 Erro em getOverviewMetrics (Tasks):', error);
+        throw new Error('Falha ao carregar a visão geral de tarefas.');
+    }
 };
