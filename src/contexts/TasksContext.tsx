@@ -38,32 +38,32 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
     setRefreshTrigger(prev => prev + 1);
   }, []);
 
-  const fetchTasks = useCallback(async () => {
-    if (!currentUser) {
+  useEffect(() => {
+    const fetchTasks = async () => {
+      if (!currentUser) {
         setTasks([]);
         setLoading(false);
         return;
-    }
+      }
+      
+      console.log('🔄 Tentando carregar tarefas...');
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await listTasks({ actor: currentUser.uid });
+        const sortedTasks = result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setTasks(sortedTasks);
+        console.log('✅ Tarefas carregadas com sucesso');
+      } catch (err: any) {
+        console.error('❌ Erro ao carregar tarefas no contexto:', err);
+        setError(err.message || 'Erro no servidor. Tente novamente em alguns minutos.');
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    console.log('🔄 Tentando carregar tarefas...');
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await listTasks({ actor: currentUser.uid });
-      const sortedTasks = result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setTasks(sortedTasks);
-      console.log('✅ Tarefas carregadas com sucesso');
-    } catch (err: any) {
-      console.error('❌ Erro ao carregar tarefas no contexto:', err);
-      setError(err.message || 'Erro no servidor. Tente novamente em alguns minutos.');
-    } finally {
-      setLoading(false);
-    }
-  }, [currentUser]);
-
-  useEffect(() => {
     fetchTasks();
-  }, [fetchTasks, refreshTrigger]);
+  }, [currentUser, refreshTrigger]);
   
   return (
     <TasksContext.Provider value={{ tasks, loading, error, refreshTasks }}>
