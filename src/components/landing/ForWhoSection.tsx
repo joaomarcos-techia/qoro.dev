@@ -1,3 +1,4 @@
+
 'use client';
 
 import { User, Users, Briefcase, Check } from 'lucide-react';
@@ -32,7 +33,7 @@ const targetAudiences = [
     benefits: [
       'Gestão de múltiplos projetos',
       'Criação de orçamentos profissionais',
-      'Controle financeiro por projeto',
+      'Insights de IA para otimizar campanhas',
     ],
     colorClass: 'text-task-primary'
   }
