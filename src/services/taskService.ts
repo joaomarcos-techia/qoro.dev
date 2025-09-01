@@ -73,8 +73,6 @@ export const listTasks = async (actorUid: string): Promise<z.infer<typeof TaskPr
     const { organizationId } = await getAdminAndOrg(actorUid);
     
     try {
-        // SIMPLIFIED QUERY: Removed .orderBy() to prevent index-related crashes.
-        // Sorting will be handled on the client-side.
         const tasksQuery = adminDb.collection('tasks')
             .where('companyId', '==', organizationId);
                                  
@@ -107,9 +105,6 @@ export const listTasks = async (actorUid: string): Promise<z.infer<typeof TaskPr
         return tasks;
     } catch (error: any) {
         console.error("Critical error in listTasks:", error, error.stack);
-        if (error.code === 'FAILED_PRECONDITION' || (error.message && error.message.includes("index"))) {
-             throw new Error("O índice do banco de dados para tarefas ainda está sendo criado. Por favor, aguarde alguns minutos e recarregue a página.");
-        }
         throw new Error("Falha ao carregar tarefas. Ocorreu um erro no servidor.");
     }
 };

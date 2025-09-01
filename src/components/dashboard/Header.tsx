@@ -9,6 +9,7 @@ import { auth } from '@/lib/firebase';
 import { getUserProfile } from '@/ai/flows/user-management';
 import Link from 'next/link';
 import { Logo } from '@/components/ui/logo';
+import { useTasks } from '@/contexts/TasksContext';
 
 interface UserProfile {
   name: string;
@@ -22,6 +23,7 @@ export function Header() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { loadTasks } = useTasks();
 
   const fetchUserProfile = useCallback(async (user: FirebaseUser) => {
     setIsLoading(true);
@@ -42,6 +44,7 @@ export function Header() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         fetchUserProfile(user);
+        // REMOVED: loadTasks call was here causing issues.
       } else {
         setIsLoading(false);
         setUserProfile(null);
@@ -51,6 +54,7 @@ export function Header() {
 
     return () => unsubscribe();
   }, [router, fetchUserProfile]);
+
 
   const toggleMenu = () => {
     setMenuOpen((prev) => !prev);
