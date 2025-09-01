@@ -25,6 +25,7 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setLoading(true); // Set loading to true when auth state changes
       setCurrentUser(user);
       if (!user) {
         // Clear data and stop loading if user logs out
@@ -49,7 +50,7 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
       
       setLoading(true);
       setError(null);
-      console.log(`🔄 Tentando carregar tarefas... (Trigger: ${refreshTrigger})`);
+      console.log(`🔄 Tentando carregar tarefas... (Usuário: ${currentUser.uid}, Gatilho: ${refreshTrigger})`);
       try {
         const result = await listTasks({ actor: currentUser.uid });
         setTasks(result);
@@ -57,7 +58,7 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
       } catch (err: any) {
         console.error('❌ Erro ao carregar tarefas no contexto:', err);
         setError(err.message || 'Erro no servidor. Tente novamente em alguns minutos.');
-        setTasks([]);
+        setTasks([]); // Clear tasks on error
       } finally {
         setLoading(false);
       }

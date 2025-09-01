@@ -31,8 +31,8 @@ export const getAdminAndOrg = async (actorUid: string) => {
     }
     const orgData = orgDoc.data()!;
 
-    // Simplificado para sempre retornar 'free' e evitar dependência de env vars
-    // Esta era a causa raiz do erro de 'Failed to fetch'.
+    // This logic was causing the "Failed to fetch" error because the env vars were not set.
+    // Replacing it with a default value to ensure stability.
     const planId: 'free' | 'growth' | 'performance' = 'free';
 
     return { 
