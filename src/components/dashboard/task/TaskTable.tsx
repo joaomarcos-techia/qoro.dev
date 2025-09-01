@@ -143,12 +143,10 @@ export function TaskTable({ tasks, users, isLoading, error, onRefresh, onEdit }:
         },
     },
     {
-        accessorKey: 'responsibleUserId',
+        accessorKey: 'responsibleUserName',
         header: 'Responsável',
         cell: ({ row }) => {
-            const userId = row.getValue('responsibleUserId') as string;
-            const user = users.find(u => u.uid === userId);
-            const name = user?.name || user?.email;
+            const name = row.getValue('responsibleUserName') as string;
             return name ? <span className='flex items-center'><User className='w-4 h-4 mr-2 text-muted-foreground'/>{name}</span> : '-';
         }
     },
@@ -323,3 +321,5 @@ export function TaskTable({ tasks, users, isLoading, error, onRefresh, onEdit }:
     </div>
   );
 }
+
+    

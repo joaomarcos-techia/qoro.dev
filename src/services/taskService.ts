@@ -5,7 +5,7 @@
  */
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { TaskSchema, TaskProfileSchema, UpdateTaskSchema } from '@/ai/schemas';
+import { TaskSchema, TaskProfileSchema, UpdateTaskSchema, UserProfile } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import { adminDb } from '@/lib/firebase-admin';
 
@@ -102,16 +102,29 @@ export const listTasks = async (
 ): Promise<z.infer<typeof TaskProfileSchema>[]> => {
   try {
     const { organizationId } = await getAdminAndOrg(actorUid);
-    const snapshot = await adminDb.collection('tasks')
+    const tasksSnapshot = await adminDb.collection('tasks')
       .where('companyId', '==', organizationId)
       .orderBy('createdAt', 'desc')
       .get();
 
-    if (snapshot.empty) return [];
+    if (tasksSnapshot.empty) return [];
+    
+    // Get all unique user IDs from the tasks
+    const userIds = [...new Set(tasksSnapshot.docs.map(doc => doc.data().responsibleUserId).filter(Boolean))];
+    const users: Record<string, UserProfile> = {};
 
-    const tasks = snapshot.docs
+    // Fetch user data if there are any assigned users
+    if (userIds.length > 0) {
+        const usersSnapshot = await adminDb.collection('users').where('__name__', 'in', userIds).get();
+        usersSnapshot.forEach(doc => {
+            users[doc.id] = doc.data() as UserProfile;
+        });
+    }
+
+    const tasks = tasksSnapshot.docs
       .map(doc => {
         const data = doc.data() as any;
+        const responsibleUser = data.responsibleUserId ? users[data.responsibleUserId] : null;
         try {
           const parsedData = {
             id: doc.id,
@@ -121,6 +134,7 @@ export const listTasks = async (
             dueDate: toISOStringSafe(data.dueDate),
             completedAt: toISOStringSafe(data.completedAt),
             responsibleUserId: data.responsibleUserId || undefined,
+            responsibleUserName: responsibleUser?.name || responsibleUser?.email || undefined,
             subtasks: Array.isArray(data.subtasks) ? data.subtasks : [],
             comments: Array.isArray(data.comments) 
               ? data.comments.map((c: any) => ({
@@ -132,10 +146,10 @@ export const listTasks = async (
           return TaskProfileSchema.parse(parsedData);
         } catch (err) {
           console.error('❌ Erro ao parsear tarefa:', doc.id, err);
-          return null; // Retorna null se uma tarefa específica falhar no parse
+          return null;
         }
       })
-      .filter((task): task is z.infer<typeof TaskProfileSchema> => task !== null); // Filtra os nulos
+      .filter((task): task is z.infer<typeof TaskProfileSchema> => task !== null);
 
     return tasks;
   } catch (error) {
@@ -233,3 +247,5 @@ export const getDashboardMetrics = async (actorUid: string) => {
     throw new Error('Falha ao carregar métricas.');
   }
 };
+
+    
