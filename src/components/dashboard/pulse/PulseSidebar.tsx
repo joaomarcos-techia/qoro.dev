@@ -130,7 +130,7 @@ export function PulseSidebar() {
                             <Trash2 className="w-4 h-4"/>
                         </button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent className="rounded-2xl">
                         <AlertDialogHeader>
                             <AlertDialogTitle>Excluir esta conversa?</AlertDialogTitle>
                             <AlertDialogDescription>
@@ -138,8 +138,8 @@ export function PulseSidebar() {
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDeleteConversation(convo.id); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDeleteConversation(convo.id); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">
                                 Sim, excluir
                             </AlertDialogAction>
                         </AlertDialogFooter>
