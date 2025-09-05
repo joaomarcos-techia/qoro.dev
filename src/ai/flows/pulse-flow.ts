@@ -182,7 +182,7 @@ IMPORTANTE: A conversa já possui um título. Não gere um novo título. O campo
     const output = llmResponse.output;
 
     if (!output) {
-        throw new Error("A IA não conseguiu gerar uma resposta válida.");
+        throw new Error("A IA não conseguiu gerar uma resposta válida. Tente reformular sua pergunta ou tente novamente mais tarde.");
     }
     
     const assistantMessage: z.infer<typeof PulseMessageSchema> = {
