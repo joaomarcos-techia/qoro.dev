@@ -138,8 +138,8 @@ export function PulseSidebar() {
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDeleteConversation(convo.id); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDeleteConversation(convo.id); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                                 Sim, excluir
                             </AlertDialogAction>
                         </AlertDialogFooter>
