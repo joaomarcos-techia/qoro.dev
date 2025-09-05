@@ -14,7 +14,7 @@ import { CustomerProfileSchema } from '@/ai/schemas';
 export const listCustomersTool = ai.defineTool(
     {
         name: 'listCustomersTool',
-        description: 'Obtém uma lista detalhada de todos os clientes da organização. Use isso para perguntas que exigem detalhes específicos de clientes individuais.',
+        description: 'Obtém uma lista detalhada de todos os clientes da organização. Use esta ferramenta para responder perguntas sobre quantos clientes existem ou para obter detalhes específicos sobre eles.',
         inputSchema: z.object({}),
         outputSchema: z.array(CustomerProfileSchema),
     },
@@ -27,34 +27,39 @@ export const listCustomersTool = ai.defineTool(
 );
 
 
-const CrmSummarySchema = z.object({
-    totalCustomers: z.number().describe("O número total de clientes cadastrados."),
-    customersByStatus: z.record(z.string(), z.number()).describe("Um objeto mostrando a contagem de clientes em cada estágio do funil de vendas (ex: { 'Novo': 10, 'Ganho': 5 })."),
+const FunnelSummarySchema = z.object({
+    totalCustomersInFunnel: z.number().describe("O número total de clientes ativos no funil de vendas (não ganhos, perdidos ou arquivados)."),
+    customersByStatus: z.record(z.string(), z.number()).describe("Um objeto mostrando a contagem de clientes em cada estágio do funil de vendas (ex: { 'Novo': 10, 'Qualificação': 5 })."),
 });
 
 // Define a new, more efficient tool for getting a CRM summary
-export const getCrmSummaryTool = ai.defineTool(
+export const getFunnelSummaryTool = ai.defineTool(
     {
-        name: 'getCrmSummaryTool',
-        description: 'Recupera um resumo dos dados do CRM, incluindo o número total de clientes e a contagem de clientes por status (funil de vendas). Use esta ferramenta para responder a perguntas de alto nível sobre o desempenho de vendas e a base de clientes.',
+        name: 'getFunnelSummaryTool',
+        description: 'Recupera um resumo do funil de vendas, incluindo o número de clientes ativos no funil e a contagem de clientes por status. Use esta ferramenta para responder a perguntas de alto nível sobre o desempenho de vendas e a saúde do funil.',
         inputSchema: z.object({}),
-        outputSchema: CrmSummarySchema,
+        outputSchema: FunnelSummarySchema,
     },
     async (_, context) => {
         if (!context?.actor) {
             throw new Error('Autenticação do usuário é necessária para obter o resumo do CRM.');
         }
         const customers = await crmService.listCustomers(context.actor);
-        const totalCustomers = customers.length;
-        const customersByStatus = customers.reduce((acc, customer) => {
+        const funnelStatuses: CustomerProfile['status'][] = ['new', 'initial_contact', 'qualification', 'proposal', 'negotiation'];
+        const funnelCustomers = customers.filter(c => funnelStatuses.includes(c.status));
+
+        const totalCustomersInFunnel = funnelCustomers.length;
+
+        const customersByStatus = funnelCustomers.reduce((acc, customer) => {
             const status = customer.status || 'Desconhecido';
             acc[status] = (acc[status] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
 
         return {
-            totalCustomers,
+            totalCustomersInFunnel,
             customersByStatus,
         };
     }
 );
+
