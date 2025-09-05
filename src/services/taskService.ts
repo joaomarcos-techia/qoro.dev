@@ -111,6 +111,10 @@ export const updateTask = async (
 export const listTasks = async (
   actorUid: string
 ): Promise<z.infer<typeof TaskProfileSchema>[]> => {
+  if (!actorUid) {
+      console.error('🔥 Erro crítico em listTasks: actorUid não foi fornecido.');
+      throw new Error('Identificação do usuário é necessária para listar tarefas.');
+  }
   try {
     const { organizationId } = await getAdminAndOrg(actorUid);
     const tasksSnapshot = await adminDb.collection('tasks')
