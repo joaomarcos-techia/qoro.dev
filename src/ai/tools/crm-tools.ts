@@ -11,7 +11,7 @@ import * as crmService from '@/services/crmService';
 import { CustomerProfileSchema } from '@/ai/schemas';
 import type { CustomerProfile } from '@/ai/schemas';
 
-// Define the tool for listing customers
+// Define the tool for listing customers - kept for potential future use but removed from Pulse
 export const listCustomersTool = ai.defineTool(
     {
         name: 'listCustomersTool',
@@ -28,18 +28,19 @@ export const listCustomersTool = ai.defineTool(
 );
 
 
-const FunnelSummarySchema = z.object({
-    totalCustomersInFunnel: z.number().describe("O número total de clientes ativos no funil de vendas (não ganhos, perdidos ou arquivados)."),
+const CrmSummarySchema = z.object({
+    totalCustomers: z.number().describe("O número total de clientes cadastrados no sistema."),
+    customersInFunnel: z.number().describe("O número de clientes que estão atualmente em alguma etapa do funil de vendas (não ganhos, perdidos ou arquivados)."),
     customersByStatus: z.record(z.string(), z.number()).describe("Um objeto mostrando a contagem de clientes em cada estágio do funil de vendas (ex: { 'Novo': 10, 'Qualificação': 5 })."),
 });
 
 // Define a new, more efficient tool for getting a CRM summary
-export const getFunnelSummaryTool = ai.defineTool(
+export const getCrmSummaryTool = ai.defineTool(
     {
-        name: 'getFunnelSummaryTool',
-        description: 'Recupera um RESUMO NUMÉRICO do funil de vendas, incluindo o número total de clientes ativos no funil e a contagem de clientes por status. Use esta ferramenta para responder a perguntas de alto nível sobre o DESEMPENHO DE VENDAS e a saúde do funil.',
+        name: 'getCrmSummaryTool',
+        description: 'Recupera um RESUMO NUMÉRICO do CRM, incluindo o número total de clientes, a quantidade de clientes no funil e a contagem por status. Use esta ferramenta para responder a qualquer pergunta sobre quantidade de clientes ou sobre o funil de vendas.',
         inputSchema: z.object({}),
-        outputSchema: FunnelSummarySchema,
+        outputSchema: CrmSummarySchema,
     },
     async (_, context) => {
         if (!context?.actor) {
@@ -50,7 +51,7 @@ export const getFunnelSummaryTool = ai.defineTool(
         
         const funnelCustomers = customers.filter(c => funnelStatuses.includes(c.status));
 
-        const totalCustomersInFunnel = funnelCustomers.length;
+        const customersInFunnel = funnelCustomers.length;
 
         const customersByStatus = funnelCustomers.reduce((acc, customer) => {
             const status = customer.status || 'Desconhecido';
@@ -59,8 +60,10 @@ export const getFunnelSummaryTool = ai.defineTool(
         }, {} as Record<string, number>);
 
         return {
-            totalCustomersInFunnel,
+            totalCustomers: customers.length,
+            customersInFunnel,
             customersByStatus,
         };
     }
 );
+
