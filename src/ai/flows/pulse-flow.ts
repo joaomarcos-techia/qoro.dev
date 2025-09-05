@@ -9,7 +9,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { AskPulseInputSchema, AskPulseOutputSchema, PulseMessageSchema } from '@/ai/schemas';
-import { listCustomersTool } from '@/ai/tools/crm-tools';
+import { getCrmSummaryTool, listCustomersTool } from '@/ai/tools/crm-tools';
 import { createTaskTool, listTasksTool } from '@/ai/tools/task-tools';
 import { listAccountsTool, getFinanceSummaryTool } from '@/ai/tools/finance-tools';
 import { listSuppliersTool } from '@/ai/tools/supplier-tools';
@@ -172,7 +172,7 @@ IMPORTANTE: A conversa já possui um título. Não gere um novo título. O campo
         config: {
           temperature: 0.7,
         },
-        tools: [listCustomersTool, listTasksTool, createTaskTool, listAccountsTool, getFinanceSummaryTool, listSuppliersTool],
+        tools: [getCrmSummaryTool, listTasksTool, createTaskTool, listAccountsTool, getFinanceSummaryTool, listSuppliersTool, listCustomersTool],
         toolConfig: {
           context: { actor },
         },
