@@ -42,21 +42,25 @@ const pulseFlow = ai.defineFlow(
     const { actor, messages, conversationId } = input;
 
     let existingConversation = null;
+    let history: MessageData[] = [];
+    
+    // 1. Load full history from the database if a conversation ID exists.
     if (conversationId) {
         existingConversation = await pulseService.getConversation({ conversationId, actor });
+        if (existingConversation?.messages) {
+            history = existingConversation.messages.slice(0, -1).map(message => ({
+                role: message.role as 'user' | 'model',
+                parts: [{ text: message.content }],
+            }));
+        }
     }
     
     const hasTitle = !!existingConversation?.title && existingConversation.title !== 'Nova Conversa';
 
-    const history: MessageData[] = messages.slice(0, -1).slice(-10).map(message => ({
-        role: message.role as 'user' | 'model',
-        parts: [{ text: message.content }],
-    }));
-
     const lastMessage = messages[messages.length - 1];
     const prompt = lastMessage.content;
     
-    const isGreeting = messages.length <= 1 && /^(oi|olá|ola|hello|hi|hey|bom dia|boa tarde|boa noite)/i.test(prompt.trim());
+    const isGreeting = (existingConversation?.messages.length || messages.length) <= 1 && /^(oi|olá|ola|hello|hi|hey|bom dia|boa tarde|boa noite)/i.test(prompt.trim());
 
     const shouldGenerateTitle = !hasTitle && !isGreeting;
 
@@ -117,7 +121,7 @@ IMPORTANTE: A conversa já possui um título. Não gere um novo título. O campo
     const llmResponse = await ai.generate({
         model: 'googleai/gemini-1.5-flash',
         prompt: prompt,
-        history: history,
+        history: history.slice(-10), // Use the loaded history
         output: {
             schema: PulseResponseSchema,
         },
@@ -142,7 +146,10 @@ IMPORTANTE: A conversa já possui um título. Não gere um novo título. O campo
         content: output.response,
     };
     
-    const updatedMessages = [...messages, assistantMessage];
+    // 2. Construct the full new history for saving.
+    const fullMessageHistory = existingConversation ? existingConversation.messages : [];
+    const updatedMessages = [...fullMessageHistory, lastMessage, assistantMessage];
+    
     let currentConversationId = conversationId;
     let finalTitle = existingConversation?.title;
 
@@ -151,11 +158,11 @@ IMPORTANTE: A conversa já possui um título. Não gere um novo título. O campo
       finalTitle = output.title;
     }
 
+    // 3. Save the complete, updated conversation history.
     if (!currentConversationId) {
         const result = await pulseService.createConversation(actor, finalTitle || 'Nova Conversa', updatedMessages);
         currentConversationId = result.id;
     } else {
-        // Pass the potentially new title to the update function.
         await pulseService.updateConversation(actor, currentConversationId, updatedMessages, finalTitle);
     }
     
