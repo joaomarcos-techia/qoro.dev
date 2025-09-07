@@ -21,7 +21,7 @@ const FinanceSummarySchema = z.object({
 export const listAccountsTool = ai.defineTool(
     {
         name: 'listAccountsTool',
-        description: 'Lista todas as contas financeiras da organização, como contas correntes, poupanças, cartões de crédito e caixas. Use para responder perguntas sobre contas bancárias ou saldos individuais.',
+        description: 'Lista todas as contas financeiras cadastradas, como contas correntes, poupanças e caixas. Use para responder perguntas sobre contas bancárias ou saldos individuais.',
         inputSchema: z.object({}), // No specific input needed from the AI
         outputSchema: z.array(AccountProfileSchema),
     },
@@ -38,7 +38,7 @@ export const listAccountsTool = ai.defineTool(
 export const getFinanceSummaryTool = ai.defineTool(
     {
         name: 'getFinanceSummaryTool',
-        description: 'Recupera um resumo da saúde financeira da organização, incluindo saldo total em todas as contas, receita total, despesas totais e o lucro líquido do mês atual. Use para perguntas de alto nível sobre desempenho financeiro, como "qual o balanço da empresa?", "como estão as finanças?" ou para obter o saldo total da empresa.',
+        description: 'Recupera um resumo financeiro, incluindo saldo total, receita, despesas e lucro líquido do mês atual. Use para perguntas de alto nível sobre desempenho financeiro, como "qual o balanço da empresa?" ou "como estão as finanças?".',
         inputSchema: z.object({}), // No specific input needed from the AI
         outputSchema: FinanceSummarySchema,
     },
