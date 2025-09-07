@@ -107,9 +107,9 @@ export default function PulsePage() {
                         <Button
                             type="submit"
                             disabled={isLoading || !input.trim()}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-pulse-primary text-primary-foreground rounded-2xl transition-all duration-300 hover:bg-pulse-primary/90 disabled:bg-secondary disabled:text-muted-foreground disabled:shadow-none enabled:shadow-lg enabled:hover:shadow-xl enabled:shadow-pulse-primary/30"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-pulse-primary text-primary-foreground rounded-2xl transition-all duration-300 hover:bg-pulse-primary/90 disabled:bg-secondary disabled:text-muted-foreground"
                         >
-                            <ArrowUp size={24} />
+                            <ArrowUp size={28} />
                         </Button>
                     </form>
                     {error && (
