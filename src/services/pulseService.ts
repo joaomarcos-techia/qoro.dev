@@ -8,6 +8,8 @@ import { z } from 'zod';
 import { ConversationSchema, ConversationProfileSchema, PulseMessage, Conversation } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import { adminDb } from '@/lib/firebase-admin';
+import { MessageData } from 'genkit';
+
 
 // Helper to convert Firestore Timestamps in nested objects to ISO strings
 const convertTimestampsToISO = (obj: any): any => {
@@ -29,10 +31,10 @@ const convertTimestampsToISO = (obj: any): any => {
 };
 
 
-export const createConversation = async (actorUid: string, title: string, messages: PulseMessage[]): Promise<{ id: string }> => {
+export const createConversation = async (actorUid: string, title: string, messages: MessageData[]): Promise<{ id: string }> => {
     const { organizationId } = await getAdminAndOrg(actorUid);
 
-    const newConversationData: Omit<Conversation, 'id'> = {
+    const newConversationData = {
         userId: actorUid,
         organizationId,
         title: title || 'Nova Conversa',

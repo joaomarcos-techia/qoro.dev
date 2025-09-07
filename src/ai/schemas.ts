@@ -1,5 +1,6 @@
 
 import { z } from 'zod';
+import { MessageData } from 'genkit';
 
 // Schemas for User and Organization Management
 export const SignUpSchema = z.object({
@@ -254,7 +255,7 @@ export const ConversationSchema = z.object({
     title: z.string().optional(),
     userId: z.string(),
     organizationId: z.string(),
-    messages: z.array(PulseMessageSchema),
+    messages: z.array(z.any()), // Allow any for MessageData from Genkit
     createdAt: z.any(),
     updatedAt: z.any(),
 });

@@ -14,8 +14,7 @@ import { createTaskTool, listTasksTool } from '@/ai/tools/task-tools';
 import { listAccountsTool, getFinanceSummaryTool } from '@/ai/tools/finance-tools';
 import { listSuppliersTool } from '@/ai/tools/supplier-tools';
 import * as pulseService from '@/services/pulseService';
-import { MessageData } from 'genkit';
-
+import { MessageData, ToolRequestPart, ToolResponsePart } from 'genkit';
 
 const PulseResponseSchema = z.object({
     response: z.string().describe("A resposta da IA para a pergunta do usuário."),
@@ -41,18 +40,14 @@ const pulseFlow = ai.defineFlow(
   async (input) => {
     const { actor, messages: clientMessages, conversationId: currentConversationId } = input;
     
-    // Etapa B: Carregar sempre do banco. Nunca confiar em histórico que vem do frontend.
+    // Etapa 1: Carregar sempre o histórico do banco de dados, nunca confiar no front-end.
     let conversation: Conversation | null = null;
     if (currentConversationId) {
         conversation = await pulseService.getConversation({ conversationId: currentConversationId, actor });
     }
     
-    const dbHistory: MessageData[] = (conversation?.messages || []).map(message => ({
-        role: message.role as 'user' | 'model',
-        parts: [{ text: message.content }],
-    }));
-
-    // Usar apenas a última mensagem do cliente para a pergunta atual.
+    const dbHistory: MessageData[] = conversation?.messages || [];
+    
     const lastUserMessage = clientMessages[clientMessages.length - 1];
     const prompt = lastUserMessage.content;
     const hasTitle = !!conversation?.title && conversation.title !== 'Nova Conversa';
@@ -73,55 +68,72 @@ Você é o QoroPulse, um agente de IA especialista em gestão empresarial e o pa
         systemPrompt += `\nIMPORTANTE: A conversa ainda não tem um título. Baseado na pergunta do usuário, você DEVE gerar um título curto e conciso (máximo 5 palavras) para a conversa e retorná-lo no campo "title" do JSON de saída.`;
     }
     
-    // Etapa C: Injetar no modelo corretamente (com janela de memória).
-    const llmResponse = await ai.generate({
+    // Etapa 2: Chamar a IA para decidir qual ferramenta usar (ou se não usar nenhuma).
+    const llmRequest = {
         model: 'googleai/gemini-1.5-flash',
         prompt: prompt,
-        history: dbHistory.slice(-10), // Memory Window: Use the last 10 messages for context
-        output: { schema: PulseResponseSchema },
-        config: { temperature: 0.3 },
+        history: dbHistory.slice(-10), // Memory Window
         tools: [getCrmSummaryTool, listTasksTool, createTaskTool, listAccountsTool, getFinanceSummaryTool, listSuppliersTool],
         toolConfig: { context: { actor } },
         system: systemPrompt,
-    });
-    
-    const output = llmResponse.output;
-    if (!output) {
-        throw new Error("A IA não conseguiu gerar uma resposta válida. Tente reformular sua pergunta ou tente novamente mais tarde.");
-    }
-    
-    const assistantMessage: z.infer<typeof PulseMessageSchema> = {
-        role: 'assistant',
-        content: output.response,
     };
-    
-    // Etapa D: Atualizar ciclo - Construir o histórico COMPLETO para persistência.
-    const updatedMessages = [...(conversation?.messages || []), lastUserMessage, assistantMessage];
-    
-    let conversationIdToReturn = currentConversationId;
-    let finalTitle = conversation?.title;
 
-    if (output.title) {
-      finalTitle = output.title;
+    const llmResponse = await ai.generate(llmRequest);
+    const toolRequests = llmResponse.toolRequests();
+
+    let assistantResponseText: string;
+    let newHistory: MessageData[] = [...dbHistory, { role: 'user', parts: [{ text: prompt }] }];
+    let title = conversation?.title;
+    
+    // Etapa 3: Executar a ferramenta e construir a resposta factual.
+    if (toolRequests.length > 0) {
+        newHistory.push({ role: 'model', parts: [{ toolRequest: toolRequests[0] }] });
+
+        const toolResponse = await ai.runTool(toolRequests[0]);
+        const toolResponsePart: ToolResponsePart = { toolResponse };
+        
+        newHistory.push({ role: 'tool', parts: [toolResponsePart] });
+
+        // Etapa 4: Gerar resposta final baseada no resultado da ferramenta.
+        const finalLlmResponse = await ai.generate({
+            ...llmRequest,
+            history: newHistory, // Inclui a chamada e o resultado da ferramenta
+            output: { schema: PulseResponseSchema },
+        });
+
+        const output = finalLlmResponse.output;
+        if (!output) throw new Error("A IA não conseguiu gerar uma resposta final.");
+        
+        assistantResponseText = output.response;
+        if (output.title) title = output.title;
+
+    } else {
+        // Fallback: Se nenhuma ferramenta foi chamada, usamos a resposta direta da IA.
+        const output = (await llmResponse.output({ schema: PulseResponseSchema }))
+        if (!output) throw new Error("A IA não conseguiu gerar uma resposta válida.");
+
+        assistantResponseText = output.response;
+        if (output.title) title = output.title;
     }
 
-    // Salvar a conversa completa e atualizada.
+    const assistantMessage: PulseMessage = {
+        role: 'assistant',
+        content: assistantResponseText,
+    };
+    newHistory.push({ role: 'model', parts: [{ text: assistantResponseText }] });
+
+    // Etapa 5: Salvar a conversa completa.
+    let conversationIdToReturn = currentConversationId;
     if (!conversationIdToReturn) {
-        // Criar uma nova conversa com o histórico completo.
-        const result = await pulseService.createConversation(actor, finalTitle || 'Nova Conversa', updatedMessages);
+        const result = await pulseService.createConversation(actor, title || 'Nova Conversa', newHistory);
         conversationIdToReturn = result.id;
     } else {
-        // Atualizar a conversa existente com o histórico completo.
-        const updatedConversationData: Partial<Conversation> = {
-            messages: updatedMessages,
-            title: finalTitle,
-        };
-        await pulseService.updateConversation(actor, conversationIdToReturn, updatedConversationData);
+        await pulseService.updateConversation(actor, conversationIdToReturn, { messages: newHistory, title });
     }
     
     return {
         conversationId: conversationIdToReturn!,
-        title: finalTitle === 'Nova Conversa' ? undefined : finalTitle,
+        title: title === 'Nova Conversa' ? undefined : title,
         response: assistantMessage,
     };
   }
