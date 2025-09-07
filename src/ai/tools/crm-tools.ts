@@ -27,6 +27,7 @@ export const getCrmSummaryTool = ai.defineTool(
             throw new Error('Autenticação do usuário é necessária para obter dados do CRM.');
         }
         // This now calls the centralized service function, ensuring consistency.
-        return crmService.getCrmDashboardMetrics(context.actor);
+        const metrics = await crmService.getCrmDashboardMetrics(context.actor);
+        return { totalCustomers: metrics.totalCustomers, activeLeads: metrics.activeLeads };
     }
 );
