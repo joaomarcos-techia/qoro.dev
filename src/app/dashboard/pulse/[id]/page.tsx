@@ -15,7 +15,7 @@ import type { PulseMessage } from '@/ai/schemas';
 
 const ArrowUpIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" {...props}>
-      <path d="M12 23V3M5 10l7-7 7 7"
+      <path d="M12 23V1M5 12l7-7 7 7" 
             stroke="currentColor" strokeWidth="2" 
             strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
@@ -194,7 +194,7 @@ export default function PulseConversationPage() {
                             }
                             }}
                             placeholder="Pergunte qualquer coisa sobre seu negócio..."
-                            className="w-full pr-20 pl-4 py-4 bg-transparent rounded-2xl border-none focus:ring-0 text-base resize-none shadow-none"
+                            className="w-full pr-20 pl-4 py-4 bg-transparent rounded-2xl border-none focus:ring-0 text-base resize-none"
                             rows={1}
                             disabled={isSending || isNavigating}
                         />
