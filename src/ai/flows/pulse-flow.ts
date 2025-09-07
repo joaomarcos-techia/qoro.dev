@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A conversational AI agent for business insights.
@@ -46,10 +45,8 @@ const pulseFlow = ai.defineFlow(
         conversation = await pulseService.getConversation({ conversationId: currentConversationId, actor });
     }
     
-    // O histórico real é o do banco de dados.
     const dbHistory: MessageData[] = conversation?.messages || [];
     
-    // A única mensagem que importa do cliente é a última (a pergunta atual).
     const lastUserMessage = clientMessages[clientMessages.length - 1];
     const prompt = lastUserMessage.content as string;
 
@@ -70,14 +67,13 @@ Você é o QoroPulse, um agente de IA especialista em gestão empresarial e o pa
         systemPrompt += `\nIMPORTANTE: A conversa ainda não tem um título. Baseado na pergunta do usuário, você DEVE gerar um título curto e conciso (máximo 5 palavras) para a conversa e retorná-lo no campo "title" do JSON de saída.`;
     }
     
-    // Etapa 2: Chamar a IA para decidir qual ferramenta usar.
     const llmRequest = {
         model: 'googleai/gemini-1.5-flash',
         prompt: prompt,
         history: dbHistory.slice(-10), // Memory Window
         tools: [getCrmSummaryTool, listTasksTool, createTaskTool, listAccountsTool, getFinanceSummaryTool, listSuppliersTool],
         toolConfig: { 
-            context: { actor }, // Passa o ator para o contexto da ferramenta
+            context: { actor },
         },
         system: systemPrompt,
     };
@@ -86,26 +82,20 @@ Você é o QoroPulse, um agente de IA especialista em gestão empresarial e o pa
     const toolRequests = llmResponse.toolRequests();
     
     let assistantResponseText: string;
-    // Começa um novo histórico para este turno, baseado no histórico confiável do BD.
     let newHistory: MessageData[] = [...dbHistory, { role: 'user', parts: [{ text: prompt }] }];
     let title = conversation?.title;
     
-    // Etapa 3: Executar a ferramenta e construir a resposta.
-    if (toolRequests.length > 0) {
-        // Adiciona a requisição da ferramenta ao histórico do turno
+    if (toolRequests && toolRequests.length > 0) {
         newHistory.push({ role: 'model', parts: [{ toolRequest: toolRequests[0] }] });
 
-        // Executa a ferramenta
         const toolResponsePart: ToolResponsePart = { toolResponse: await ai.runTool(toolRequests[0]) };
         
-        // Adiciona a resposta da ferramenta ao histórico do turno
         newHistory.push({ role: 'tool', parts: [toolResponsePart] });
 
-        // Etapa 4: Gerar resposta final baseada no resultado da ferramenta.
         const finalLlmResponse = await ai.generate({
             ...llmRequest,
-            history: newHistory, // Inclui a chamada e o resultado da ferramenta
-            tools: [], // Não precisa mais de ferramentas, só para gerar texto
+            history: newHistory,
+            tools: [], 
             output: { schema: PulseResponseSchema },
         });
 
@@ -116,7 +106,6 @@ Você é o QoroPulse, um agente de IA especialista em gestão empresarial e o pa
         if (output.title) title = output.title;
 
     } else {
-        // Fallback: Se nenhuma ferramenta foi chamada, usamos a resposta direta da IA.
         const output = (await llmResponse.output({ schema: PulseResponseSchema }))
         if (!output) throw new Error("A IA não conseguiu gerar uma resposta válida.");
 
@@ -128,17 +117,13 @@ Você é o QoroPulse, um agente de IA especialista em gestão empresarial e o pa
         role: 'assistant',
         content: assistantResponseText,
     };
-    // Adiciona a resposta final do assistente ao histórico do turno.
     newHistory.push({ role: 'model', parts: [{ text: assistantResponseText }] });
 
-    // Etapa 5: Salvar a conversa completa.
     let conversationIdToReturn = currentConversationId;
     if (!conversationIdToReturn) {
-        // Cria uma nova conversa se não existir.
         const result = await pulseService.createConversation(actor, title || 'Nova Conversa', newHistory);
         conversationIdToReturn = result.id;
     } else {
-        // Atualiza a conversa existente com o histórico completo.
         await pulseService.updateConversation(actor, conversationIdToReturn, { messages: newHistory, title });
     }
     
