@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, FormEvent, useCallback, useTransition } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Send, BrainCircuit, Loader2, AlertCircle, Sparkles, User } from 'lucide-react';
+import { ArrowUp, BrainCircuit, Loader2, AlertCircle, Sparkles, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
@@ -193,7 +193,7 @@ export default function PulseConversationPage() {
                             disabled={isSending || isNavigating || !input.trim()}
                             className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-pulse-primary text-primary-foreground rounded-2xl transition-all duration-300 hover:bg-pulse-primary/90 disabled:bg-secondary disabled:text-muted-foreground disabled:shadow-none enabled:shadow-lg enabled:hover:shadow-xl enabled:shadow-pulse-primary/30"
                         >
-                            <Send size={22} />
+                            <ArrowUp size={24} />
                         </Button>
                     </form>
                     {error && (

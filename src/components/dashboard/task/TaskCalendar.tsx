@@ -14,17 +14,18 @@ interface CalendarEvent {
   allDay: boolean;
   backgroundColor: string;
   borderColor: string;
+  textColor: string;
   extendedProps: {
     status: string;
     priority: string;
   };
 }
 
-const priorityColors: Record<TaskProfile['priority'], { bg: string; border: string }> = {
-    low: { bg: 'hsl(var(--crm-primary))', border: 'hsl(var(--crm-primary) / 0.8)' },
-    medium: { bg: 'hsl(var(--task-primary))', border: 'hsl(var(--task-primary) / 0.8)' },
-    high: { bg: 'hsl(var(--destructive))', border: 'hsl(var(--destructive) / 0.8)' },
-    urgent: { bg: 'hsl(var(--pulse-primary))', border: 'hsl(var(--pulse-primary) / 0.8)' },
+const priorityColors: Record<TaskProfile['priority'], { bg: string; border: string, text: string }> = {
+    low: { bg: 'hsl(var(--crm-primary))', border: 'hsl(var(--crm-primary) / 0.8)', text: '#000000' },
+    medium: { bg: 'hsl(var(--task-primary))', border: 'hsl(var(--task-primary) / 0.8)', text: '#000000' },
+    high: { bg: 'hsl(var(--destructive))', border: 'hsl(var(--destructive) / 0.8)', text: '#FFFFFF' },
+    urgent: { bg: 'hsl(var(--pulse-primary))', border: 'hsl(var(--pulse-primary) / 0.8)', text: '#FFFFFF' },
 };
 
 export function TaskCalendar() {
@@ -32,18 +33,22 @@ export function TaskCalendar() {
 
   const calendarEvents = tasks
     .filter(task => !!task.dueDate)
-    .map((task): CalendarEvent => ({
-      id: task.id,
-      title: task.title,
-      start: task.dueDate!,
-      allDay: true,
-      backgroundColor: priorityColors[task.priority]?.bg || priorityColors.medium.bg,
-      borderColor: priorityColors[task.priority]?.border || priorityColors.medium.border,
-      extendedProps: {
-        status: task.status,
-        priority: task.priority,
-      }
-    }));
+    .map((task): CalendarEvent => {
+        const colors = priorityColors[task.priority] || priorityColors.medium;
+        return {
+            id: task.id,
+            title: task.title,
+            start: task.dueDate!,
+            allDay: true,
+            backgroundColor: colors.bg,
+            borderColor: colors.border,
+            textColor: colors.text,
+            extendedProps: {
+                status: task.status,
+                priority: task.priority,
+            }
+        };
+    });
 
   if (loading) {
     return (
