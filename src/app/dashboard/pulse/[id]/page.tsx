@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, FormEvent, useCallback, useTransition } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowUp, BrainCircuit, Loader2, AlertCircle, Sparkles, User } from 'lucide-react';
+import { BrainCircuit, Loader2, AlertCircle, Sparkles, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
@@ -11,6 +11,14 @@ import { doc, getDoc } from 'firebase/firestore';
 import { askPulse } from '@/ai/flows/pulse-flow';
 import { getConversation } from '@/services/pulseService';
 import type { PulseMessage } from '@/ai/schemas';
+
+const ArrowUpIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M12 5l-7 7h14l-7-7z" transform="translate(0, 7)"/>
+        <path d="M12 19V5"/>
+    </svg>
+);
+
 
 export default function PulseConversationPage() {
   const [messages, setMessages] = useState<PulseMessage[]>([]);
@@ -193,7 +201,7 @@ export default function PulseConversationPage() {
                             disabled={isSending || isNavigating || !input.trim()}
                             className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-pulse-primary text-primary-foreground rounded-2xl transition-all duration-300 hover:bg-pulse-primary/90 disabled:bg-secondary disabled:text-muted-foreground"
                         >
-                            <ArrowUp size={28} />
+                            <ArrowUpIcon className="w-7 h-7" />
                         </Button>
                     </form>
                     {error && (
