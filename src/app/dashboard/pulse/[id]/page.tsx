@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, FormEvent, useCallback, useTransition } from 'react';
@@ -216,3 +217,4 @@ export default function PulseConversationPage() {
     </div>
   );
 }
+

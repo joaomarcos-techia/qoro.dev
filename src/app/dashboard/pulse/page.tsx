@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, FormEvent, useTransition } from 'react';
@@ -132,3 +133,4 @@ export default function PulsePage() {
     </div>
   );
 }
+
