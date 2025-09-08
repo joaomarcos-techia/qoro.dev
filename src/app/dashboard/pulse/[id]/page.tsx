@@ -103,13 +103,16 @@ export default function PulseConversationPage() {
             conversationId: conversationId,
         });
 
+        // The askPulse flow now handles creating the conversation if it doesn't exist.
+        // If it was a new conversation, the flow returns a new ID, and we navigate.
         if (conversationId !== response.conversationId) {
              startNavigation(() => {
                 router.push(`/dashboard/pulse/${response.conversationId}`);
              });
         } else {
-            // After successful response, fetch the whole history again to ensure consistency
+            // Otherwise, just refresh the history for the existing conversation.
             await fetchConversationHistory();
+            // If the title was updated, refresh the sidebar.
             if (response.title) {
                 router.refresh();
             }
@@ -118,6 +121,7 @@ export default function PulseConversationPage() {
     } catch (error: any) {
         console.error("Error calling Pulse Flow:", error);
         setError(error.message || 'Ocorreu um erro ao comunicar com a IA. Tente novamente.');
+        // Revert optimistic update on error
         setMessages(messages);
         setInput(originalInput);
     } finally {

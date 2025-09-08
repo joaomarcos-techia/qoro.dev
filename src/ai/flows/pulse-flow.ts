@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A conversational AI agent for business insights.
@@ -42,10 +41,12 @@ const pulseFlow = ai.defineFlow(
     
     // Standardize incoming messages to Genkit's MessageData format (using 'parts')
     const standardizedClientMessages: MessageData[] = clientMessages.map(msg => {
+      // If the message is in {role, content} format, convert it.
       if ('content' in msg && !('parts' in msg)) {
         return { role: msg.role === 'assistant' ? 'model' : 'user', parts: [{ text: msg.content }] };
       }
-      return msg as MessageData; // Assumes it's already in a compatible format
+      // Otherwise, assume it's already in a compatible format (like MessageData)
+      return msg as MessageData; 
     });
 
     let conversation: Conversation | null = null;
@@ -53,7 +54,10 @@ const pulseFlow = ai.defineFlow(
         conversation = await pulseService.getConversation({ conversationId: currentConversationId, actor });
     }
     
-    const dbHistory: MessageData[] = conversation?.messages || [];
+    const dbHistory: MessageData[] = conversation?.messages.map(msg => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content }]
+    })) || [];
     
     const lastUserMessage = standardizedClientMessages[standardizedClientMessages.length - 1];
     const prompt = (lastUserMessage.parts[0] as any)?.text || '';
@@ -99,8 +103,6 @@ Você é o QoroPulse, um agente de IA especialista em gestão empresarial e o pa
     const toolRequests = llmResponse.toolRequests;
 
     if (Array.isArray(toolRequests) && toolRequests.length > 0) {
-      console.log("⚡ Tool request detectado:", toolRequests);
-
       newHistory.push({
         role: "model",
         parts: toolRequests.map(toolRequest => ({ toolRequest })),

@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Service for managing QoroPulse conversations in Firestore.
@@ -64,6 +63,25 @@ export const updateConversation = async (actorUid: string, conversationId: strin
     await conversationRef.update(updateData);
 };
 
+const normalizeDbMessagesToPulseMessages = (messages: MessageData[]): PulseMessage[] => {
+    if (!messages || !Array.isArray(messages)) return [];
+    
+    return messages.map((msg: any) => {
+        let content = '';
+        if (msg.content) {
+            content = msg.content;
+        } else if (msg.parts && msg.parts[0]?.text) {
+            content = msg.parts[0].text;
+        }
+        
+        // Map Genkit roles to frontend roles (model -> assistant)
+        const role = msg.role === 'model' ? 'assistant' : 'user';
+
+        return { role, content };
+    }).filter((msg): msg is PulseMessage => !!msg.content);
+};
+
+
 export const getConversation = async ({ conversationId, actor }: { conversationId: string, actor: string }): Promise<Conversation | null> => {
     const { organizationId } = await getAdminAndOrg(actor);
     const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
@@ -78,29 +96,8 @@ export const getConversation = async ({ conversationId, actor }: { conversationI
 
     // Sanitize data for client components by converting Timestamps
     const sanitizedData = convertTimestampsToISO(data);
-
-    // Convert Genkit's MessageData[] (with 'parts') to PulseMessage[] (with 'content')
-    const clientMessages: PulseMessage[] = (sanitizedData.messages || [])
-        .map((msg: MessageData) => {
-            let content = '';
-            if (msg.parts && msg.parts.length > 0) {
-                // Find the first text part and use it as content
-                const textPart = msg.parts.find(part => part.text);
-                if (textPart) {
-                    content = textPart.text!;
-                }
-            } else if ((msg as any).content) {
-                // Fallback for already converted messages
-                content = (msg as any).content;
-            }
-
-            // Map Genkit roles to frontend roles (model -> assistant)
-            const role = msg.role === 'model' ? 'assistant' : 'user';
-            
-            return { role, content };
-        })
-        .filter((msg): msg is PulseMessage => !!msg.content); // Filter out any empty messages
-
+    
+    const clientMessages = normalizeDbMessagesToPulseMessages(sanitizedData.messages || []);
 
     const parsedData = ConversationSchema.parse({
         id: doc.id,
