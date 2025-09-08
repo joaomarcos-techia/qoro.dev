@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { getDashboardMetrics, listQuotes, getOrganizationDetails } from '@/ai/flows/crm-management';
+import { listCustomers, listQuotes, getOrganizationDetails } from '@/ai/flows/crm-management';
 import { CustomerProfile, QuoteProfile, OrganizationProfile } from '@/ai/schemas';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { DollarSign, Trophy, Users, Target, Loader2, ServerCrash, Calendar as CalendarIcon, Download } from 'lucide-react';
@@ -62,17 +62,17 @@ export default function RelatoriosPage() {
     const endDate = range.to || new Date();
 
     const filteredCustomers = customers.filter(c => {
-        const customerDate = parseISO(c.createdAt);
+        const customerDate = parseISO(c.createdAt as string);
         return isValid(customerDate) && customerDate >= startDate && customerDate <= endDate;
     });
     
     const acceptedQuotes = quotes.filter(q => {
-        const quoteDate = parseISO(q.updatedAt);
+        const quoteDate = parseISO(q.updatedAt as string);
         return q.status === 'accepted' && isValid(quoteDate) && quoteDate >= startDate && quoteDate <= endDate;
     });
 
-    const wonCustomers = customers.filter(c => c.status === 'won' && isValid(parseISO(c.createdAt)) && parseISO(c.createdAt) >= startDate && parseISO(c.createdAt) <= endDate);
-    const lostCustomers = customers.filter(c => c.status === 'lost' && isValid(parseISO(c.createdAt)) && parseISO(c.createdAt) >= startDate && parseISO(c.createdAt) <= endDate);
+    const wonCustomers = customers.filter(c => c.status === 'won' && isValid(parseISO(c.createdAt as string)) && parseISO(c.createdAt as string) >= startDate && parseISO(c.createdAt as string) <= endDate);
+    const lostCustomers = customers.filter(c => c.status === 'lost' && isValid(parseISO(c.createdAt as string)) && parseISO(c.createdAt as string) >= startDate && parseISO(c.createdAt as string) <= endDate);
 
     const totalRevenue = acceptedQuotes.reduce((acc, q) => acc + q.total, 0);
     const totalWonDeals = acceptedQuotes.length;
@@ -80,10 +80,10 @@ export default function RelatoriosPage() {
 
     const salesCycleDurations = wonCustomers
         .map(c => {
-            const createdAt = parseISO(c.createdAt);
+            const createdAt = parseISO(c.createdAt as string);
             const quote = quotes.find(q => q.customerId === c.id && q.status === 'accepted');
             if (quote) {
-                const wonAt = parseISO(quote.updatedAt);
+                const wonAt = parseISO(quote.updatedAt as string);
                 return differenceInDays(wonAt, createdAt);
             }
             return null;
@@ -112,7 +112,7 @@ export default function RelatoriosPage() {
     ];
 
     const revenueByMonthData = acceptedQuotes.reduce((acc, quote) => {
-      const updatedAt = parseISO(quote.updatedAt);
+      const updatedAt = parseISO(quote.updatedAt as string);
       if(isValid(updatedAt)){
           const month = format(updatedAt, 'MMM/yy', { locale: ptBR });
           acc[month] = (acc[month] || 0) + quote.total;
@@ -142,14 +142,14 @@ export default function RelatoriosPage() {
         setIsLoading(true);
         setError(null);
         try {
-            const [crmData, quotesData, orgData] = await Promise.all([
-                getDashboardMetrics({ actor: currentUser.uid }),
+            const [customersData, quotesData, orgData] = await Promise.all([
+                listCustomers({ actor: currentUser.uid }),
                 listQuotes({ actor: currentUser.uid }),
                 getOrganizationDetails({ actor: currentUser.uid })
             ]);
             setOrganization(orgData);
             if (date) {
-                const calculatedMetrics = calculateMetrics(crmData.customers, quotesData, date);
+                const calculatedMetrics = calculateMetrics(customersData, quotesData, date);
                 setMetrics(calculatedMetrics);
             }
         } catch (err) {
