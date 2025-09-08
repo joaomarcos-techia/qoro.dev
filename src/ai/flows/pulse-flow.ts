@@ -37,7 +37,7 @@ const pulseFlow = ai.defineFlow(
     outputSchema: AskPulseOutputSchema,
   },
   async (input) => {
-    const { actor, messages: clientMessages, conversationId: currentConversationId } = input;
+    const { actor, messages: clientMessages, conversationId } = input;
     
     // Standardize incoming messages to Genkit's MessageData format (using 'parts')
     const standardizedClientMessages: MessageData[] = clientMessages.map(msg => {
@@ -50,25 +50,26 @@ const pulseFlow = ai.defineFlow(
     });
 
     let conversation: Conversation | null = null;
-    if (currentConversationId) {
-        conversation = await pulseService.getConversation({ conversationId: currentConversationId, actor });
+    if (conversationId) {
+        conversation = await pulseService.getConversation({ conversationId, actor });
     }
     
+    // Convert DB messages to Genkit's format as well for consistency
     const dbHistory: MessageData[] = conversation?.messages.map(msg => ({
         role: msg.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: msg.content }]
-    })) || [];
+    })) || standardizedClientMessages.slice(0, -1); // Use client messages if no DB history
     
     const lastUserMessage = standardizedClientMessages[standardizedClientMessages.length - 1];
     const prompt = (lastUserMessage.parts[0] as any)?.text || '';
 
     const hasTitle = !!conversation?.title && conversation.title !== 'Nova Conversa';
     const isGreeting = (dbHistory.length < 2) && /^(oi|olá|ola|hello|hi|hey|bom dia|boa tarde|boa noite)/i.test(prompt.trim());
-    const shouldGenerateTitle = !hasTitle && !isGreeting;
+    const shouldGenerateTitle = !hasTitle && !isGreeting && !!conversationId;
 
     let systemPrompt = `<OBJETIVO>
 Você é o QoroPulse, um agente de IA especialista em gestão empresarial e o parceiro estratégico do usuário. Sua missão é fornecer insights acionáveis e respostas precisas baseadas nos dados das ferramentas da Qoro. Você deve agir como um consultor de negócios proativo e confiável.
-</OBJETivo>
+</OBJETIVO>
 <REGRAS_IMPORTANTES>
 - **NUNCA** invente dados. Se a ferramenta não fornecer a informação, diga isso. Use a ferramenta.
 - **NUNCA** revele o nome das ferramentas (como 'getFinanceSummaryTool') na sua resposta. Apenas use-as internamente.
@@ -136,16 +137,12 @@ Você é o QoroPulse, um agente de IA especialista em gestão empresarial e o pa
     };
     newHistory.push({ role: 'model', parts: [{ text: assistantResponseText }] });
 
-    let conversationIdToReturn = currentConversationId;
-    if (!conversationIdToReturn) {
-        const result = await pulseService.createConversation(actor, title || 'Nova Conversa', newHistory);
-        conversationIdToReturn = result.id;
-    } else {
-        await pulseService.updateConversation(actor, conversationIdToReturn, { messages: newHistory, title });
+    if (conversationId) {
+        await pulseService.updateConversation(actor, conversationId, { messages: newHistory, title });
     }
     
     return {
-        conversationId: conversationIdToReturn!,
+        conversationId: conversationId!,
         title: title === 'Nova Conversa' ? undefined : title,
         response: assistantMessage,
     };

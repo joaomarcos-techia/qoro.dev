@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect, FormEvent, useCallback, useTransition } from 'react';
@@ -7,8 +6,7 @@ import { BrainCircuit, Loader2, AlertCircle, Sparkles, User } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { auth } from '@/lib/firebase';
 import { askPulse } from '@/ai/flows/pulse-flow';
 import { getConversation } from '@/services/pulseService';
 import type { PulseMessage } from '@/ai/schemas';
@@ -47,90 +45,81 @@ export default function PulseConversationPage() {
     return () => unsubscribe();
   }, [router]);
   
-  const fetchConversationHistory = useCallback(async () => {
-    if (conversationId && currentUser) {
-      setIsLoadingHistory(true);
-      setError(null);
-      setMessages([]);
-      try {
+  const fetchConversationHistory = useCallback(async (shouldStartAiFlow = false) => {
+    if (!conversationId || !currentUser) return;
+
+    setIsLoadingHistory(true);
+    setError(null);
+    try {
         const conversation = await getConversation({ conversationId, actor: currentUser.uid });
         if (conversation && conversation.messages) {
-           setMessages(conversation.messages);
+            setMessages(conversation.messages);
+            // If the last message is from the user, it means we need the AI's response.
+            if (shouldStartAiFlow && conversation.messages.length > 0 && conversation.messages[conversation.messages.length - 1].role === 'user') {
+                triggerAiResponse(conversation.messages);
+            }
         } else if (conversation) {
-            setMessages([]); // Conversation exists but has no messages
+            setMessages([]); // Conversation exists but has no messages.
         } else {
             setError("Não foi possível encontrar a conversa ou você não tem permissão para vê-la.");
         }
-      } catch (err: any) {
+    } catch (err: any) {
         console.error("Error loading conversation", err);
         setError(err.message || "Não foi possível carregar o histórico desta conversa.");
-      } finally {
+    } finally {
         setIsLoadingHistory(false);
-      }
-    } else {
-        setIsLoadingHistory(false);
-        setMessages([]);
     }
   }, [conversationId, currentUser]);
 
 
   useEffect(() => {
-    fetchConversationHistory();
-  }, [fetchConversationHistory]);
+    if(currentUser) {
+        // The first time the page loads, check if we need to trigger the AI response.
+        fetchConversationHistory(true);
+    }
+  }, [currentUser, fetchConversationHistory]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages, isSending]);
+  
+  const triggerAiResponse = async (currentMessages: PulseMessage[]) => {
+      setIsSending(true);
+      setError(null);
+      if (!currentUser) return;
+
+      try {
+        await askPulse({
+            messages: currentMessages,
+            actor: currentUser.uid,
+            conversationId: conversationId,
+        });
+        await fetchConversationHistory(); // Refetch to get the AI's response
+      } catch (error: any) {
+          console.error("Error calling Pulse Flow:", error);
+          setError(error.message || 'Ocorreu um erro ao comunicar com a IA. Tente novamente.');
+      } finally {
+          setIsSending(false);
+      }
+  }
 
   const handleSendMessage = async (e?: FormEvent) => {
     e?.preventDefault();
-    if (!input.trim() || isSending || !currentUser || isNavigating) return;
+    if (!input.trim() || isSending || !currentUser || isNavigating || !conversationId) return;
   
     const userMessage: PulseMessage = { role: 'user', content: input };
     const optimisticMessages = [...messages, userMessage];
     setMessages(optimisticMessages);
     const originalInput = input;
     setInput('');
-    setIsSending(true);
-    setError(null);
   
-    try {
-        const response = await askPulse({
-            messages: optimisticMessages,
-            actor: currentUser.uid,
-            conversationId: conversationId,
-        });
-
-        // The askPulse flow now handles creating the conversation if it doesn't exist.
-        // If it was a new conversation, the flow returns a new ID, and we navigate.
-        if (conversationId !== response.conversationId) {
-             startNavigation(() => {
-                router.push(`/dashboard/pulse/${response.conversationId}`);
-             });
-        } else {
-            // Otherwise, just refresh the history for the existing conversation.
-            await fetchConversationHistory();
-            // If the title was updated, refresh the sidebar.
-            if (response.title) {
-                router.refresh();
-            }
-        }
-
-    } catch (error: any) {
-        console.error("Error calling Pulse Flow:", error);
-        setError(error.message || 'Ocorreu um erro ao comunicar com a IA. Tente novamente.');
-        // Revert optimistic update on error
-        setMessages(messages);
-        setInput(originalInput);
-    } finally {
-        setIsSending(false);
-    }
+    await triggerAiResponse(optimisticMessages);
   };
 
   const renderMessages = () => {
-    if (isLoadingHistory) {
+    if (isLoadingHistory && messages.length === 0) {
       return (
         <div className="flex-grow flex flex-col items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />

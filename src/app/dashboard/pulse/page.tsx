@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, FormEvent, useTransition } from 'react';
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { askPulse } from '@/ai/flows/pulse-flow';
+import { createConversation } from '@/services/pulseService';
 import type { PulseMessage } from '@/ai/schemas';
 
 const ArrowUpIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -47,29 +46,28 @@ export default function PulsePage() {
     if (!input.trim() || isLoading || !currentUser) return;
   
     const userMessage: PulseMessage = { role: 'user', content: input };
-    const currentMessages = [userMessage];
     
     setInput('');
     setIsSending(true);
     setError(null);
   
     try {
-        const response = await askPulse({
-            messages: currentMessages,
-            actor: currentUser.uid,
-        });
+        // Step 1: Create the conversation immediately to get an ID.
+        const { id: newConversationId } = await createConversation(currentUser.uid, 'Nova Conversa', [userMessage]);
 
-        if (response.conversationId) {
+        // Step 2: Navigate to the new conversation page.
+        // The AI response will be triggered on that page.
+        if (newConversationId) {
              startTransition(() => {
-                router.push(`/dashboard/pulse/${response.conversationId}`);
+                router.push(`/dashboard/pulse/${newConversationId}`);
             });
         } else {
-            throw new Error("A IA não retornou um ID de conversa.");
+            throw new Error("Não foi possível criar a conversa.");
         }
 
     } catch (error: any) {
-        console.error("Error calling Pulse Flow:", error);
-        setError(error.message || 'Ocorreu um erro ao comunicar com a IA. Tente novamente.');
+        console.error("Error creating conversation:", error);
+        setError(error.message || 'Ocorreu um erro ao iniciar a conversa. Tente novamente.');
         setIsSending(false); // Reset sending state on error
     }
   };
@@ -83,7 +81,7 @@ export default function PulsePage() {
                 {isLoading ? (
                      <div className="flex flex-col items-center justify-center">
                         <Loader2 className="w-12 h-12 text-primary animate-spin" />
-                        <p className="mt-4 text-muted-foreground">Pensando...</p>
+                        <p className="mt-4 text-muted-foreground">Iniciando conversa...</p>
                     </div>
                 ) : (
                     <div className="text-center">
