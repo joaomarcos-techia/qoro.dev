@@ -122,7 +122,7 @@ Você é o QoroPulse, um agente de IA especialista em gestão empresarial e o pa
     let llmResponse = await ai.generate(llmRequest as any);
 
     // 6) Handle tool requests if any
-    let historyForNextTurn: MessageData[] = [...dbHistory, incomingMsg];
+    let historyForNextTurn: MessageData[] = [...dbHistory];
     const toolRequests = llmResponse.toolRequests();
 
     if (toolRequests.length > 0) {
@@ -158,7 +158,7 @@ Você é o QoroPulse, um agente de IA especialista em gestão empresarial e o pa
 
     // 9) Save the assistant's response to the database
     const assistantMessage: PulseMessage = { role: 'assistant', content: assistantResponseText };
-    const allMessages = [...dbHistory.map(messageDataToDbMessage), messageDataToDbMessage(incomingMsg), assistantMessage];
+    const allMessages = [...dbHistory.map(messageDataToDbMessage), assistantMessage];
     
     await pulseService.updateConversation(actor, conversationId!, { messages: allMessages, title: titleToSave });
 
