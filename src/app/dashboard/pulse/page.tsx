@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, FormEvent, useTransition } from 'react';
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { createConversation } from '@/services/pulseService';
+import { askPulse } from '@/ai/flows/pulse-flow';
 import type { PulseMessage } from '@/ai/schemas';
 
 const ArrowUpIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -21,14 +20,12 @@ const ArrowUpIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function PulsePage() {
   const [input, setInput] = useState('');
-  const [isSending, setIsSending] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [error, setError] = useState<string | null>(null);
   
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-
-  const isLoading = isSending || isPending;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -46,27 +43,30 @@ export default function PulsePage() {
     e?.preventDefault();
     if (!input.trim() || isLoading || !currentUser) return;
   
-    const userMessage: PulseMessage = { role: 'user', content: input };
-    
-    setInput('');
-    setIsSending(true);
+    setIsLoading(true);
     setError(null);
   
     try {
-        const { id: newConversationId } = await createConversation({ actor: currentUser.uid, messages: [userMessage], title: input.substring(0, 30) });
+        const userMessage: PulseMessage = { role: 'user', content: input };
+        
+        // The flow will now create the conversation on the first go
+        const result = await askPulse({
+          messages: [userMessage],
+          actor: currentUser.uid,
+        });
 
-        if (newConversationId) {
+        if (result.conversationId) {
              startTransition(() => {
-                router.push(`/dashboard/pulse/${newConversationId}`);
+                router.push(`/dashboard/pulse/${result.conversationId}`);
             });
         } else {
-            throw new Error("Não foi possível criar a conversa.");
+            throw new Error("Não foi possível criar a conversa e obter um ID.");
         }
 
     } catch (error: any) {
         console.error("Error creating conversation:", error);
         setError(error.message || 'Ocorreu um erro ao iniciar a conversa. Tente novamente.');
-        setIsSending(false);
+        setIsLoading(false);
     }
   };
 
@@ -76,7 +76,7 @@ export default function PulsePage() {
         <div className="flex-grow flex flex-col items-center w-full px-4 relative">
             <div className="flex-grow w-full max-w-4xl flex flex-col justify-center items-center pb-32">
                 
-                {isLoading ? (
+                {isLoading || isPending ? (
                      <div className="flex flex-col items-center justify-center">
                         <Loader2 className="w-12 h-12 text-primary animate-spin" />
                         <p className="mt-4 text-muted-foreground">Iniciando conversa...</p>
@@ -107,11 +107,11 @@ export default function PulsePage() {
                             placeholder="Comece uma nova conversa com o QoroPulse..."
                             className="w-full pr-20 pl-4 py-4 bg-transparent rounded-2xl border-none focus:ring-0 text-base resize-none"
                             rows={1}
-                            disabled={isLoading}
+                            disabled={isLoading || isPending}
                         />
                         <Button
                             type="submit"
-                            disabled={isLoading || !input.trim()}
+                            disabled={isLoading || isPending || !input.trim()}
                             className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-pulse-primary text-primary-foreground rounded-2xl transition-all duration-300 hover:bg-pulse-primary/90 disabled:bg-secondary disabled:text-muted-foreground"
                         >
                             <ArrowUpIcon className="w-6 h-6" />

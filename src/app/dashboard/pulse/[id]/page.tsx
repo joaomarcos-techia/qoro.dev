@@ -1,16 +1,15 @@
-
 'use client';
 
 import { useState, useRef, useEffect, FormEvent, useCallback, useTransition } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { BrainCircuit, Loader2, AlertCircle, Sparkles, User } from 'lucide-react';
+import { BrainCircuit, Loader2, AlertCircle, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { askPulse } from '@/ai/flows/pulse-flow';
 import { getConversation } from '@/services/pulseService';
-import type { PulseMessage, Conversation } from '@/ai/schemas';
+import type { PulseMessage } from '@/ai/schemas';
 
 const ArrowUpIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" {...props}>
@@ -54,10 +53,10 @@ export default function PulseConversationPage() {
         const conversation = await getConversation({ conversationId, actor: currentUser.uid });
         if (conversation && Array.isArray(conversation.messages)) {
             setMessages(conversation.messages);
-        } else if (conversation) {
-            setMessages([]);
         } else {
+            // If conversation is not found, maybe redirect to a 404 or the base pulse page
             setError("Não foi possível encontrar a conversa ou você não tem permissão para vê-la.");
+            setTimeout(() => router.push('/dashboard/pulse'), 3000);
         }
     } catch (err: any) {
         console.error("Error loading conversation", err);
@@ -65,7 +64,7 @@ export default function PulseConversationPage() {
     } finally {
         setIsLoadingHistory(false);
     }
-  }, [conversationId, currentUser]);
+  }, [conversationId, currentUser, router]);
 
 
   useEffect(() => {
@@ -85,25 +84,24 @@ export default function PulseConversationPage() {
     if (!input.trim() || isSending || !currentUser || !conversationId) return;
   
     const userMessage: PulseMessage = { role: 'user', content: input };
-    const optimisticMessages = [...messages, userMessage];
-    setMessages(optimisticMessages);
+    setMessages(prev => [...prev, userMessage]); // Optimistic UI update
     setInput('');
     setIsSending(true);
     setError(null);
 
     try {
       const result = await askPulse({
-          messages: optimisticMessages,
+          messages: [...messages, userMessage],
           actor: currentUser.uid,
           conversationId: conversationId,
       });
-      // Append only the AI's response to the state
+      // Replace optimistic update with final state from server to ensure consistency
       setMessages(prev => [...prev, result.response]);
     } catch (error: any) {
         console.error("Error calling Pulse Flow:", error);
         setError(error.message || 'Ocorreu um erro ao comunicar com a IA. Tente novamente.');
-        // Revert optimistic update on failure
-        setMessages(messages);
+        // Revert optimistic update on failure by removing the last user message
+        setMessages(prev => prev.slice(0, -1));
     } finally {
         setIsSending(false);
     }

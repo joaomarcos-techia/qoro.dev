@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Service for managing QoroPulse conversations in Firestore.
@@ -8,10 +7,8 @@ import { z } from 'zod';
 import { ConversationSchema, ConversationProfileSchema, PulseMessage, Conversation } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import { adminDb } from '@/lib/firebase-admin';
-import { MessageData } from 'genkit';
 
-
-// Helper to convert Firestore Timestamps in nested objects to ISO strings
+// Helper to convert Firestore Timestamps in nested objects to ISO strings for client compatibility
 const convertTimestampsToISO = (obj: any): any => {
     if (!obj) return obj;
     if (obj instanceof Timestamp) {
@@ -20,7 +17,7 @@ const convertTimestampsToISO = (obj: any): any => {
     if (Array.isArray(obj)) {
         return obj.map(convertTimestampsToISO);
     }
-    if (typeof obj === 'object') {
+    if (typeof obj === 'object' && obj !== null) {
         const newObj: { [key: string]: any } = {};
         for (const key in obj) {
             newObj[key] = convertTimestampsToISO(obj[key]);
@@ -36,44 +33,31 @@ const normalizeDbMessagesToPulseMessages = (messages: any[]): PulseMessage[] => 
     
     return messages
         .map((msg: any): PulseMessage | null => {
-            if (!msg || !msg.role) return null;
+            if (!msg || !msg.role || typeof msg.content !== 'string') return null;
 
-            // This service now ONLY deals with the `{role, content}` schema.
-            // The flow is responsible for converting from `parts` if necessary.
-            if (typeof msg.content === 'string') {
-                 const role = msg.role === 'model' ? 'assistant' : msg.role === 'assistant' ? 'assistant' : 'user';
-                 return { role, content: msg.content };
-            }
-            
-            // If we receive the `parts` format here, it's an inconsistency.
-            // We'll try to salvage it but log a warning.
-            if (Array.isArray(msg.parts) && msg.parts[0]?.text) {
-                console.warn(`[pulseService] Received 'parts' format unexpectedly. Normalizing to 'content'.`);
-                const role = msg.role === 'model' ? 'assistant' : 'user';
-                return { role, content: msg.parts[0].text };
-            }
+            const role = msg.role === 'model' ? 'assistant' : msg.role === 'tool' ? 'assistant' : msg.role;
+            if (role !== 'user' && role !== 'assistant') return null;
 
-            // Ignore messages that don't fit the expected schemas
-            return null;
+            return { role, content: msg.content };
         })
         .filter((msg): msg is PulseMessage => msg !== null);
 };
 
 
-export const createConversation = async ({ actor, messages, title }: { actor: string; messages: PulseMessage[]; title?: string; }): Promise<{ id: string }> => {
+export const createConversation = async ({ actor, messages, title }: { actor: string; messages: PulseMessage[]; title?: string; }): Promise<{ id: string, title: string }> => {
     const { organizationId } = await getAdminAndOrg(actor);
 
     const newConversationData = {
         userId: actor,
         organizationId,
         title: title || 'Nova Conversa',
-        messages, // Storing in the simple, client-facing format
+        messages, 
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
 
     const docRef = await adminDb.collection('pulse_conversations').add(newConversationData);
-    return { id: docRef.id };
+    return { id: docRef.id, title: newConversationData.title };
 };
 
 export const updateConversation = async (actorUid: string, conversationId: string, updatedConversation: Partial<Omit<Conversation, 'id'>>): Promise<void> => {
@@ -90,7 +74,6 @@ export const updateConversation = async (actorUid: string, conversationId: strin
     };
 
     if(updatedConversation.messages) {
-        // Ensure messages are in the correct {role, content} format
         updateData.messages = updatedConversation.messages.map(m => ({
             role: m.role,
             content: m.content
@@ -99,7 +82,6 @@ export const updateConversation = async (actorUid: string, conversationId: strin
     if(updatedConversation.title) {
         updateData.title = updatedConversation.title;
     }
-
 
     await conversationRef.update(updateData);
 };
@@ -126,7 +108,6 @@ export const getConversation = async ({ conversationId, actor }: { conversationI
     
     return parsedData;
 };
-
 
 export const listConversations = async ({ actor }: { actor: string }): Promise<z.infer<typeof ConversationProfileSchema>[]> => {
     try {
