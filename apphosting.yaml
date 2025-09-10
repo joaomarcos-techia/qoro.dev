@@ -16,6 +16,30 @@ runConfig:
 # Opcional: Defina variáveis de ambiente para produção.
 # É mais seguro gerenciá-las através da interface do Firebase ou usando secrets.
 # https://firebase.google.com/docs/app-hosting/configure-backend#set-env
-# env:
-#   - variable: EXAMPLE_ENV_VARIABLE
-#     value: "example-value"
+env:
+  # Exemplo de configuração de variáveis de ambiente.
+  # Substitua 'seu-valor-aqui' pelos seus valores de produção reais.
+  # Para chaves sensíveis (como API keys), é altamente recomendado usar o Secret Manager
+  # integrado ao Firebase App Hosting para maior segurança.
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: "seu-valor-aqui"
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: "seu-valor-aqui"
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "seu-valor-aqui"
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: "seu-valor-aqui"
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "seu-valor-aqui"
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "seu-valor-aqui"
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: "seu-valor-aqui"
+  - variable: NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID
+    value: "seu-valor-aqui"
+  - variable: NEXT_PUBLIC_STRIPE_PERFORMANCE_PLAN_PRICE_ID
+    value: "seu-valor-aqui"
+  # As variáveis secretas (STRIPE e FIREBASE_ADMIN) devem ser gerenciadas via Secret Manager.
+  # Exemplo de como vincular um segredo:
+  # - variable: STRIPE_SECRET_KEY
+  #   secret: STRIPE_SECRET_KEY_SECRET_NAME
