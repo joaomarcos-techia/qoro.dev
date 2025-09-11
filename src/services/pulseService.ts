@@ -5,7 +5,7 @@
  */
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { ConversationSchema, ConversationProfileSchema, PulseMessage, Conversation } from '@/ai/schemas';
+import { ConversationSchema, ConversationProfileSchema, PulseMessage, PulseMessageSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import { adminDb } from '@/lib/firebase-admin';
 
@@ -28,12 +28,14 @@ const convertTimestampsToISO = (obj: any): any => {
     return obj;
 };
 
-// Now this function is much simpler as the DB format is just PulseMessage[]
-const normalizeDbMessagesToPulseMessages = (messages: any[]): PulseMessage[] => {
-    if (!messages || !Array.isArray(messages)) return [];
-    // Just validate that it fits the schema. The format is already correct.
-    return z.array(PulseMessage).parse(messages);
-};
+// Sanitizes a message object to ensure it's safe for Firestore.
+function sanitizeMessage(message: any): PulseMessage {
+    const { role, content } = message;
+    return {
+        role: role || 'assistant',
+        content: content || '', // Ensure content is always a string
+    };
+}
 
 
 export const createConversation = async ({ actor, messages, title }: { actor: string; messages: PulseMessage[]; title?: string; }): Promise<{ id: string, title: string }> => {
@@ -44,7 +46,7 @@ export const createConversation = async ({ actor, messages, title }: { actor: st
         userId: actor,
         organizationId,
         title: title || 'Nova Conversa',
-        messages, 
+        messages: messages.map(sanitizeMessage), // Sanitize messages on creation
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
@@ -53,7 +55,7 @@ export const createConversation = async ({ actor, messages, title }: { actor: st
     return { id: newDocRef.id, title: newConversationData.title };
 };
 
-export const updateConversation = async (actorUid: string, conversationId: string, updatedConversation: Partial<Omit<Conversation, 'id'>>): Promise<void> => {
+export const updateConversation = async (actorUid: string, conversationId: string, updatedConversation: Partial<Omit<z.infer<typeof ConversationSchema>, 'id'>>): Promise<void> => {
     const { organizationId } = await getAdminAndOrg(actorUid);
     const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
 
@@ -67,8 +69,7 @@ export const updateConversation = async (actorUid: string, conversationId: strin
     };
 
     if(updatedConversation.messages) {
-        // Ensure messages are in the simple {role, content} format
-        updateData.messages = updatedConversation.messages;
+        updateData.messages = updatedConversation.messages.map(sanitizeMessage); // Sanitize on update
     }
     if(updatedConversation.title) {
         updateData.title = updatedConversation.title;
@@ -77,7 +78,7 @@ export const updateConversation = async (actorUid: string, conversationId: strin
     await conversationRef.update(updateData);
 };
 
-export const getConversation = async ({ conversationId, actor }: { conversationId: string, actor: string }): Promise<Conversation | null> => {
+export const getConversation = async ({ conversationId, actor }: { conversationId: string, actor: string }): Promise<z.infer<typeof ConversationSchema> | null> => {
     const { organizationId } = await getAdminAndOrg(actor);
     const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
 
@@ -89,13 +90,21 @@ export const getConversation = async ({ conversationId, actor }: { conversationI
     const data = doc.data();
     if (!data) return null;
     
-    // The messages in DB are already in PulseMessage[] format.
-    const messages = data.messages ? normalizeDbMessagesToPulseMessages(data.messages) : [];
+    // Validate messages from DB with safeParse
+    const rawMessages = data.messages ?? [];
+    const parsedMessages = z.array(PulseMessageSchema).safeParse(rawMessages);
+    
+    if (!parsedMessages.success) {
+        console.error("Invalid messages found in Firestore conversation, returning empty.", parsedMessages.error);
+        data.messages = [];
+    } else {
+        data.messages = parsedMessages.data;
+    }
 
     const parsedData = ConversationSchema.parse({
         id: doc.id,
         title: data.title,
-        messages: messages,
+        messages: data.messages,
     })
     
     return parsedData;
