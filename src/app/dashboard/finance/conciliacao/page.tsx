@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -10,9 +11,9 @@ import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from '@/components/ui/dialog';
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { GitCompareArrows, Upload, FileText, Loader2, ServerCrash, Clock, Eye, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { GitCompareArrows, Upload, FileText, Loader2, ServerCrash, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { listReconciliations, createReconciliation, deleteReconciliation, updateReconciliation } from '@/ai/flows/reconciliation-flow';
@@ -97,7 +98,8 @@ export default function ConciliacaoPage() {
     }
   };
 
-  const handleEditClick = (rec: ReconciliationProfile) => {
+  const handleEditClick = (e: React.MouseEvent, rec: ReconciliationProfile) => {
+    e.stopPropagation();
     setSelectedReconciliation(rec);
     setNewFileName(rec.fileName);
     setIsEditModalOpen(true);
@@ -168,33 +170,29 @@ export default function ConciliacaoPage() {
             </TableHeader>
             <TableBody>
               {reconciliations.map((rec) => (
-                <TableRow key={rec.id}>
+                <TableRow key={rec.id} onClick={() => router.push(`/dashboard/finance/conciliacao/${rec.id}`)} className="cursor-pointer">
                   <TableCell className="font-medium flex items-center">
                     <FileText className="w-4 h-4 mr-3 text-muted-foreground" />
                     {rec.fileName}
                   </TableCell>
                   <TableCell>{format(new Date(rec.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/finance/conciliacao/${rec.id}`)} className="rounded-xl mr-2">
-                      <Eye className="w-4 h-4 mr-2" />
-                      Visualizar
-                    </Button>
                     <AlertDialog>
                        <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
+                            <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
                                 <span className="sr-only">Abrir menu</span>
                                 <MoreHorizontal className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
                          <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleEditClick(rec)}>
+                            <DropdownMenuItem onClick={(e) => handleEditClick(e, rec)}>
                                <Edit className="mr-2 h-4 w-4" />
                                <span>Editar</span>
                             </DropdownMenuItem>
                              <AlertDialogTrigger asChild>
-                                <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400">
+                                <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400" onClick={(e) => e.stopPropagation()}>
                                    <Trash2 className="mr-2 h-4 w-4" />
                                    <span>Excluir</span>
                                 </DropdownMenuItem>
