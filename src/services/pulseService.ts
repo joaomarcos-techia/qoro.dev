@@ -23,7 +23,6 @@ const FirestoreConversationSchema = z.object({
   id: z.string(),
   title: z.string(),
   userId: z.string(),
-  organizationId: z.string(),
   messages: z.array(FirestoreMessageSchema),
   createdAt: z.any(),
   updatedAt: z.any(),
@@ -58,7 +57,6 @@ export async function createConversation(input: {
 
   const convData = {
     userId: input.actor,
-    organizationId: 'temp_org_id', // This should be retrieved from user claims or another service
     title: input.title?.trim() || safeMessages[0]?.content?.slice(0, 30) || 'Nova conversa',
     messages: safeMessages,
     createdAt: Timestamp.now(),
