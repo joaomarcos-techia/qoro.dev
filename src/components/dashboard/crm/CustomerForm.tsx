@@ -32,13 +32,14 @@ type FormValues = z.infer<typeof FormSchema>;
 // --- Funções de formatação ---
 const formatCPF = (value: string) => {
     if (!value) return "";
-    return value
-      .replace(/\D/g, '') // Remove tudo que não é dígito
-      .slice(0, 11) // Limita a 11 dígitos
-      .replace(/(\d{3})(\d)/, '$1.$2') // Coloca ponto após o terceiro dígito
-      .replace(/(\d{3})(\d)/, '$1.$2') // Coloca ponto após o sexto dígito
-      .replace(/(\d{3})(\d{1,2})$/, '$1-$2'); // Coloca hífen antes dos últimos dois dígitos
+    const onlyDigits = value.replace(/\D/g, '');
+    
+    if (onlyDigits.length <= 3) return onlyDigits;
+    if (onlyDigits.length <= 6) return `${onlyDigits.slice(0, 3)}.${onlyDigits.slice(3)}`;
+    if (onlyDigits.length <= 9) return `${onlyDigits.slice(0, 3)}.${onlyDigits.slice(3, 6)}.${onlyDigits.slice(6)}`;
+    return `${onlyDigits.slice(0, 3)}.${onlyDigits.slice(3, 6)}.${onlyDigits.slice(6, 9)}-${onlyDigits.slice(9, 11)}`;
 };
+
 
 const formatCNPJ = (value: string) => {
     if (!value) return "";

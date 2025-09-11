@@ -29,32 +29,41 @@ const formatDate = (dateStr: string) => format(parseISO(dateStr), 'dd/MM/yyyy');
 export function TransactionComparisonTable({ ofxTransactions, systemTransactions, isLoading }: TransactionComparisonTableProps) {
 
   const { matched, unmatchedOfx, unmatchedSystem } = useMemo(() => {
+    const localOfx = ofxTransactions || [];
+    const localSys = systemTransactions || [];
     const matched = new Set<string>();
-    const systemCopy = [...systemTransactions];
-    const ofxCopy = [...ofxTransactions];
+    const systemCopy = [...localSys];
+    const ofxCopy = [...localOfx];
 
     const findMatch = (ofx: OfxTransaction, sys: TransactionProfile[]) => {
-      return sys.findIndex(s => {
+      // Use .find() for clarity, handle potential undefined result
+      return sys.find(s => {
         const sameDate = formatDate(s.date) === formatDate(ofx.date);
-        const sameAmount = Math.abs(s.amount - Math.abs(ofx.amount)) < 0.01; // Compare absolute for easier logic
+        const sameAmount = Math.abs(s.amount - Math.abs(ofx.amount)) < 0.01;
         return sameDate && sameAmount;
       });
     };
 
     const matchedPairs: {ofx: OfxTransaction, system: TransactionProfile}[] = [];
-
+    const finalUnmatchedOfx: OfxTransaction[] = [];
+    
     for (const ofxT of ofxCopy) {
-      const matchIndex = findMatch(ofxT, systemCopy);
-      if (matchIndex !== -1) {
-        matchedPairs.push({ofx: ofxT, system: systemCopy[matchIndex]});
-        systemCopy.splice(matchIndex, 1);
-        matched.add(ofxT.date + ofxT.amount + ofxT.description); 
+      const match = findMatch(ofxT, systemCopy);
+      if (match) {
+        matchedPairs.push({ofx: ofxT, system: match});
+        // Remove the matched item from systemCopy
+        const index = systemCopy.findIndex(s => s.id === match.id);
+        if (index > -1) {
+            systemCopy.splice(index, 1);
+        }
+      } else {
+        finalUnmatchedOfx.push(ofxT);
       }
     }
     
     return {
       matched: matchedPairs,
-      unmatchedOfx: ofxCopy.filter(t => !matched.has(t.date + t.amount + t.description)),
+      unmatchedOfx: finalUnmatchedOfx,
       unmatchedSystem: systemCopy,
     }
 
