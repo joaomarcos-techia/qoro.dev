@@ -14,7 +14,7 @@ export const createReconciliation = async (input: z.infer<typeof ReconciliationS
     const { organizationId, adminUid } = await getAdminAndOrg(input.actor);
 
     const newReconciliationData = {
-        organizationId,
+        companyId: organizationId, // Use companyId to match other services
         userId: adminUid,
         fileName: input.fileName,
         ofxContent: input.ofxContent,
@@ -30,7 +30,7 @@ export const getReconciliation = async (id: string, actor: string): Promise<z.in
     const docRef = adminDb.collection('reconciliations').doc(id);
     const docSnap = await docRef.get();
 
-    if (!docSnap.exists || docSnap.data()?.organizationId !== organizationId) {
+    if (!docSnap.exists || docSnap.data()?.companyId !== organizationId) {
         return null;
     }
 
@@ -46,7 +46,7 @@ export const listReconciliations = async (actor: string): Promise<z.infer<typeof
     const { organizationId } = await getAdminAndOrg(actor);
 
     const snapshot = await adminDb.collection('reconciliations')
-        .where('organizationId', '==', organizationId)
+        .where('companyId', '==', organizationId)
         .orderBy('createdAt', 'desc')
         .get();
 
