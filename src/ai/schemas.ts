@@ -256,6 +256,7 @@ export const ConversationSchema = z.object({
     id: z.string(),
     title: z.string(),
     messages: z.array(PulseMessageSchema), 
+    updatedAt: z.string(),
 });
 export type Conversation = z.infer<typeof ConversationSchema>;
 
@@ -348,3 +349,16 @@ export const BillProfileSchema = BillSchema.extend({
     entityName: z.string().optional(),
 });
 export type BillProfile = z.infer<typeof BillProfileSchema>;
+
+export const ReconciliationSchema = z.object({
+    fileName: z.string(),
+    ofxContent: z.string(),
+});
+export type Reconciliation = z.infer<typeof ReconciliationSchema>;
+
+export const ReconciliationProfileSchema = ReconciliationSchema.extend({
+    id: z.string(),
+    createdAt: z.string(),
+    userId: z.string(),
+});
+export type ReconciliationProfile = z.infer<typeof ReconciliationProfileSchema>;

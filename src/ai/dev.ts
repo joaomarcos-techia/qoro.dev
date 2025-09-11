@@ -7,6 +7,7 @@ import './flows/task-management';
 import './flows/pulse-flow';
 import './flows/finance-management';
 import './flows/supplier-management';
+import './flows/reconciliation-flow';
 import { stripeWebhookFlow } from './flows/billing-flow';
 
 
