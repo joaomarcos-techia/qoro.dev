@@ -33,31 +33,6 @@ export default function PulseConversationPage() {
   const params = useParams();
   const conversationId = params.id as string;
 
-  // Helper to normalize messages for display
-  const normalizeMessagesForDisplay = (dbMessages: any[]): PulseMessage[] => {
-    if (!dbMessages || !Array.isArray(dbMessages)) return [];
-    
-    return dbMessages
-        .map((msg: any): PulseMessage | null => {
-            if (!msg || !msg.role) return null;
-            const role = msg.role === 'model' ? 'assistant' : msg.role;
-            if (role !== 'user' && role !== 'assistant') return null;
-
-            let content = '';
-            if (typeof msg.content === 'string') {
-                content = msg.content;
-            } else if (Array.isArray(msg.parts)) {
-                content = msg.parts.map((p: any) => p.text).filter(Boolean).join('\n');
-            }
-            
-            if (content) {
-                return { role, content };
-            }
-            return null;
-        })
-        .filter((msg): msg is PulseMessage => msg !== null);
-  };
-
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -78,13 +53,11 @@ export default function PulseConversationPage() {
         const conversation = await getConversation({ conversationId, actor: currentUser.uid });
 
         if (conversation && Array.isArray(conversation.messages)) {
-            const displayMessages = normalizeMessagesForDisplay(conversation.messages);
-            setMessages(displayMessages);
+            setMessages(conversation.messages);
 
             // If the conversation is new and only has one user message, trigger AI response.
-            if (displayMessages.length === 1 && displayMessages[0].role === 'user') {
-                // Pass the single message to the flow
-                handleSendMessage(undefined, [displayMessages[0]]);
+            if (conversation.messages.length === 1 && conversation.messages[0].role === 'user') {
+                handleSendMessage(undefined, conversation.messages);
             }
         } else {
             setError("Não foi possível encontrar a conversa ou você não tem permissão para vê-la.");
@@ -247,5 +220,3 @@ export default function PulseConversationPage() {
     </div>
   );
 }
-
-    

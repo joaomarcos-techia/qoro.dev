@@ -244,9 +244,9 @@ export type TaskProfile = z.infer<typeof TaskProfileSchema>;
 
 
 // Schemas for QoroPulse
-// Este é o schema que o frontend envia.
+// Este é o schema que o frontend envia e que usamos no DB. Simples e robusto.
 export const PulseMessageSchema = z.object({
-    role: z.enum(['user', 'assistant']), // Apenas 'user' ou 'assistant' são permitidos do cliente.
+    role: z.enum(['user', 'assistant']), 
     content: z.string(),
 });
 export type PulseMessage = z.infer<typeof PulseMessageSchema>;
@@ -255,7 +255,7 @@ export type PulseMessage = z.infer<typeof PulseMessageSchema>;
 export const ConversationSchema = z.object({
     id: z.string(),
     title: z.string(),
-    messages: z.array(z.any()), // Permite a estrutura flexível de MessageData da Genkit
+    messages: z.array(PulseMessageSchema), 
 });
 export type Conversation = z.infer<typeof ConversationSchema>;
 
@@ -268,7 +268,7 @@ export type ConversationProfile = z.infer<typeof ConversationProfileSchema>;
 
 
 export const AskPulseInputSchema = z.object({
-    messages: z.array(PulseMessageSchema), // O frontend envia um histórico simplificado
+    messages: z.array(PulseMessageSchema), 
     actor: z.string(),
     conversationId: z.string().optional(),
 });
@@ -277,7 +277,7 @@ export type AskPulseInput = z.infer<typeof AskPulseInputSchema>;
 export const AskPulseOutputSchema = z.object({
     conversationId: z.string(),
     title: z.string().optional(),
-    response: PulseMessageSchema, // A resposta para o frontend é simplificada
+    response: PulseMessageSchema, 
 });
 export type AskPulseOutput = z.infer<typeof AskPulseOutputSchema>;
 

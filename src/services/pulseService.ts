@@ -28,37 +28,11 @@ const convertTimestampsToISO = (obj: any): any => {
     return obj;
 };
 
-// Converts various message formats to a consistent PulseMessage format.
+// Now this function is much simpler as the DB format is just PulseMessage[]
 const normalizeDbMessagesToPulseMessages = (messages: any[]): PulseMessage[] => {
     if (!messages || !Array.isArray(messages)) return [];
-    
-    return messages
-        .map((msg: any): PulseMessage | null => {
-            // This handles both the Genkit MessageData structure and our simple {role, content} structure
-            if (!msg || !msg.role) return null;
-
-            const role = msg.role === 'model' ? 'assistant' : msg.role;
-            if (role !== 'user' && role !== 'assistant') return null;
-            
-            // Handle both `content` and `parts` format from DB
-            let content = '';
-            if (typeof msg.content === 'string') {
-                content = msg.content;
-            } else if (Array.isArray(msg.parts) && msg.parts.length > 0) {
-                 // Join text parts, ignore other parts for client display
-                content = msg.parts
-                    .map(p => (p as any).text)
-                    .filter(Boolean)
-                    .join('\n');
-            }
-            
-            if (content) {
-                return { role, content };
-            }
-
-            return null;
-        })
-        .filter((msg): msg is PulseMessage => msg !== null);
+    // Just validate that it fits the schema. The format is already correct.
+    return z.array(PulseMessage).parse(messages);
 };
 
 
@@ -93,6 +67,7 @@ export const updateConversation = async (actorUid: string, conversationId: strin
     };
 
     if(updatedConversation.messages) {
+        // Ensure messages are in the simple {role, content} format
         updateData.messages = updatedConversation.messages;
     }
     if(updatedConversation.title) {
@@ -114,13 +89,13 @@ export const getConversation = async ({ conversationId, actor }: { conversationI
     const data = doc.data();
     if (!data) return null;
     
-    // Important: We just pass the raw messages here. The flow will handle conversion.
-    const rawMessages = data.messages || [];
+    // The messages in DB are already in PulseMessage[] format.
+    const messages = data.messages ? normalizeDbMessagesToPulseMessages(data.messages) : [];
 
     const parsedData = ConversationSchema.parse({
         id: doc.id,
         title: data.title,
-        messages: rawMessages,
+        messages: messages,
     })
     
     return parsedData;
@@ -171,5 +146,3 @@ export const deleteConversation = async ({ conversationId, actor }: { conversati
     await conversationRef.delete();
     return { success: true };
 };
-
-    
