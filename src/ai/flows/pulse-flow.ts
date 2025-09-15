@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Robust QoroPulse conversation flow with tool integration and safe history handling.
@@ -124,26 +123,28 @@ Sua missão é fornecer insights acionáveis e respostas precisas baseadas nos d
     
     // 6. If tools are requested, execute them and get a final response
     if (toolRequests && toolRequests.length > 0) {
-        aiHistory.push({ role: 'model', parts: toolRequests.map(toolRequest => ({ toolRequest })) });
+        // Add the model's tool request to the history
+        const toolRequestPart: Part = { toolRequest: toolRequests[0] };
+        aiHistory.push({ role: 'model', parts: [toolRequestPart] });
 
         const toolOutputs = await Promise.all(
-          toolRequests.map(async (toolRequest) => {
-            try {
-              const output = await ai.runTool(toolRequest as any, { context: { actor } });
-              // Return the Part object directly
-              return { toolResponse: { name: toolRequest.name, output } };
-            } catch (err: any) {
-              return {
-                toolResponse: {
-                  name: toolRequest.name,
-                  output: { __error: true, message: String(err?.message || err) },
-                },
-              };
-            }
-          })
+            toolRequests.map(async (toolRequest) => {
+              try {
+                const output = await ai.runTool(toolRequest as any, { context: { actor } });
+                // Return the Part object directly
+                return { toolResponse: { name: toolRequest.name, output } };
+              } catch (err: any) {
+                return {
+                  toolResponse: {
+                    name: toolRequest.name,
+                    output: { __error: true, message: String(err?.message || err) },
+                  },
+                };
+              }
+            })
         );
         
-        // Pass the array of Part objects directly
+        // Add the tool's response to the history
         aiHistory.push({ role: 'tool', parts: toolOutputs });
         
         // Generate the final response using the tool outputs
