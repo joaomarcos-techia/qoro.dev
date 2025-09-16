@@ -4,7 +4,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { config } from 'dotenv';
 
-// Carrega as variáveis de ambiente do arquivo .env
+// Carrega as variáveis de ambiente do arquivo .env. Isso é crucial para o ambiente de servidor.
 config({ path: `.env` });
 
 let app: App;
@@ -33,7 +33,6 @@ if (!apps.length) {
         });
     } catch (e: any) {
         console.error("Falha na inicialização do Firebase Admin SDK:", e.message);
-        // Lança um erro para impedir que a aplicação continue em um estado quebrado.
         throw new Error("Não foi possível inicializar o Firebase Admin. Verifique as variáveis de ambiente do servidor.");
     }
 } else {
