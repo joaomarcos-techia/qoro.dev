@@ -9,12 +9,19 @@ config({ path: `.env` });
 
 let app: App;
 
-if (!getApps().length) {
+const apps = getApps();
+if (!apps.length) {
     try {
         const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
-        if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !privateKey) {
-            throw new Error("As variáveis de ambiente do Firebase Admin não estão configuradas corretamente.");
+        if (!process.env.FIREBASE_PROJECT_ID) {
+            throw new Error("FIREBASE_PROJECT_ID não está definido no ambiente.");
+        }
+        if (!process.env.FIREBASE_CLIENT_EMAIL) {
+            throw new Error("FIREBASE_CLIENT_EMAIL não está definido no ambiente.");
+        }
+        if (!privateKey) {
+            throw new Error("FIREBASE_PRIVATE_KEY não está definido no ambiente.");
         }
 
         app = initializeApp({
@@ -24,13 +31,13 @@ if (!getApps().length) {
                 privateKey: privateKey,
             }),
         });
-    } catch (e) {
-        console.error("Firebase Admin SDK initialization failed.", e);
-        // Lança um erro mais genérico para evitar vazar detalhes de configuração.
-        throw new Error("Could not initialize Firebase Admin SDK. Ensure environment is configured correctly.");
+    } catch (e: any) {
+        console.error("Falha na inicialização do Firebase Admin SDK:", e.message);
+        // Lança um erro para impedir que a aplicação continue em um estado quebrado.
+        throw new Error("Não foi possível inicializar o Firebase Admin. Verifique as variáveis de ambiente do servidor.");
     }
 } else {
-    app = getApps()[0];
+    app = apps[0];
 }
 
 const adminAuth = getAuth(app);

@@ -1,3 +1,4 @@
+
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 
@@ -5,7 +6,7 @@ import { googleAI } from '@genkit-ai/googleai';
 const apiKey = process.env.GOOGLE_API_KEY || '';
 if (!apiKey) {
   console.warn(
-    'GOOGLE_API_KEY is not defined. Genkit will not be able to interat with Google AI services.'
+    'AVISO: A variável de ambiente GOOGLE_API_KEY não está definida. A comunicação com a Google AI API falhará.'
   );
 }
 
