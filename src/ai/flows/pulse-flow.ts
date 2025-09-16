@@ -1,174 +1,173 @@
-'use server';
 
+'use server';
+/**
+ * @fileOverview The central orchestrator for the QoroPulse AI agent.
+ * This flow manages the conversation, tool usage, and persistence.
+ *
+ * - askPulse: The main function that handles user queries.
+ * - deleteConversation: Deletes a conversation history.
+ */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { AskPulseInputSchema, AskPulseOutputSchema, PulseMessage } from '@/ai/schemas';
-import { getCrmSummaryTool } from '@/ai/tools/crm-tools';
-import { createTaskTool, listTasksTool } from '@/ai/tools/task-tools';
-import { listAccountsTool, getFinanceSummaryTool } from '@/ai/tools/finance-tools';
-import { listSuppliersTool } from '@/ai/tools/supplier-tools';
+import {
+  AskPulseInputSchema,
+  AskPulseOutputSchema,
+  PulseMessage,
+  PulseMessageSchema
+} from '@/ai/schemas';
+
+import * as crmTools from '@/ai/tools/crm-tools';
+import * as taskTools from '@/ai/tools/task-tools';
+import * as financeTools from '@/ai/tools/finance-tools';
+import * as supplierTools from '@/ai/tools/supplier-tools';
+
 import * as pulseService from '@/services/pulseService';
 
-const PulseResponseSchema = z.object({
-  response: z.string().describe('The final, user-facing response from the AI.'),
-  title: z.string().optional().describe('A short, descriptive title for the conversation if a new one is needed.'),
-});
-
 /**
- * Sanitizes messages to ensure compatibility with Genkit models.
+ * Sanitizes conversation history to conform to the expected format for the AI model.
+ * It ensures roles are either 'user' or 'model' and filters out any invalid messages.
  */
-function sanitizeHistory(messages: PulseMessage[]): { role: 'user' | 'model'; parts: { text: string }[] }[] {
-  return messages.map(msg => ({
-    role: msg.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: msg.content }],
-  })).filter(m => m.parts[0].text.trim().length > 0);
+function sanitizeHistory(messages: PulseMessage[]): { role: 'user' | 'model'; content: any[] }[] {
+  const history: { role: 'user' | 'model'; content: any[] }[] = [];
+  for (const msg of messages) {
+    if (msg.role === 'assistant' || msg.role === 'model') {
+      history.push({ role: 'model', content: [{ text: msg.content }] });
+    } else if (msg.role === 'user') {
+      history.push({ role: 'user', content: [{ text: msg.content }] });
+    }
+  }
+  return history;
 }
 
 /**
- * Checks if a suggested title is meaningful or just a rehash of the first message.
+ * Defines the main prompt for the QoroPulse agent, making all available tools accessible.
  */
-function isTitleDerivedFromFirstMessage(suggested?: string, firstUser?: string): boolean {
-  if (!suggested?.trim() || !firstUser?.trim()) return true;
-  const a = suggested.trim().toLowerCase();
-  const b = firstUser.trim().toLowerCase();
-  return a === b || a.includes(b) || b.includes(a);
-}
-
-// Main QoroPulse flow
-const pulseFlow = ai.defineFlow(
+const pulsePrompt = ai.definePrompt(
   {
-    name: 'pulseFlow',
-    inputSchema: AskPulseInputSchema,
-    outputSchema: AskPulseOutputSchema,
+    name: 'pulsePrompt',
+    system: `Você é o QoroPulse, um assistente de negócios inteligente e proativo. 
+      Sua personalidade é prestativa, direta e focada em resultados.
+      Você tem acesso a ferramentas para buscar informações sobre CRM, finanças e tarefas.
+      Responda de forma concisa e clara. Se precisar de mais informações para usar uma ferramenta, peça ao usuário.
+      Ao criar uma tarefa, sempre confirme com o usuário após a criação.`,
+    tools: [
+      crmTools.getCrmSummaryTool,
+      taskTools.listTasksTool,
+      taskTools.createTaskTool,
+      financeTools.getFinanceSummaryTool,
+      financeTools.listAccountsTool,
+      supplierTools.listSuppliersTool
+    ],
   },
-  async (input) => {
-    const { actor, messages: clientMessages } = input;
-    let { conversationId } = input;
-
-    // 1. Validate input
-    if (!actor?.trim()) throw new Error('Actor is required.');
-    if (!Array.isArray(clientMessages) || clientMessages.length === 0) throw new Error('Message list is required.');
-    const lastUserMessage = clientMessages[clientMessages.length - 1];
-    if (!lastUserMessage || lastUserMessage.role !== 'user' || !lastUserMessage.content.trim()) throw new Error('Last message must be a non-empty message from the user.');
-
-    // 2. Load or create conversation
-    let conversationHistory: PulseMessage[] = [];
-    let currentTitle = 'Nova Conversa';
-
-    if (conversationId) {
-      const loadedConv = await pulseService.getConversation({ conversationId, actor });
-      if (loadedConv) {
-        conversationHistory = loadedConv.messages || [];
-        currentTitle = loadedConv.title || 'Nova Conversa';
-      } else {
-        throw new Error('Conversation not found.');
-      }
-    } else {
-      const created = await pulseService.createConversation({ actor, messages: [lastUserMessage] });
-      conversationId = created.id;
-      conversationHistory = [lastUserMessage];
-      currentTitle = created.title;
-    }
-
-    // 3. Prepare AI history
-    const aiHistory = sanitizeHistory(conversationHistory);
-
-    // 4. Define AI system prompt and tools
-    const systemPrompt = `Você é o QoroPulse, um agente de IA especialista em gestão empresarial.
-- Forneça insights acionáveis baseados nos dados da Qoro.
-- Se for uma nova conversa, SEMPRE sugira um título curto e descritivo no campo 'title' da resposta.
-- Use as ferramentas disponíveis para obter dados. Não invente informações.
-- Aja como se soubesse a informação diretamente, sem mencionar o uso de ferramentas.
-- Seja direto, executivo e amigável.`;
-
-    const availableTools = [getCrmSummaryTool, listTasksTool, createTaskTool, listAccountsTool, getFinanceSummaryTool, listSuppliersTool];
-
-    // 5. Generate AI response (with potential tool use)
-    let llmResponse = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
-      history: aiHistory,
-      tools: availableTools,
-      toolConfig: { context: { actor } },
-      system: systemPrompt,
-      output: { schema: PulseResponseSchema },
-    });
-
-    const toolRequests = llmResponse.toolRequests();
-
-    // 6. Handle tool requests if any
-    if (toolRequests?.length > 0) {
-      const modelMessage = { role: 'model' as const, parts: toolRequests.map(toolRequest => ({ toolRequest })) };
-      aiHistory.push(modelMessage);
-
-      const toolOutputs = await Promise.all(
-        toolRequests.map(async (toolRequest) => {
-          try {
-            const output = await ai.runTool(toolRequest, { context: { actor } });
-            return { toolResponse: { name: toolRequest.name, output } };
-          } catch (err) {
-            console.error(`Error in tool ${toolRequest.name}:`, err);
-            return { toolResponse: { name: toolRequest.name, output: { __error: true, message: 'Tool temporarily unavailable' } } };
-          }
-        })
-      );
-
-      aiHistory.push({ role: 'tool' as const, parts: toolOutputs });
-
-      // Second call to AI with tool results
-      llmResponse = await ai.generate({
-        model: 'googleai/gemini-1.5-flash',
-        history: aiHistory,
-        system: systemPrompt,
-        output: { schema: PulseResponseSchema },
-      });
-    }
-
-    // 7. Process final output and save
-    const finalOutput = llmResponse.output();
-    const assistantResponseText = finalOutput?.response?.trim() || 'Desculpe, não consegui processar sua solicitação.';
-    const suggestedTitle = finalOutput?.title?.trim();
-
-    let titleToSave = currentTitle;
-    const firstUserContent = conversationHistory.find(m => m.role === 'user')?.content || '';
-    if (suggestedTitle && !isTitleDerivedFromFirstMessage(suggestedTitle, firstUserContent)) {
-      titleToSave = suggestedTitle;
-    }
-
-    const assistantMessage: PulseMessage = { role: 'assistant', content: assistantResponseText };
-    const allMessages = [...conversationHistory, assistantMessage];
-
-    await pulseService.updateConversation(actor, conversationId!, { messages: allMessages, title: titleToSave });
-
+  async (history) => {
     return {
-      conversationId: conversationId!,
-      title: titleToSave,
-      response: assistantMessage,
+      history,
     };
   }
 );
 
-// Flow for deleting a conversation
-const deleteConversationFlow = ai.defineFlow(
+
+const askPulseFlow = ai.defineFlow(
   {
-    name: 'deleteConversationFlow',
-    inputSchema: z.object({ conversationId: z.string(), actor: z.string() }),
-    outputSchema: z.object({ success: z.boolean() }),
+    name: 'askPulseFlow',
+    inputSchema: AskPulseInputSchema,
+    outputSchema: AskPulseOutputSchema,
   },
-  async ({ conversationId, actor }) => {
-    return pulseService.deleteConversation({ conversationId, actor });
+  async (input) => {
+    const { messages, actor, conversationId: existingConvId } = input;
+    let conversationId = existingConvId;
+    let title = 'Nova Conversa';
+
+    // Ensure there is at least one user message
+    const lastUserMessage = messages[messages.length - 1];
+    if (lastUserMessage?.role !== 'user') {
+      throw new Error('A última mensagem deve ser do usuário.');
+    }
+
+    // 1. PERSISTENCE: Create conversation if it's new
+    if (!conversationId) {
+        const newConversation = await pulseService.createConversation({
+            actor,
+            messages: [lastUserMessage],
+            title: lastUserMessage.content.substring(0, 40),
+        });
+        conversationId = newConversation.id;
+        title = newConversation.title;
+    }
+
+    try {
+      // 2. GENERATE: First call to the AI with the user's query
+      const history = sanitizeHistory(messages);
+      const llmResponse = await pulsePrompt(history);
+
+      // 3. TOOL CYCLE: Check if the AI wants to use a tool
+      if (llmResponse.toolRequests.length > 0) {
+        const toolResponses = [];
+        
+        // Add the AI's request to use a tool to the history
+        history.push({ role: 'model', content: llmResponse.content });
+
+        // Execute each tool request
+        for (const toolRequest of llmResponse.toolRequests) {
+          const toolResponse = await ai.runTool(toolRequest);
+          toolResponses.push(toolResponse);
+        }
+
+        // Add the results of the tool calls to the history
+        history.push({ role: 'user', content: toolResponses });
+
+        // 4. GENERATE AGAIN: Call the AI again with the tool results
+        const finalResponse = await pulsePrompt(history);
+        
+        const assistantMessage: PulseMessage = {
+          role: 'assistant',
+          content: finalResponse.text,
+        };
+
+        await pulseService.updateConversation(actor, conversationId, {
+            messages: [...messages, assistantMessage],
+        });
+
+        return { conversationId, response: assistantMessage, title };
+
+      } else {
+        // 5. FINAL RESPONSE: If no tools are needed, return the AI's direct response
+        const assistantMessage: PulseMessage = {
+          role: 'assistant',
+          content: llmResponse.text,
+        };
+        
+        await pulseService.updateConversation(actor, conversationId, {
+            messages: [...messages, assistantMessage]
+        });
+
+        return { conversationId, response: assistantMessage, title };
+      }
+    } catch (err: any) {
+        console.error("QoroPulse Flow Error:", err);
+        // Provide a more user-friendly error message
+        const userFacingError = new Error("Desculpe, nosso sistema está passando por instabilidades. Tente novamente em alguns minutos. Se o problema persistir, entre em contato com o suporte.");
+        (userFacingError as any).originalError = err.message;
+        throw userFacingError;
+    }
   }
 );
 
+
+const deleteConversationFlow = ai.defineFlow({
+    name: 'deleteConversationFlow',
+    inputSchema: z.object({ conversationId: z.string(), actor: z.string() }),
+    outputSchema: z.object({ success: z.boolean() }),
+}, async (input) => {
+    return await pulseService.deleteConversation(input);
+});
+
+
 export async function askPulse(input: z.infer<typeof AskPulseInputSchema>): Promise<z.infer<typeof AskPulseOutputSchema>> {
-    try {
-        return await pulseFlow(input);
-    } catch (error: any) {
-        console.error('FATAL: QoroPulse flow failed:', error);
-        // This is a fallback error message. The user's modification might reveal more specific errors.
-        throw new Error('Erro ao comunicar com a IA. Tente novamente.');
-    }
+    return askPulseFlow(input);
 }
 
-export async function deleteConversation(input: { conversationId: string; actor: string; }): Promise<{ success: boolean }> {
-  return deleteConversationFlow(input);
+export async function deleteConversation(input: { conversationId: string; actor: string; }): Promise<{ success: boolean; }> {
+    return deleteConversationFlow(input);
 }
+
