@@ -148,7 +148,7 @@ export function BillForm({ onAction, bill }: BillFormProps) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="amount">Valor (R$)*</Label>
-          <Input id="amount" type="number" step="0.01" {...register('amount')} placeholder="0,00" />
+          <Input id="amount" type="text" inputMode="decimal" {...register('amount')} placeholder="0,00" />
           {errors.amount && <p className="text-destructive text-sm">{errors.amount.message}</p>}
         </div>
         <div className="space-y-2">

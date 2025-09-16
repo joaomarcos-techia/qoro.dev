@@ -101,20 +101,6 @@ export function ProductTable({ onEdit, onRefresh, itemType }: ProductTableProps)
       cell: ({ row }) => <div className="font-medium text-foreground">{row.getValue('name')}</div>,
     },
     {
-        accessorKey: 'pricingModel',
-        header: 'Tipo',
-        cell: ({ row }) => {
-            const model = row.getValue('pricingModel');
-            const isService = model === 'per_hour';
-            return (
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full flex items-center w-fit ${isService ? 'bg-blue-500/20 text-blue-300' : 'bg-teal-500/20 text-teal-300'}`}>
-                   {isService ? <Wrench className="w-3 h-3 mr-1.5"/> : <Package className="w-3 h-3 mr-1.5"/>}
-                   {isService ? 'Serviço' : 'Produto'}
-                </span>
-            )
-        },
-    },
-    {
       accessorKey: 'price',
       header: 'Preço',
       cell: ({ row }) => formatCurrency(row.getValue('price'), row.original.pricingModel),
@@ -194,7 +180,8 @@ export function ProductTable({ onEdit, onRefresh, itemType }: ProductTableProps)
       try {
         const allItems = await listProducts({ actor: currentUser.uid });
         const filteredItems = allItems.filter(item => {
-            return itemType === 'service' ? item.pricingModel === 'per_hour' : item.pricingModel !== 'per_hour';
+            const isService = item.pricingModel === 'per_hour' || item.pricingModel === 'fixed' && item.durationHours;
+            return itemType === 'service' ? isService : !isService;
         })
         setData(filteredItems);
       } catch (err) {

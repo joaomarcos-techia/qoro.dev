@@ -58,7 +58,7 @@ export function ProductForm({ onProductAction, product, itemType }: ProductFormP
           category: '',
           sku: '',
           price: 0,
-          cost: 0,
+          cost: undefined,
           pricingModel: itemType === 'service' ? 'per_hour' : 'fixed',
           durationHours: 1,
       });
@@ -69,13 +69,15 @@ export function ProductForm({ onProductAction, product, itemType }: ProductFormP
 
   const handleNumericInput = (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof z.infer<typeof ProductSchema>) => {
     const value = e.target.value;
-    // Permite números, um ponto ou uma vírgula. Remove caracteres inválidos.
+    if (value === '' || value === null) {
+      setValue(fieldName, undefined as any, { shouldValidate: true });
+      return;
+    }
     const numericValue = value.replace(/[^0-9.,]/g, '').replace(',', '.');
-    // Garante que haja apenas um ponto decimal
     const parts = numericValue.split('.');
     const formattedValue = parts.length > 2 ? `${parts[0]}.${parts.slice(1).join('')}` : numericValue;
 
-    setValue(fieldName, formattedValue as any, { shouldValidate: true });
+    setValue(fieldName, parseFloat(formattedValue) as any, { shouldValidate: true });
   };
 
 

@@ -118,8 +118,8 @@ export function AccountForm({ onAccountAction, account }: AccountFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="balance">Saldo (R$)*</Label>
-          <Input id="balance" type="text" {...register('balance')} disabled={isEditMode} placeholder="0.00"/>
+          <Label htmlFor="balance">Saldo Inicial (R$)*</Label>
+          <Input id="balance" type="text" inputMode="decimal" {...register('balance')} disabled={isEditMode} placeholder="0.00"/>
            {isEditMode && <p className="text-xs text-muted-foreground">O saldo só pode ser alterado através de transações.</p>}
           {errors.balance && <p className="text-destructive text-sm">{errors.balance.message}</p>}
         </div>
