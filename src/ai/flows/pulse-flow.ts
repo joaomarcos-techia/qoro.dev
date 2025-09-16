@@ -147,26 +147,6 @@ const pulseFlow = ai.defineFlow(
   }
 );
 
-/**
- * Client-callable wrapper for the main flow with an emergency fallback.
- */
-export async function askPulse(input: z.infer<typeof AskPulseInputSchema>): Promise<z.infer<typeof AskPulseOutputSchema>> {
-  try {
-    return await pulseFlow(input);
-  } catch (error) {
-    console.error('Critical error in askPulse flow:', error);
-    // Emergency fallback response
-    return {
-      conversationId: input.conversationId || 'error-conv',
-      title: 'Erro de Sistema',
-      response: {
-        role: 'assistant',
-        content: 'Desculpe, nosso sistema está passando por instabilidades. Tente novamente em alguns minutos. Se o problema persistir, entre em contato com o suporte.',
-      },
-    };
-  }
-}
-
 // Flow for deleting a conversation
 const deleteConversationFlow = ai.defineFlow(
   {
@@ -178,6 +158,16 @@ const deleteConversationFlow = ai.defineFlow(
     return pulseService.deleteConversation({ conversationId, actor });
   }
 );
+
+export async function askPulse(input: z.infer<typeof AskPulseInputSchema>): Promise<z.infer<typeof AskPulseOutputSchema>> {
+    try {
+        return await pulseFlow(input);
+    } catch (error: any) {
+        console.error('FATAL: QoroPulse flow failed:', error);
+        // This is a fallback error message. The user's modification might reveal more specific errors.
+        throw new Error('Erro ao comunicar com a IA. Tente novamente.');
+    }
+}
 
 export async function deleteConversation(input: { conversationId: string; actor: string; }): Promise<{ success: boolean }> {
   return deleteConversationFlow(input);
