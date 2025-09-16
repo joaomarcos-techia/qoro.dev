@@ -25,13 +25,14 @@ import * as pulseService from '@/services/pulseService';
 /**
  * Sanitizes conversation history to conform to the expected format for the AI model.
  * It ensures roles are either 'user' or 'model' and filters out any invalid messages.
+ * The content is wrapped in the [{ text: ... }] format.
  */
 function sanitizeHistory(messages: PulseMessage[]): { role: 'user' | 'model'; content: any[] }[] {
   const history: { role: 'user' | 'model'; content: any[] }[] = [];
   for (const msg of messages) {
-    if (msg.role === 'assistant' || msg.role === 'model') {
+    if ((msg.role === 'assistant' || msg.role === 'model') && msg.content) {
       history.push({ role: 'model', content: [{ text: msg.content }] });
-    } else if (msg.role === 'user') {
+    } else if (msg.role === 'user' && msg.content) {
       history.push({ role: 'user', content: [{ text: msg.content }] });
     }
   }
@@ -77,13 +78,11 @@ const askPulseFlow = ai.defineFlow(
     let conversationId = existingConvId;
     let title = 'Nova Conversa';
 
-    // Ensure there is at least one user message
     const lastUserMessage = messages[messages.length - 1];
     if (lastUserMessage?.role !== 'user') {
       throw new Error('A última mensagem deve ser do usuário.');
     }
 
-    // 1. PERSISTENCE: Create conversation if it's new
     if (!conversationId) {
         const newConversation = await pulseService.createConversation({
             actor,
@@ -95,8 +94,10 @@ const askPulseFlow = ai.defineFlow(
     }
 
     try {
-      // 2. GENERATE: First call to the AI with the user's query
+      // 1. Sanitize history for the AI model
       const history = sanitizeHistory(messages);
+      
+      // 2. First call to the AI with the user's query
       const llmResponse = await pulsePrompt(history);
 
       // 3. TOOL CYCLE: Check if the AI wants to use a tool
@@ -108,11 +109,13 @@ const askPulseFlow = ai.defineFlow(
 
         // Execute each tool request
         for (const toolRequest of llmResponse.toolRequests) {
+          console.log(`Executing tool: ${toolRequest.name}`);
           const toolResponse = await ai.runTool(toolRequest);
           toolResponses.push(toolResponse);
         }
 
         // Add the results of the tool calls to the history
+        // This is the crucial step - the tool result is user-provided content
         history.push({ role: 'user', content: toolResponses });
 
         // 4. GENERATE AGAIN: Call the AI again with the tool results
@@ -145,7 +148,7 @@ const askPulseFlow = ai.defineFlow(
     } catch (err: any) {
         console.error("QoroPulse Flow Error:", err);
         // Provide a more user-friendly error message
-        const userFacingError = new Error("Desculpe, nosso sistema está passando por instabilidades. Tente novamente em alguns minutos. Se o problema persistir, entre em contato com o suporte.");
+        const userFacingError = new Error("Erro ao comunicar com a IA. Tente novamente.");
         (userFacingError as any).originalError = err.message;
         throw userFacingError;
     }
