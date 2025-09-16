@@ -24,8 +24,7 @@ import * as pulseService from '@/services/pulseService';
 
 /**
  * Sanitizes conversation history to conform to the expected format for the AI model.
- * It ensures roles are either 'user' or 'model' and filters out any invalid messages.
- * The content is wrapped in the [{ text: ... }] format.
+ * It ensures roles are either 'user' or 'model' and wraps content in the { text: ... } format.
  */
 function sanitizeHistory(messages: PulseMessage[]): { role: 'user' | 'model'; content: any[] }[] {
   const history: { role: 'user' | 'model'; content: any[] }[] = [];
@@ -102,11 +101,11 @@ const askPulseFlow = ai.defineFlow(
 
       // 3. TOOL CYCLE: Check if the AI wants to use a tool
       if (llmResponse.toolRequests.length > 0) {
-        const toolResponses = [];
         
         // Add the AI's request to use a tool to the history
-        history.push({ role: 'model', content: llmResponse.content });
-
+        history.push(llmResponse.content);
+        
+        const toolResponses = [];
         // Execute each tool request
         for (const toolRequest of llmResponse.toolRequests) {
           console.log(`Executing tool: ${toolRequest.name}`);
@@ -115,8 +114,7 @@ const askPulseFlow = ai.defineFlow(
         }
 
         // Add the results of the tool calls to the history
-        // This is the crucial step - the tool result is user-provided content
-        history.push({ role: 'user', content: toolResponses });
+        history.push({ role: 'tool', content: toolResponses });
 
         // 4. GENERATE AGAIN: Call the AI again with the tool results
         const finalResponse = await pulsePrompt(history);
