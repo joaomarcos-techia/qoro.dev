@@ -141,7 +141,7 @@ TOM:
 
     try {
       let llmResponse = await ai.generate({
-          model: 'googleai/gemini-2.0-flash',
+          model: 'googleai/gemini-1.5-flash',
           history: aiHistory,
           tools: availableTools,
           toolConfig: { context: { actor } },
@@ -170,7 +170,7 @@ TOM:
         aiHistory.push({ role: 'tool' as const, parts: toolOutputs });
 
         llmResponse = await ai.generate({
-            model: 'googleai/gemini-2.0-flash',
+            model: 'googleai/gemini-1.5-flash',
             history: aiHistory,
             system: systemPrompt,
             output: { schema: PulseResponseSchema },
@@ -219,7 +219,7 @@ TOM:
       
       // Fallback: resposta simples sem ferramentas
       try {
-        const fallbackResponse = await ai.generate({ model: 'googleai/gemini-2.0-flash', history: aiHistory, system: systemPrompt });
+        const fallbackResponse = await ai.generate({ model: 'googleai/gemini-1.5-flash', history: aiHistory, system: systemPrompt });
         const fallbackText = String(fallbackResponse.text() || 'Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns instantes.');
         const assistantMessage: PulseMessage = { role: 'assistant', content: fallbackText };
         const allMessages = [...conversationHistory, assistantMessage];
@@ -285,3 +285,5 @@ const deleteConversationFlow = ai.defineFlow(
 export async function deleteConversation(input: z.infer<typeof DeleteConversationInputSchema>): Promise<{ success: boolean }> {
   return deleteConversationFlow(input);
 }
+
+    
