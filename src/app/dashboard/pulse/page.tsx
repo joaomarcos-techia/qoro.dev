@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect, FormEvent, useTransition } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, AlertCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { askPulse } from '@/ai/flows/pulse-flow';
 import { createConversation } from '@/services/pulseService';
 import type { PulseMessage } from '@/ai/schemas';
 
@@ -26,7 +25,6 @@ export default function PulsePage() {
   const [error, setError] = useState<string | null>(null);
   
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -39,46 +37,43 @@ export default function PulsePage() {
     return () => unsubscribe();
   }, [router]);
   
-
   const handleSendMessage = async (e?: FormEvent) => {
     e?.preventDefault();
     if (!input.trim() || isLoading || !currentUser) return;
-  
+
+    const messageText = input.trim();
     setIsLoading(true);
     setError(null);
-  
+
     try {
-        const userMessage: PulseMessage = { role: 'user', content: input };
+        const userMessage: PulseMessage = { role: 'user', content: messageText };
         
-        // Step 1: Create the conversation immediately to get an ID
+        // O título agora é gerado pela IA no backend.
+        // Enviamos um título provisório simples.
         const newConversation = await createConversation({
           actor: currentUser.uid,
           messages: [userMessage],
-          title: input.substring(0, 50), // Use prompt as initial title
+          title: messageText.substring(0, 40),
         });
 
         if (newConversation.id) {
-             startTransition(() => {
-                router.push(`/dashboard/pulse/${newConversation.id}`);
-            });
+            router.push(`/dashboard/pulse/${newConversation.id}`);
         } else {
             throw new Error("Não foi possível criar a conversa e obter um ID.");
         }
 
     } catch (error: any) {
-        console.error("Error creating conversation:", error);
         setError(error.message || 'Ocorreu um erro ao iniciar a conversa. Tente novamente.');
         setIsLoading(false);
     }
   };
-
 
   return (
     <div className="flex flex-col h-full bg-black">
         <div className="flex-grow flex flex-col items-center w-full px-4 relative">
             <div className="flex-grow w-full max-w-4xl flex flex-col justify-center items-center pb-32">
                 
-                {isLoading || isPending ? (
+                {isLoading ? (
                      <div className="flex flex-col items-center justify-center">
                         <Loader2 className="w-12 h-12 text-primary animate-spin" />
                         <p className="mt-4 text-muted-foreground">Iniciando conversa...</p>
@@ -109,11 +104,11 @@ export default function PulsePage() {
                             placeholder="Comece uma nova conversa com o QoroPulse..."
                             className="w-full pr-20 pl-4 py-4 bg-transparent rounded-2xl border-none focus:ring-0 text-base resize-none"
                             rows={1}
-                            disabled={isLoading || isPending}
+                            disabled={isLoading}
                         />
                         <Button
                             type="submit"
-                            disabled={isLoading || isPending || !input.trim()}
+                            disabled={isLoading || !input.trim()}
                             className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-pulse-primary text-primary-foreground rounded-2xl transition-all duration-300 hover:bg-pulse-primary/90 disabled:bg-secondary disabled:text-muted-foreground"
                         >
                             <ArrowUpIcon className="w-6 h-6" />
