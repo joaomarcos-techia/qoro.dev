@@ -41,11 +41,11 @@ Sua personalidade é profissional, prestativa, perspicaz e um pouco futurista.
 Responda de forma clara, concisa e acionável. Formate em Markdown quando apropriado.
 `.trim();
 
-    const genkitMessages = [
-      { role: 'system', content: [{ text: systemPrompt }] },
+    const genkitPromptParts = [
+      { role: "system" as const, content: [{ text: systemPrompt }] },
       ...(input.messages ?? []).map((m) => ({
-        role: (m.role as 'user' | 'assistant' | 'tool' | 'model') ?? 'user',
-        content: [{ text: m.content ?? '' }],
+        role: (m.role as "user" | "assistant" | "tool" | "model") ?? "user",
+        content: [{ text: m.content ?? "" }],
       })),
     ];
 
@@ -53,23 +53,23 @@ Responda de forma clara, concisa e acionável. Formate em Markdown quando apropr
     try {
       result = await ai.generate({
         model: "gemini-1.5-flash",
-        messages: genkitMessages,
+        prompt: genkitPromptParts,
         temperature: 0.5,
         maxOutputTokens: 1024,
       });
     } catch (err) {
-      console.error('askPulse: ai.generate error', err);
-      throw new Error('Falha ao gerar resposta da IA.');
+      console.error("askPulse: ai.generate error", err);
+      throw new Error("Falha ao gerar resposta da IA.");
     }
-    
-    const responseText = result.text ?? 'Desculpe, não consegui processar sua pergunta. Tente novamente.';
-    const responseMessage: PulseMessage = { role: 'assistant', content: responseText };
+
+    const responseText =
+      result.text ?? "Desculpe, não consegui processar sua pergunta. Tente novamente.";
+    const responseMessage: PulseMessage = { role: "assistant", content: responseText };
 
     let conversationId = input.conversationId;
-    let conversationRef: FirebaseFirestore.DocumentReference | undefined;
 
     if (conversationId) {
-      conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
+      const conversationRef = adminDb.collection("pulse_conversations").doc(conversationId);
       const latestUserMessage = input.messages[input.messages.length - 1];
       await conversationRef.update({
         messages: FieldValue.arrayUnion(latestUserMessage, responseMessage),
@@ -77,21 +77,21 @@ Responda de forma clara, concisa e acionável. Formate em Markdown quando apropr
       });
     } else {
       const initialMessages = input.messages ?? [];
-      const firstUserMessage = initialMessages[0] ?? { content: 'Sem conteúdo', role: 'user' };
-      const addedRef = await adminDb.collection('pulse_conversations').add({
+      const firstUserMessage = initialMessages[0] ?? { content: "Sem conteúdo", role: "user" };
+      const addedRef = await adminDb.collection("pulse_conversations").add({
         userId,
         messages: [...initialMessages, responseMessage],
         title:
-          (typeof firstUserMessage.content === 'string'
+          (typeof firstUserMessage.content === "string"
             ? firstUserMessage.content.substring(0, 40)
             : String(firstUserMessage.content)) +
-          (typeof firstUserMessage.content === 'string' && firstUserMessage.content.length > 40
-            ? '...'
-            : ''),
+          (typeof firstUserMessage.content === "string" &&
+          firstUserMessage.content.length > 40
+            ? "..."
+            : ""),
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       });
-      conversationRef = addedRef;
       conversationId = addedRef.id;
     }
 
