@@ -36,7 +36,7 @@ const UserProfileOutputSchema = z.object({
 
 // Define flows
 const signUpFlow = ai.defineFlow(
-    { name: 'signUpFlow', inputSchema: SignUpSchema, outputSchema: z.object({ uid: z.string() }) },
+    { name: 'signUpFlow', inputSchema: SignUpSchema.extend({ uid: z.string() }), outputSchema: z.object({ uid: z.string() }) },
     async (input) => orgService.signUp(input)
 );
 
@@ -90,12 +90,8 @@ const getUserProfileFlow = ai.defineFlow(
 
 
 // Exported functions (client-callable wrappers)
-export async function signUp(input: z.infer<typeof SignUpSchema>): Promise<{uid: string}> {
-    // This function is now just a pass-through. The actual logic requires the UID.
-    // The client-side logic in signup/page.tsx has been updated to call this with a UID.
-    // However, to satisfy the type-checker for this flow definition, we assume `input` has the UID.
-    // This is a slight simplification to avoid a more complex refactor not requested.
-    return signUpFlow(input as z.infer<typeof SignUpSchema> & { uid: string });
+export async function signUp(input: z.infer<typeof SignUpSchema> & { uid: string }): Promise<{uid: string}> {
+    return signUpFlow(input);
 }
 
 export async function inviteUser(input: z.infer<typeof InviteUserSchema> & z.infer<typeof ActorSchema>): Promise<{ uid: string; email: string; organizationId: string; }> {

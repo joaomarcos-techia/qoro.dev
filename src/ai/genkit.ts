@@ -17,5 +17,4 @@ export const ai = genkit({
     }),
   ],
   // Log to a file during development.
-  logLevel: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
 });
