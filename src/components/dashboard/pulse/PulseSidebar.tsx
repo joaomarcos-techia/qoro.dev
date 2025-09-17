@@ -6,8 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { PlusCircle, MessageSquare, Loader2, Activity, ChevronLeft, Trash2 } from 'lucide-react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { listConversations } from '@/services/pulseService';
-import { deleteConversation } from '@/ai/flows/pulse-flow';
+import { listConversations, deleteConversation } from '@/services/pulseService';
 import type { ConversationProfile } from '@/ai/schemas';
 import { cn } from '@/lib/utils';
 import {
