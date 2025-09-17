@@ -52,7 +52,7 @@ Responda de forma clara, concisa e acionável. Formate em Markdown quando apropr
     let result;
     try {
       result = await ai.generate({
-        model: "gemini-1.5-flash",
+        model: 'gemini-1.5-flash',
         prompt: genkitPromptParts,
         temperature: 0.5,
         maxOutputTokens: 1024,
