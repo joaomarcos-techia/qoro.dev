@@ -49,32 +49,20 @@ Responda de forma clara, concisa e acionável. Formate em Markdown quando apropr
       })),
     ];
 
-    let rawResponse: any = null;
+    let result;
     try {
-      rawResponse = await ai.generate({
-        model: 'gemini-1.5-flash',
-        messages: genkitMessages,
-        temperature: 0.3,
+      result = await ai.generate({
+        model: "gemini-1.5-flash",
+        prompt: genkitMessages,
+        temperature: 0.5,
         maxOutputTokens: 1024,
       });
     } catch (err) {
       console.error('askPulse: ai.generate error', err);
+      throw new Error('Falha ao gerar resposta da IA.');
     }
-
-    let responseText = 'Desculpe, não consegui processar sua pergunta. Tente novamente.';
-    if (rawResponse) {
-      // Handle both v1.x (rawResponse.text) and potential older structures
-      if (typeof rawResponse.text === 'string') {
-        responseText = rawResponse.text;
-      } else if (
-        rawResponse.output &&
-        Array.isArray(rawResponse.output) &&
-        rawResponse.output[0]?.content?.[0]?.text
-      ) {
-        responseText = rawResponse.output[0].content[0].text;
-      }
-    }
-
+    
+    const responseText = result.text ?? 'Desculpe, não consegui processar sua pergunta. Tente novamente.';
     const responseMessage: PulseMessage = { role: 'assistant', content: responseText };
 
     let conversationId = input.conversationId;
