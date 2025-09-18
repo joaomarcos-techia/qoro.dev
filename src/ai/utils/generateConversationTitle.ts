@@ -9,7 +9,7 @@ export async function generateConversationTitle(firstUserMessage: string): Promi
 
   // Fallback para saudações comuns
   const commonGreetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite'];
-  if (commonGreetings.includes(firstUserMessage.toLowerCase().trim())) {
+  if (commonGreetings.includes(firstUserMessage.trim().toLowerCase())) {
       return "Nova Conversa";
   }
 
