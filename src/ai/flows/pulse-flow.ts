@@ -42,10 +42,10 @@ Responda de forma clara, concisa e acionável. Formate em Markdown quando apropr
 `.trim();
 
     const genkitPrompt = [
-      { role: 'system' as const, content: [{ text: systemPrompt }] },
+      { role: 'system' as const, content: systemPrompt },
       ...(input.messages ?? []).map((m) => ({
         role: (m.role as 'user' | 'assistant' | 'tool' | 'model') ?? 'user',
-        content: [{ text: m.content ?? '' }],
+        content: m.content ?? '',
       })),
     ];
 
@@ -80,7 +80,7 @@ Responda de forma clara, concisa e acionável. Formate em Markdown quando apropr
       const firstUserMessage = initialMessages[0] ?? { content: "Sem conteúdo", role: "user" };
       const addedRef = await adminDb.collection("pulse_conversations").add({
         userId,
-        organizationId: organizationId, // Make sure to include organizationId
+        organizationId: organizationId,
         messages: [...initialMessages, responseMessage],
         title:
           (typeof firstUserMessage.content === "string"
