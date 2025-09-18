@@ -16,5 +16,4 @@ export const ai = genkit({
       apiKey: apiKey,
     }),
   ],
-  // Log to a file during development.
 });
