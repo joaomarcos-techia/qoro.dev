@@ -9,4 +9,5 @@ import './flows/finance-management';
 import './flows/supplier-management';
 import './flows/reconciliation-flow';
 
-// Tools have been removed as per user request.
+// O fluxo de cobrança foi removido para permitir o teste sem credenciais do Stripe.
+// As ferramentas foram removidas conforme solicitação do usuário.

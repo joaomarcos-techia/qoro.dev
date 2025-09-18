@@ -1,219 +1,227 @@
 
-'use server';
-/**
- * @fileOverview Billing and subscription management flows.
- * - createStripeCheckoutSession - Creates a new Stripe checkout session for a user to subscribe.
- * - createStripePortalSession - Creates a new Stripe Customer Portal session for a user to manage their subscription.
- * - stripeWebhookFlow - Handles incoming webhook events from Stripe to sync subscription status.
- */
-import { ai } from '@/ai/genkit';
+// src/ai/flows/billing-flow.ts
+
 import { z } from 'zod';
-import { getAdminAndOrg } from '@/services/utils';
-import { adminDb } from '@/lib/firebase-admin';
 import Stripe from 'stripe';
+import { ai } from '../genkit';
+import { adminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
-if (!STRIPE_SECRET_KEY) {
-    console.warn("STRIPE_SECRET_KEY is not set. Billing flows will not work.");
-}
-const stripe = new Stripe(STRIPE_SECRET_KEY || '', { apiVersion: '2024-04-10' });
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 
-const CreateCheckoutSchema = z.object({
-    priceId: z.string(),
-    actor: z.string(),
-});
+const stripe = STRIPE_SECRET_KEY
+  ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' })
+  : null;
 
-const ActorSchema = z.object({
-    actor: z.string(),
-});
+export const createCheckoutSessionFlow = ai.defineFlow(
+  {
+    name: 'createCheckoutSessionFlow',
+    inputSchema: z.object({
+      priceId: z.string(),
+      actor: z.string(),
+    }),
+    outputSchema: z.object({
+      sessionId: z.string(),
+      url: z.string(),
+    }),
+  },
+  async (input) => {
+    if (!stripe) throw new Error('Stripe is not configured.');
+    
+    const userDoc = await adminDb.collection('users').doc(input.actor).get();
+    if (!userDoc.exists) throw new Error('User not found');
+    const organizationId = userDoc.data()?.organizationId;
+    if (!organizationId) throw new Error('Organization not found for user');
 
+    const organizationDoc = await adminDb
+      .collection('organizations')
+      .doc(organizationId)
+      .get();
 
-const createStripeCheckoutSessionFlow = ai.defineFlow(
-    {
-        name: 'createStripeCheckoutSessionFlow',
-        inputSchema: CreateCheckoutSchema,
-        outputSchema: z.object({ url: z.string().url() }),
-    },
-    async ({ priceId, actor }) => {
-        if (!stripe) throw new Error("Stripe is not configured.");
-
-        if (!priceId.startsWith('price_')) {
-            throw new Error(`Invalid Stripe Price ID: "${priceId}". Please check your environment variables (e.g., NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID) and ensure you are using a Price ID (starting with 'price_') and not a Product ID.`);
-        }
-        
-        const { organizationId, userData } = await getAdminAndOrg(actor);
-        
-        let customerId = userData.stripeCustomerId;
-        if (!customerId) {
-            const customer = await stripe.customers.create({
-                email: userData.email,
-                name: userData.name,
-                metadata: {
-                    organizationId: organizationId,
-                }
-            });
-            customerId = customer.id;
-            await adminDb.collection('users').doc(actor).update({ stripeCustomerId: customerId });
-            await adminDb.collection('organizations').doc(organizationId).update({ stripeCustomerId: customerId });
-        }
-        
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items: [{
-                price: priceId,
-                quantity: 1,
-            }],
-            mode: 'subscription',
-            success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/#precos`,
-            customer: customerId,
-        });
-
-        if (!session.url) {
-            throw new Error("Could not create Stripe checkout session.");
-        }
-
-        return { url: session.url };
+    if (!organizationDoc.exists) {
+      throw new Error('Organization not found');
     }
+
+    const organization = organizationDoc.data();
+    let customerId = organization?.stripeCustomerId;
+
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        metadata: { organizationId: organizationId },
+      });
+      customerId = customer.id;
+
+      await adminDb
+        .collection('organizations')
+        .doc(organizationId)
+        .update({ stripeCustomerId: customerId });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'subscription',
+      customer: customerId,
+      line_items: [{ price: input.priceId, quantity: 1 }],
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?stripe_success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?stripe_canceled=true`,
+      metadata: {
+          userId: input.actor,
+          organizationId: organizationId,
+      }
+    });
+
+    return {
+      sessionId: session.id,
+      url: session.url!,
+    };
+  }
 );
 
-export async function createStripeCheckoutSession(input: z.infer<typeof CreateCheckoutSchema>): Promise<{ url: string }> {
-    return createStripeCheckoutSessionFlow(input);
-}
 
-// Flow to create a Stripe Customer Portal session
-const createStripePortalSessionFlow = ai.defineFlow(
-    {
-        name: 'createStripePortalSessionFlow',
-        inputSchema: ActorSchema,
-        outputSchema: z.object({ url: z.string().url() }),
-    },
-    async ({ actor }) => {
-        if (!stripe) throw new Error("Stripe is not configured.");
-        
-        const { userData } = await getAdminAndOrg(actor);
-        const customerId = userData.stripeCustomerId;
-
-        if (!customerId) {
-            throw new Error("User does not have a Stripe Customer ID.");
-        }
-
-        const portalSession = await stripe.billingPortal.sessions.create({
-            customer: customerId,
-            return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings`,
-        });
-
-        if (!portalSession.url) {
-            throw new Error("Could not create Stripe portal session.");
-        }
-
-        return { url: portalSession.url };
-    }
-);
-
-export async function createStripePortalSession(input: z.infer<typeof ActorSchema>): Promise<{ url: string }> {
-    return createStripePortalSessionFlow(input);
-}
-
-
-// Stripe Webhook Flow
 export const stripeWebhookFlow = ai.defineFlow(
-    {
-        name: "stripeWebhookFlow",
-        inputSchema: z.any(),
-        outputSchema: z.any(),
-    },
-    async (payload, streamingCallback, context) => {
-        if (!stripe) throw new Error("Stripe is not configured.");
-        const signature = context?.headers ? (context.headers['stripe-signature'] as string) : '';
-        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  {
+    name: 'stripeWebhookFlow',
+    inputSchema: z.any(),
+    outputSchema: z.any(),
+  },
+  async (
+    payload: Buffer,
+    { headers }: { headers: Record<string, string> } 
+  ) => {
+    if (!stripe) throw new Error('Stripe is not configured.');
 
-        if (!webhookSecret) {
-            throw new Error("Stripe webhook secret is not configured.");
+    const signature = headers['stripe-signature'];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.error('Stripe webhook secret is not configured.');
+      throw new Error('Stripe webhook secret is not configured.');
+    }
+    if (!signature) {
+      console.error('Stripe signature is missing from webhook request.');
+      throw new Error('Stripe signature is missing.');
+    }
+
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+    } catch (err: any) {
+      console.error('Webhook signature verification failed.', err.message);
+      throw new Error(`Webhook Error: ${err.message}`);
+    }
+    
+    console.log(`✅ Stripe Webhook Received: ${event.type}`);
+
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const organizationId = session.metadata?.organizationId;
+        const subscriptionId = session.subscription as string;
+
+        if (!organizationId || !subscriptionId) {
+            console.error('Missing metadata in checkout session', session.id);
+            return { received: true, message: 'Missing metadata.' };
         }
         
-        let event;
-        try {
-            event = stripe.webhooks.constructEvent(payload as Buffer, signature, webhookSecret);
-        } catch (err: any) {
-            console.error(`Webhook signature verification failed.`, err.message);
-            throw new Error(`Webhook Error: ${err.message}`);
-        }
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
-        const session = event.data.object as Stripe.Checkout.Session;
-        const subscription = event.data.object as Stripe.Subscription;
+        await adminDb.collection('organizations').doc(organizationId).update({
+            stripeSubscriptionId: subscription.id,
+            stripePriceId: subscription.items.data[0].price.id,
+            stripeCurrentPeriodEnd: new Date(
+              subscription.current_period_end * 1000
+            ),
+        });
 
-        switch (event.type) {
-            case 'checkout.session.completed': {
-                if (!session.subscription || !session.customer) {
-                    throw new Error("Webhook Error: Missing subscription or customer ID in session.");
-                }
+        break;
+      }
+      
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object as Stripe.Invoice;
+        const subscriptionId = invoice.subscription as string;
 
-                const completedSubscription = await stripe.subscriptions.retrieve(session.subscription.toString());
-                const customer = await stripe.customers.retrieve(session.customer.toString()) as Stripe.Customer;
-                
-                let organizationId = customer.metadata.organizationId;
-                
-                // Robustness: If orgId is not in metadata, find it via the customerId in the users collection
-                if (!organizationId) {
-                    console.warn(`Organization ID missing from Stripe customer metadata for customer ${customer.id}. Attempting fallback.`);
-                    const userQuery = await adminDb.collection('users').where('stripeCustomerId', '==', customer.id).limit(1).get();
-                    if (!userQuery.empty) {
-                        organizationId = userQuery.docs[0].data().organizationId;
-                        console.log(`Fallback successful: Found organizationId ${organizationId} for customer ${customer.id}`);
-                    } else {
-                         throw new Error(`Webhook Critical Error: Could not find organization for Stripe customer ${customer.id}`);
-                    }
-                }
-                
-                await adminDb.collection('organizations').doc(organizationId).update({
-                    stripeSubscriptionId: completedSubscription.id,
-                    stripeCustomerId: completedSubscription.customer,
-                    stripePriceId: completedSubscription.items.data[0].price.id,
-                    stripeCurrentPeriodEnd: new Date(completedSubscription.current_period_end * 1000),
-                });
-                break;
-            }
-            case 'invoice.payment_succeeded': {
-                if (subscription.billing_reason === 'subscription_cycle') {
-                     if (!subscription.customer) break;
-                    const customer = await stripe.customers.retrieve(subscription.customer.toString()) as Stripe.Customer;
-                    const organizationId = customer.metadata.organizationId;
-                    await adminDb.collection('organizations').doc(organizationId).update({
-                        stripePriceId: subscription.items.data[0].price.id,
-                        stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
-                    });
-                }
-                break;
-            }
-             case 'customer.subscription.deleted':
-             case 'customer.subscription.updated': {
-                const customerId = (subscription.customer as Stripe.Customer)?.id || subscription.customer as string;
-                const customerDetails = await stripe.customers.retrieve(customerId) as Stripe.Customer;
-                
-                if (customerDetails.deleted) break;
-                
-                const organizationId = customerDetails.metadata.organizationId;
+        if (invoice.billing_reason === 'subscription_cycle') {
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+            const customer = (await stripe.customers.retrieve(
+              subscription.customer as string
+            )) as Stripe.Customer;
 
-                const updatePayload: any = {
+            const organizationId = customer.metadata.organizationId;
+            
+            if(organizationId){
+                 await adminDb.collection('organizations').doc(organizationId).update({
                     stripePriceId: subscription.items.data[0].price.id,
-                    stripeSubscriptionId: subscription.id,
-                    stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
-                };
-
-                if (event.type === 'customer.subscription.deleted') {
-                    updatePayload.stripePriceId = null;
-                    updatePayload.stripeSubscriptionId = null;
-                    updatePayload.stripeCurrentPeriodEnd = null;
-                }
-
-                await adminDb.collection('organizations').doc(organizationId).update(updatePayload);
-                break;
+                    stripeCurrentPeriodEnd: new Date(
+                    subscription.current_period_end * 1000
+                    ),
+                });
             }
-            default:
-                console.log(`Unhandled event type ${event.type}`);
         }
+        break;
+      }
 
-        return { received: true };
+      case 'customer.subscription.deleted':
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object as Stripe.Subscription;
+        
+        // On subscription changes, update plan status
+        if (subscription.status === 'canceled' || subscription.status === 'unpaid') {
+            const customer = (await stripe.customers.retrieve(
+              subscription.customer as string
+            )) as Stripe.Customer;
+    
+            const organizationId = customer.metadata.organizationId;
+    
+            if(organizationId) {
+                await adminDb.collection('organizations').doc(organizationId).update({
+                  stripePriceId: FieldValue.delete(),
+                  stripeSubscriptionId: FieldValue.delete(),
+                  stripeCurrentPeriodEnd: FieldValue.delete(),
+                });
+            }
+        }
+        break;
+      }
+
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+
+    return { received: true };
+  }
+);
+
+
+export const createStripePortalSession = ai.defineFlow(
+    {
+      name: 'createStripePortalSession',
+      inputSchema: z.object({
+        actor: z.string(),
+      }),
+      outputSchema: z.object({
+        url: z.string(),
+      }),
+    },
+    async (input) => {
+      if (!stripe) throw new Error('Stripe is not configured.');
+  
+      const userDoc = await adminDb.collection('users').doc(input.actor).get();
+      if (!userDoc.exists) throw new Error('User not found');
+      const organizationId = userDoc.data()?.organizationId;
+      if (!organizationId) throw new Error('Organization not found for user');
+  
+      const orgDoc = await adminDb.collection('organizations').doc(organizationId).get();
+      const customerId = orgDoc.data()?.stripeCustomerId;
+  
+      if (!customerId) {
+        throw new Error('Stripe customer ID not found for this organization.');
+      }
+  
+      const session = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings/organization`,
+      });
+  
+      return { url: session.url! };
     }
 );

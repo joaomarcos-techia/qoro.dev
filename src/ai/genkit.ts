@@ -1,8 +1,7 @@
-
+// src/ai/genkit.ts
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 
-// Ensure the API key is passed correctly, providing a fallback empty string.
 const apiKey = process.env.GOOGLE_API_KEY || '';
 if (!apiKey) {
   console.warn(
@@ -13,7 +12,9 @@ if (!apiKey) {
 export const ai = genkit({
   plugins: [
     googleAI({
-      apiKey: apiKey,
+      apiKey,
     }),
   ],
 });
+
+export { googleAI };
