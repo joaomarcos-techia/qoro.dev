@@ -120,11 +120,17 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
     let conversationId = input.conversationId;
 
     if (conversationId) {
+        // Robust update logic: Read, modify, then write.
         const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
-        await conversationRef.update({
-            messages: FieldValue.arrayUnion(responseMessage),
-            updatedAt: FieldValue.serverTimestamp(),
-        });
+        const conversationDoc = await conversationRef.get();
+        if (conversationDoc.exists) {
+            const currentMessages = conversationDoc.data()?.messages || [];
+            const updatedMessages = [...currentMessages, responseMessage];
+            await conversationRef.update({
+                messages: updatedMessages,
+                updatedAt: FieldValue.serverTimestamp(),
+            });
+        }
     } else {
         const initialMessages = messages ?? [];
         const firstUserMessage = initialMessages.length > 0 && initialMessages[0].content ? initialMessages[0].content : "Nova Conversa";
