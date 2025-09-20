@@ -1,3 +1,4 @@
+
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -10,6 +11,15 @@ import { generateConversationTitle } from '../utils/generateConversationTitle';
 
 export type { AskPulseInput, AskPulseOutput, PulseMessage } from '@/ai/schemas';
 
+// Mapeia os papéis do nosso schema para os papéis da API do Gemini
+const roleMap: Record<PulseMessage['role'], 'user' | 'model'> = {
+    user: 'user',
+    assistant: 'model',
+    model: 'model', // Trata 'model' como 'model'
+    tool: 'user',   // Trata a saída de ferramenta como se fosse do usuário
+};
+
+
 const pulseFlow = ai.defineFlow(
   {
     name: 'pulseFlow',
@@ -19,6 +29,8 @@ const pulseFlow = ai.defineFlow(
   async (input: z.infer<typeof AskPulseInputSchema>) => {
     const { actor, messages } = input;
     const userId = actor;
+
+    console.log('[pulseFlow] Recebido:', { messagesCount: messages.length, conversationId: input.conversationId });
 
     const systemPrompt = `
 <OBJETIVO>
@@ -89,15 +101,15 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
 </EXEMPLOS>
 `.trim();
     
-    // Use o histórico de mensagens completo que vem do input, pegando as últimas 15.
-    const conversationHistory = (messages ?? []).slice(-15);
+    // CORREÇÃO: Mapeia corretamente os papéis para o formato esperado pelo Genkit/Gemini.
+    const conversationHistory = (messages ?? []).slice(-15).map(m => ({
+        role: roleMap[m.role] || 'user',
+        content: [{ text: m.content ?? '' }],
+    }));
 
     const genkitPrompt = [
         { role: 'system' as const, content: [{ text: systemPrompt }] },
-        ...conversationHistory.map((m: PulseMessage) => ({
-            role: (m.role as 'user' | 'model') ?? 'user',
-            content: [{ text: m.content ?? '' }],
-        })),
+        ...conversationHistory
     ];
 
     let result;
@@ -116,16 +128,14 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
     }
 
     const responseText = result.text ?? 'Desculpe, não consegui processar sua pergunta. Tente novamente.';
+    // CORREÇÃO: Garante que salvamos a resposta com o 'role' correto ('assistant') no nosso banco de dados.
     const responseMessage: PulseMessage = { role: 'assistant', content: responseText };
 
     let conversationId = input.conversationId;
 
     if (conversationId) {
-        // Lógica de atualização simplificada e robusta
+        // CORREÇÃO: Simplifica a lógica de atualização.
         const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
-        
-        // O `messages` do input já contém o histórico + a última mensagem do usuário.
-        // Apenas adicionamos a nova resposta da IA.
         const updatedMessages = [...messages, responseMessage];
 
         await conversationRef.update({
@@ -142,7 +152,6 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
 
         const addedRef = await adminDb.collection('pulse_conversations').add({
             userId,
-            // A conversa é criada com a primeira mensagem do usuário e a primeira resposta da IA.
             messages: [...initialMessages, responseMessage],
             title, 
             createdAt: FieldValue.serverTimestamp(),
