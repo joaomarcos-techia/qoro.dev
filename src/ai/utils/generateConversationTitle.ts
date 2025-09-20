@@ -6,10 +6,12 @@ export async function generateConversationTitle(firstUserMessage: string): Promi
   if (!firstUserMessage || firstUserMessage.trim().length === 0) {
     return "Nova conversa";
   }
-
+  
+  const trimmedMessage = firstUserMessage.trim().toLowerCase();
+  
   // Fallback para saudações comuns
   const commonGreetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite'];
-  if (commonGreetings.includes(firstUserMessage.trim().toLowerCase())) {
+  if (commonGreetings.includes(trimmedMessage)) {
       return "Nova Conversa";
   }
 
@@ -29,13 +31,16 @@ Texto: "${firstUserMessage}"
     });
 
     const title = result.text?.trim();
-    if (title) return title;
+    // Adiciona uma verificação para não usar saudações como título caso a IA retorne uma
+    if (title && !commonGreetings.includes(title.toLowerCase())) {
+        return title;
+    }
   } catch (err) {
     console.error("Erro ao gerar título com IA:", err);
   }
 
-  // fallback se a IA não responder
-  return firstUserMessage.length > 20
-    ? firstUserMessage.substring(0, 20) + "..."
+  // fallback se a IA não responder ou retornar uma saudação
+  return firstUserMessage.length > 25
+    ? firstUserMessage.substring(0, 25) + "..."
     : firstUserMessage;
 }

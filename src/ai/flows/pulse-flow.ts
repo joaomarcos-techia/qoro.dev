@@ -1,4 +1,3 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -19,7 +18,7 @@ const pulseFlow = ai.defineFlow(
     outputSchema: AskPulseOutputSchema,
   },
   async (input: z.infer<typeof AskPulseInputSchema>) => {
-    const { organizationName, userData, planId, organizationId } = await getAdminAndOrg(input.actor);
+    const { userData, organizationName, planId, organizationId } = await getAdminAndOrg(input.actor);
     const userId = input.actor;
 
     const systemPrompt = `
@@ -44,8 +43,8 @@ Sua personalidade é profissional, prestativa, perspicaz e um pouco futurista.
 Responda de forma clara, concisa e acionável. Formate em Markdown quando apropriado.
 `.trim();
     
-    const history = input.messages ?? [];
-    const conversationHistory = history.slice(-15);
+    // Pega as últimas 15 mensagens para manter o contexto
+    const conversationHistory = (input.messages ?? []).slice(-15);
 
     const genkitPrompt = [
         { role: 'system' as const, content: [{ text: systemPrompt }] },
@@ -76,38 +75,30 @@ Responda de forma clara, concisa e acionável. Formate em Markdown quando apropr
     let conversationId = input.conversationId;
 
     if (conversationId) {
-      const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
-      // Ensure the message to be saved has the right structure.
-      const latestUserMessage = input.messages.length > 0 ? input.messages[input.messages.length - 1] : null;
-      
-      const updatePayload: any = {
-          messages: FieldValue.arrayUnion(responseMessage),
-          updatedAt: FieldValue.serverTimestamp(),
-      };
-      
-      if(latestUserMessage){
-          updatePayload.messages = FieldValue.arrayUnion(latestUserMessage, responseMessage);
-      }
-      
-      await conversationRef.update(updatePayload);
-
+        const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
+        // Apenas adiciona a nova resposta da IA, pois a mensagem do usuário já está no `input.messages`
+        await conversationRef.update({
+            messages: FieldValue.arrayUnion(responseMessage),
+            updatedAt: FieldValue.serverTimestamp(),
+        });
     } else {
-      const initialMessages = input.messages ?? [];
-      const firstUserMessage = initialMessages.length > 0 && initialMessages[0].content ? initialMessages[0].content : "Nova Conversa";
+        const initialMessages = input.messages ?? [];
+        // Pega o conteúdo da primeira mensagem do usuário para gerar o título
+        const firstUserMessage = initialMessages.length > 0 && initialMessages[0].content ? initialMessages[0].content : "Nova Conversa";
 
-      const title = await generateConversationTitle(
-        typeof firstUserMessage === "string" ? firstUserMessage : String(firstUserMessage)
-      );
+        const title = await generateConversationTitle(
+            typeof firstUserMessage === "string" ? firstUserMessage : String(firstUserMessage)
+        );
 
-      const addedRef = await adminDb.collection('pulse_conversations').add({
-        userId,
-        organizationId: organizationId,
-        messages: [...initialMessages, responseMessage],
-        title, 
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      });
-      conversationId = addedRef.id;
+        const addedRef = await adminDb.collection('pulse_conversations').add({
+            userId,
+            organizationId: organizationId,
+            messages: [...initialMessages, responseMessage], // Salva a mensagem do usuário e a resposta da IA
+            title, 
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+        });
+        conversationId = addedRef.id;
     }
 
     return { response: responseMessage, conversationId };
