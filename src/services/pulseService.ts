@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Service layer for QoroPulse conversations, using Firebase Admin SDK.
@@ -49,14 +48,16 @@ function sanitizeMessages(messages?: any[]): PulseMessage[] {
     }));
 }
 
+const CreateConversationInputSchema = z.object({
+  actor: z.string(),
+  messages: z.array(PulseMessageSchema),
+  title: z.string().optional(), // Title is now optional
+});
+
 /**
  * Creates a new conversation in Firestore.
  */
-export async function createConversation(input: {
-  actor: string;
-  messages: PulseMessage[];
-  title: string;
-}): Promise<Conversation> {
+export async function createConversation(input: z.infer<typeof CreateConversationInputSchema>): Promise<Conversation> {
   const { actor, messages, title } = input;
   if (!actor || !Array.isArray(messages) || messages.length === 0) {
     throw new Error('Actor and at least one message are required.');
@@ -70,8 +71,9 @@ export async function createConversation(input: {
   const docRef = adminDb.collection(COLLECTION).doc();
   const convData = {
     userId: actor,
-    title: title,
-    messages: safeMessages, // Already sanitized
+    // Title is now optional, will be set by the flow
+    title: title || 'Nova Conversa',
+    messages: safeMessages,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   };
