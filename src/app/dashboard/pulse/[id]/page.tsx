@@ -43,56 +43,21 @@ export default function PulseConversationPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const fetchConversation = useCallback(async () => {
-    if (!currentUser || !conversationId) return;
-
-    setIsLoadingHistory(true);
-    setError(null);
-
-    try {
-      const conversation = await getConversation({ conversationId, actor: currentUser.uid });
-
-      if (conversation?.messages) {
-        setMessages(conversation.messages);
-        // Auto-trigger first response if conversation has only one message from user
-        if (conversation.messages.length === 1 && conversation.messages[0].role === 'user') {
-          await handleSendMessage(undefined, conversation.messages);
-        }
-      } else {
-        throw new Error('Conversa não encontrada ou acesso negado.');
-      }
-    } catch (err: any) {
-      setError('Não foi possível carregar a conversa.');
-      setTimeout(() => router.push('/dashboard/pulse'), 3000);
-    } finally {
-      setIsLoadingHistory(false);
-    }
-  }, [currentUser, conversationId, router]);
-
-
-  useEffect(() => {
-    if(currentUser){
-      fetchConversation();
-    }
-  }, [currentUser, fetchConversation]);
-
-
-  const handleSendMessage = async (e?: FormEvent, currentMessages?: PulseMessage[]) => {
+  const handleSendMessage = useCallback(async (e?: FormEvent, messagesOverride?: PulseMessage[]) => {
     e?.preventDefault();
+    if (isSending || !currentUser?.uid) return;
 
-    const messageText = input.trim();
-    const messagesToSend = currentMessages ?? [...messages, { role: 'user', content: messageText }];
-    
-    if (messagesToSend.length === 0 || isSending || !currentUser?.uid) return;
-    if (!currentMessages && !messageText) return; 
+    const currentInput = input;
+    const messagesToSend = messagesOverride || [...messages, { role: 'user', content: currentInput.trim() }];
 
-    if (!currentMessages) {
+    if (!messagesToSend.length || (!messagesOverride && !currentInput.trim())) return;
+
+    setIsSending(true);
+    setError(null);
+    if (!messagesOverride) {
       setMessages(messagesToSend);
       setInput('');
     }
-    
-    setIsSending(true);
-    setError(null);
 
     try {
       const result = await askPulse({
@@ -102,8 +67,7 @@ export default function PulseConversationPage() {
       });
 
       if (result?.response?.content) {
-        const aiMessage: PulseMessage = { role: 'assistant', content: result.response.content };
-        setMessages(prev => [...prev, aiMessage]);
+        setMessages(prev => [...prev, result.response]);
       } else {
         throw new Error('Resposta inválida da IA.');
       }
@@ -111,11 +75,42 @@ export default function PulseConversationPage() {
       let errorMessage = 'Erro ao comunicar com a IA. Tente novamente.';
       if (err.message?.includes('500')) errorMessage = 'Erro interno do servidor. Tente em alguns momentos.';
       setError(errorMessage);
-      if(!currentMessages) setMessages(messages); 
+      // Revert optimistic update on failure
+      setMessages(messagesToSend.slice(0, -1));
     } finally {
       setIsSending(false);
     }
-  };
+  }, [isSending, currentUser, conversationId, input, messages, router]);
+
+
+  useEffect(() => {
+    if (!currentUser || !conversationId) return;
+
+    const fetchConversation = async () => {
+        setIsLoadingHistory(true);
+        setError(null);
+        try {
+            const conversation = await getConversation({ conversationId, actor: currentUser.uid });
+            if (conversation?.messages) {
+                setMessages(conversation.messages);
+                // Auto-trigger first response if conversation has only one message from user
+                if (conversation.messages.length === 1 && conversation.messages[0].role === 'user') {
+                   await handleSendMessage(undefined, conversation.messages);
+                }
+            } else {
+                throw new Error('Conversa não encontrada ou acesso negado.');
+            }
+        } catch (err: any) {
+            setError('Não foi possível carregar a conversa.');
+            setTimeout(() => router.push('/dashboard/pulse'), 3000);
+        } finally {
+            setIsLoadingHistory(false);
+        }
+    };
+    
+    fetchConversation();
+  }, [currentUser, conversationId, router, handleSendMessage]);
+
 
   useEffect(() => {
     if (scrollAreaRef.current) {
