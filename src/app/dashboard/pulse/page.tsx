@@ -71,11 +71,9 @@ export default function PulsePage() {
         try {
             const userMessage: PulseMessage = { role: 'user', content: messageText };
             
-            // The askPulse flow now handles conversation creation internally
             const result = await askPulse({
                 actor: currentUser.uid,
                 messages: [userMessage],
-                // No conversationId is passed, so the flow knows to create a new one
             });
 
             if (!result?.conversationId) {
@@ -83,7 +81,6 @@ export default function PulsePage() {
             }
 
             setInput('');
-            // Redirect to the newly created conversation page
             router.push(`/dashboard/pulse/${result.conversationId}`);
 
         } catch (error: any) {

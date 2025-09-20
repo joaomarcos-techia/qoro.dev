@@ -103,16 +103,21 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         content: m.content ?? '',
     }));
 
-    const genkitPrompt = [
-        { role: 'system' as const, content: systemPrompt },
-        ...conversationHistory
-    ];
+    const genkitPrompt = {
+        messages: [
+            { role: 'system' as const, content: systemPrompt },
+            ...conversationHistory
+        ]
+    };
 
     let result;
     try {
       result = await ai.generate({
         model: googleAI.model('gemini-1.5-flash'),
-        prompt: genkitPrompt,
+        prompt: genkitPrompt.messages.map(m => ({
+          role: m.role,
+          content: [{ text: m.content }]
+        })),
         config: {
           temperature: 0.5,
           maxOutputTokens: 1024,
