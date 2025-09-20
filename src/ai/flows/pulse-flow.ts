@@ -44,7 +44,6 @@ Sua personalidade é profissional, prestativa, perspicaz e um pouco futurista.
 Responda de forma clara, concisa e acionável. Formate em Markdown quando apropriado.
 `.trim();
     
-    // Implementação da janela de contexto de 15 mensagens + prompt de sistema
     const history = input.messages ?? [];
     const conversationHistory = history.slice(-15);
 
@@ -71,19 +70,27 @@ Responda de forma clara, concisa e acionável. Formate em Markdown quando apropr
       throw new Error('Falha ao gerar resposta da IA.');
     }
 
-    const responseText =
-      result.text ?? 'Desculpe, não consegui processar sua pergunta. Tente novamente.';
+    const responseText = result.text ?? 'Desculpe, não consegui processar sua pergunta. Tente novamente.';
     const responseMessage: PulseMessage = { role: 'assistant', content: responseText };
 
     let conversationId = input.conversationId;
 
     if (conversationId) {
       const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
-      const latestUserMessage = input.messages[input.messages.length - 1];
-      await conversationRef.update({
-        messages: FieldValue.arrayUnion(latestUserMessage, responseMessage),
-        updatedAt: FieldValue.serverTimestamp(),
-      });
+      // Ensure the message to be saved has the right structure.
+      const latestUserMessage = input.messages.length > 0 ? input.messages[input.messages.length - 1] : null;
+      
+      const updatePayload: any = {
+          messages: FieldValue.arrayUnion(responseMessage),
+          updatedAt: FieldValue.serverTimestamp(),
+      };
+      
+      if(latestUserMessage){
+          updatePayload.messages = FieldValue.arrayUnion(latestUserMessage, responseMessage);
+      }
+      
+      await conversationRef.update(updatePayload);
+
     } else {
       const initialMessages = input.messages ?? [];
       const firstUserMessage = initialMessages.length > 0 && initialMessages[0].content ? initialMessages[0].content : "Nova Conversa";
