@@ -74,41 +74,39 @@ export default function PulseConversationPage() {
       let errorMessage = 'Erro ao comunicar com a IA. Tente novamente.';
       if (err.message?.includes('500')) errorMessage = 'Erro interno do servidor. Tente em alguns momentos.';
       setError(errorMessage);
-      // Revert optimistic update on failure
-      setMessages(messagesToSend.slice(0, -1));
+      setMessages(messages.slice(0, -1));
     } finally {
       setIsSending(false);
     }
-  }, [isSending, currentUser, conversationId, input, messages, router]);
+  }, [currentUser, conversationId, input, isSending, messages]);
 
+
+  const fetchConversation = useCallback(async () => {
+    if (!currentUser || !conversationId) return;
+
+    setIsLoadingHistory(true);
+    setError(null);
+    try {
+        const conversation = await getConversation({ conversationId, actor: currentUser.uid });
+        if (conversation?.messages) {
+            setMessages(conversation.messages);
+            if (conversation.messages.length === 1 && conversation.messages[0].role === 'user') {
+               await handleSendMessage(undefined, conversation.messages);
+            }
+        } else {
+            throw new Error('Conversa não encontrada ou acesso negado.');
+        }
+    } catch (err: any) {
+        setError('Não foi possível carregar a conversa.');
+        setTimeout(() => router.push('/dashboard/pulse'), 3000);
+    } finally {
+        setIsLoadingHistory(false);
+    }
+  }, [currentUser, conversationId, router, handleSendMessage]);
 
   useEffect(() => {
-    const fetchConversation = async () => {
-        if (!currentUser || !conversationId) return;
-
-        setIsLoadingHistory(true);
-        setError(null);
-        try {
-            const conversation = await getConversation({ conversationId, actor: currentUser.uid });
-            if (conversation?.messages) {
-                setMessages(conversation.messages);
-                // Auto-trigger first response if conversation has only one message from user
-                if (conversation.messages.length === 1 && conversation.messages[0].role === 'user') {
-                   await handleSendMessage(undefined, conversation.messages);
-                }
-            } else {
-                throw new Error('Conversa não encontrada ou acesso negado.');
-            }
-        } catch (err: any) {
-            setError('Não foi possível carregar a conversa.');
-            setTimeout(() => router.push('/dashboard/pulse'), 3000);
-        } finally {
-            setIsLoadingHistory(false);
-        }
-    };
-    
     fetchConversation();
-  }, [currentUser, conversationId, router, handleSendMessage]);
+  }, [fetchConversation]);
 
 
   useEffect(() => {
