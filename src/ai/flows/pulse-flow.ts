@@ -100,11 +100,11 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
     
     const conversationHistory = (messages ?? []).slice(-15).map(m => ({
         role: roleMap[m.role] || 'user',
-        content: [{ text: m.content ?? '' }],
+        content: m.content ?? '',
     }));
 
     const genkitPrompt = [
-        { role: 'system' as const, content: [{ text: systemPrompt }] },
+        { role: 'system' as const, content: systemPrompt },
         ...conversationHistory
     ];
 
@@ -112,7 +112,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
     try {
       result = await ai.generate({
         model: googleAI.model('gemini-1.5-flash'),
-        messages: genkitPrompt,
+        prompt: genkitPrompt,
         config: {
           temperature: 0.5,
           maxOutputTokens: 1024,
