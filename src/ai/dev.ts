@@ -8,6 +8,3 @@ import './flows/pulse-flow';
 import './flows/finance-management';
 import './flows/supplier-management';
 import './flows/reconciliation-flow';
-
-// O fluxo de cobrança foi removido para permitir o teste sem credenciais do Stripe.
-// As ferramentas foram removidas conforme solicitação do usuário.
