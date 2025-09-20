@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect, FormEvent, useCallback } from 'react';
@@ -55,7 +54,7 @@ export default function PulseConversationPage() {
     setIsSending(true);
     setError(null);
     if (!messagesOverride) {
-      setMessages(messagesToSend);
+      setMessages(prev => [...prev, { role: 'user', content: currentInput.trim() }]);
       setInput('');
     }
 
@@ -66,7 +65,7 @@ export default function PulseConversationPage() {
         conversationId,
       });
 
-      if (result?.response?.content) {
+      if (result?.response) {
         setMessages(prev => [...prev, result.response]);
       } else {
         throw new Error('Resposta inválida da IA.');
@@ -84,9 +83,9 @@ export default function PulseConversationPage() {
 
 
   useEffect(() => {
-    if (!currentUser || !conversationId) return;
-
     const fetchConversation = async () => {
+        if (!currentUser || !conversationId) return;
+
         setIsLoadingHistory(true);
         setError(null);
         try {
