@@ -129,6 +129,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
 
     if (conversationId) {
         const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
+        // Securely update the conversation with the full message history
         const updatedMessages = [...messages, responseMessage];
 
         await conversationRef.update({
@@ -139,6 +140,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         const initialMessages = messages ?? [];
         const firstUserMessage = initialMessages.length > 0 && initialMessages[0].content ? initialMessages[0].content : "Nova Conversa";
 
+        // Generate title based on the first user message
         const title = await generateConversationTitle(
             typeof firstUserMessage === "string" ? firstUserMessage : String(firstUserMessage)
         );

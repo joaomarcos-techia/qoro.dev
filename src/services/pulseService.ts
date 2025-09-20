@@ -8,10 +8,10 @@ import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import {
-  PulseMessage,
   Conversation,
   ConversationProfile,
   ConversationProfileSchema,
+  PulseMessage,
   PulseMessageSchema,
 } from '@/ai/schemas';
 
@@ -29,7 +29,7 @@ function toISOStringSafe(date: any): string {
             const parsed = new Date(date);
             if (!isNaN(parsed.getTime())) return parsed.toISOString();
         } catch (e) {
-            console.error('Invalid date string for conversion:', date, e);
+            // Ignore invalid date strings
         }
     }
     return new Date().toISOString();
@@ -48,45 +48,6 @@ function sanitizeMessages(messages?: any[]): PulseMessage[] {
     }));
 }
 
-const CreateConversationInputSchema = z.object({
-  actor: z.string(),
-  messages: z.array(PulseMessageSchema),
-  title: z.string().optional(), // Title is now optional
-});
-
-/**
- * Creates a new conversation in Firestore.
- */
-export async function createConversation(input: z.infer<typeof CreateConversationInputSchema>): Promise<Conversation> {
-  const { actor, messages, title } = input;
-  if (!actor || !Array.isArray(messages) || messages.length === 0) {
-    throw new Error('Actor and at least one message are required.');
-  }
-
-  const safeMessages = sanitizeMessages(messages);
-  if (safeMessages.length === 0) {
-    throw new Error('No valid messages provided.');
-  }
-
-  const docRef = adminDb.collection(COLLECTION).doc();
-  const convData = {
-    userId: actor,
-    // Title is now optional, will be set by the flow
-    title: title || 'Nova Conversa',
-    messages: safeMessages,
-    createdAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp(),
-  };
-
-  await docRef.set(convData);
-
-  return {
-    id: docRef.id,
-    title: convData.title,
-    messages: safeMessages,
-    updatedAt: new Date().toISOString(),
-  };
-}
 
 /**
  * Retrieves a specific conversation for a user.
@@ -100,14 +61,13 @@ export async function getConversation(input: {
   const docSnap = await docRef.get();
 
   if (!docSnap.exists) {
-    console.warn(`Conversation not found: ${conversationId}`);
     return null;
   }
 
   const data = docSnap.data();
   if (data?.userId !== actor) {
-    console.error(`Unauthorized access attempt by ${actor} on conversation ${conversationId}`);
-    return null; // Security: Do not leak existence of conversation
+    // Security: Do not leak existence of conversation
+    return null; 
   }
 
   return {
@@ -134,13 +94,8 @@ export async function deleteConversation(input: {
     return { success: true };
   }
   
-  if (!currentDoc.exists) {
-      console.warn(`Attempted to delete non-existent conversation: ${conversationId}`);
-  } else {
-      console.error(`Unauthorized delete attempt by ${actor} on conversation ${conversationId}`);
-  }
-  
-  return { success: false }; // Fail silently for security reasons
+  // Fail silently for security reasons if doc doesn't exist or user is not owner
+  return { success: false };
 }
 
 /**
@@ -171,8 +126,6 @@ export async function listConversations(input: {
       });
       if (profile.success) {
           profiles.push(profile.data);
-      } else {
-          console.warn(`Invalid conversation profile found in DB for user ${actor}: ${doc.id}`);
       }
   });
 
