@@ -6,14 +6,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, AlertCircle, CheckCircle, User, Building, FileText, Phone, ArrowRight, Loader2 } from 'lucide-react';
 import { signUp } from '@/ai/flows/user-management';
-import { createStripeCheckoutSession } from '@/ai/flows/billing-flow';
 import { createUserAndSendVerification } from '@/lib/auth';
 import { Logo } from '@/components/ui/logo';
-
-const planIdToPriceId: Record<string, string | undefined> = {
-    growth: process.env.NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID,
-    performance: process.env.NEXT_PUBLIC_STRIPE_PERFORMANCE_PLAN_PRICE_ID,
-}
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -30,7 +24,7 @@ export default function SignUpPage() {
     contactPhone: '',
   });
   const [error, setError] = useState<string | null>(null);
-  const [successData, setSuccessData] = useState<{ message: string; url?: string } | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const formatCNPJ = (value: string) => {
@@ -89,18 +83,7 @@ export default function SignUpPage() {
         cnpj: formData.cnpj.replace(/\D/g, ''), 
       });
 
-      if (!plan || plan === 'free') {
-        setSuccessData({ message: 'Conta criada! Verifique seu e-mail para ativar sua conta e depois faça o login.' });
-        return;
-      }
-      
-      const priceId = planIdToPriceId[plan];
-      if (!priceId) {
-          throw new Error('Plano selecionado é inválido ou não foi configurado.');
-      }
-      
-      const { url } = await createStripeCheckoutSession({ priceId: priceId, actor: user.uid });
-      setSuccessData({ message: 'Conta criada! Verifique seu e-mail e finalize o pagamento para começar.', url });
+      setSuccessMessage('Conta criada! Verifique seu e-mail para ativar sua conta e depois faça o login.');
 
     } catch (err: any) {
       setError(err.message || 'Ocorreu um erro ao criar a conta. Tente novamente.');
@@ -120,21 +103,14 @@ export default function SignUpPage() {
           <p className="text-muted-foreground">Crie sua conta para começar a organizar sua empresa.</p>
         </div>
 
-        {successData ? (
+        {successMessage ? (
           <div className="bg-green-800/20 border-l-4 border-green-500 text-green-300 p-6 rounded-lg flex items-center text-center flex-col">
             <CheckCircle className="w-10 h-10 mb-4 text-green-400" />
             <h3 className="text-xl font-bold text-white mb-2">Conta Criada com Sucesso!</h3>
-            <p className="text-sm font-semibold mb-6">{successData.message}</p>
-            {successData.url ? (
-                <a href={successData.url} target="_blank" rel="noopener noreferrer" className="w-full bg-primary text-primary-foreground py-3 rounded-xl hover:bg-primary/90 transition-all duration-200 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
-                    <ArrowRight className="mr-2 w-5 h-5" />
-                    Finalizar Pagamento
-                </a>
-            ) : (
-                <Link href="/login" className="w-full bg-primary text-primary-foreground py-3 rounded-xl hover:bg-primary/90 transition-all duration-200 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
-                    Ir para o Login
-                </Link>
-            )}
+            <p className="text-sm font-semibold mb-6">{successMessage}</p>
+            <Link href="/login" className="w-full bg-primary text-primary-foreground py-3 rounded-xl hover:bg-primary/90 transition-all duration-200 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
+                Ir para o Login
+            </Link>
           </div>
         ) : (
           <form onSubmit={handleSignUp} className="space-y-8">

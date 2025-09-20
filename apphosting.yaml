@@ -1,3 +1,4 @@
+
 # Configurações para gerenciar e configurar um backend do Firebase App Hosting.
 # https://firebase.google.com/docs/app-hosting/configure
 
@@ -34,11 +35,15 @@ env:
     value: "seu-valor-aqui"
   - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
     value: "seu-valor-aqui"
-  - variable: NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID
-    value: "seu-valor-aqui"
-  - variable: NEXT_PUBLIC_STRIPE_PERFORMANCE_PLAN_PRICE_ID
-    value: "seu-valor-aqui"
-  # As variáveis secretas (STRIPE e FIREBASE_ADMIN) devem ser gerenciadas via Secret Manager.
-  # Exemplo de como vincular um segredo:
+
+  # As variáveis de ambiente do Stripe foram removidas para teste.
+  # Adicione-as novamente quando for reativar a integração com o Stripe.
+  # - variable: NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID
+  #   value: "seu-valor-aqui"
+  # - variable: NEXT_PUBLIC_STRIPE_PERFORMANCE_PLAN_PRICE_ID
+  #   value: "seu-valor-aqui"
   # - variable: STRIPE_SECRET_KEY
   #   secret: STRIPE_SECRET_KEY_SECRET_NAME
+  # - variable: STRIPE_WEBHOOK_SECRET
+  #   secret: STRIPE_WEBHOOK_SECRET_NAME
+

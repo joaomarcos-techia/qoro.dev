@@ -1,6 +1,8 @@
 
 // src/ai/flows/billing-flow.ts
-
+// A funcionalidade de cobrança foi desativada temporariamente para permitir o teste de outras partes do aplicativo sem credenciais do Stripe.
+// Para reativar, descomente o código abaixo e certifique-se de que suas variáveis de ambiente do Stripe estão configuradas.
+/*
 import { z } from 'zod';
 import Stripe from 'stripe';
 import { ai } from '../genkit';
@@ -225,3 +227,4 @@ export const createStripePortalSession = ai.defineFlow(
       return { url: session.url! };
     }
 );
+*/

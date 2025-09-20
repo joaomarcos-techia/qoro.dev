@@ -8,7 +8,6 @@ import { z } from 'zod';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getOrganizationDetails, updateOrganizationDetails } from '@/ai/flows/user-management';
-import { createStripePortalSession } from '@/ai/flows/billing-flow';
 import { UpdateOrganizationDetailsSchema, OrganizationProfile } from '@/ai/schemas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +28,7 @@ const formatCNPJ = (value: string) => {
 export function OrganizationForm() {
     const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
     const [organization, setOrganization] = useState<OrganizationProfile | null>(null);
-    const [isLoading, setIsLoading] = useState({ page: true, form: false, portal: false });
+    const [isLoading, setIsLoading] = useState({ page: true, form: false });
     const [feedback, setFeedback] = useState<{ type: 'error' | 'success', message: string } | null>(null);
     
     const {
@@ -52,7 +51,7 @@ export function OrganizationForm() {
     useEffect(() => {
         async function fetchDetails() {
             if (!currentUser) return;
-            setIsLoading({ page: true, form: false, portal: false });
+            setIsLoading({ page: true, form: false });
             try {
                 const details = await getOrganizationDetails({ actor: currentUser.uid });
                 setOrganization(details);
@@ -93,19 +92,6 @@ export function OrganizationForm() {
             setIsLoading(prev => ({ ...prev, form: false }));
         }
     };
-    
-    const handleManageSubscription = async () => {
-        if (!currentUser) return;
-        setIsLoading(prev => ({ ...prev, portal: true }));
-        try {
-            const { url } = await createStripePortalSession({ actor: currentUser.uid });
-            window.location.href = url;
-        } catch (error) {
-            console.error("Failed to create portal session", error);
-            setFeedback({ type: 'error', message: 'Não foi possível abrir o portal de gerenciamento. Tente novamente mais tarde.' });
-            setIsLoading(prev => ({ ...prev, portal: false }));
-        }
-    }
     
     if (isLoading.page) {
         return (
@@ -180,25 +166,12 @@ export function OrganizationForm() {
                 
                 <div className="flex justify-between items-center pt-4">
                      <div>
-                        {organization?.stripeSubscriptionId ? (
-                             <Button 
-                                type="button" 
-                                variant="outline"
-                                onClick={handleManageSubscription}
-                                disabled={isLoading.portal}
-                            >
-                                {isLoading.portal && <Loader2 className="mr-2 w-5 h-5 animate-spin" />}
-                                Gerenciar Assinatura
+                        <Link href="/#precos">
+                            <Button type="button" variant="outline">
+                                Fazer Upgrade de Plano
                                 <ExternalLink className="ml-2 w-4 h-4"/>
                             </Button>
-                        ) : (
-                            <Link href="/#precos">
-                                <Button type="button" variant="outline">
-                                    Fazer Upgrade de Plano
-                                    <ExternalLink className="ml-2 w-4 h-4"/>
-                                </Button>
-                            </Link>
-                        )}
+                        </Link>
                      </div>
                      <Button 
                         type="submit" 
