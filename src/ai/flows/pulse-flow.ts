@@ -89,6 +89,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
 </EXEMPLOS>
 `.trim();
     
+    // Use o histórico de mensagens completo que vem do input, pegando as últimas 15.
     const conversationHistory = (messages ?? []).slice(-15);
 
     const genkitPrompt = [
@@ -120,17 +121,17 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
     let conversationId = input.conversationId;
 
     if (conversationId) {
-        // Robust update logic: Read, modify, then write.
+        // Lógica de atualização simplificada e robusta
         const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
-        const conversationDoc = await conversationRef.get();
-        if (conversationDoc.exists) {
-            const currentMessages = conversationDoc.data()?.messages || [];
-            const updatedMessages = [...currentMessages, responseMessage];
-            await conversationRef.update({
-                messages: updatedMessages,
-                updatedAt: FieldValue.serverTimestamp(),
-            });
-        }
+        
+        // O `messages` do input já contém o histórico + a última mensagem do usuário.
+        // Apenas adicionamos a nova resposta da IA.
+        const updatedMessages = [...messages, responseMessage];
+
+        await conversationRef.update({
+            messages: updatedMessages,
+            updatedAt: FieldValue.serverTimestamp(),
+        });
     } else {
         const initialMessages = messages ?? [];
         const firstUserMessage = initialMessages.length > 0 && initialMessages[0].content ? initialMessages[0].content : "Nova Conversa";
@@ -141,6 +142,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
 
         const addedRef = await adminDb.collection('pulse_conversations').add({
             userId,
+            // A conversa é criada com a primeira mensagem do usuário e a primeira resposta da IA.
             messages: [...initialMessages, responseMessage],
             title, 
             createdAt: FieldValue.serverTimestamp(),
