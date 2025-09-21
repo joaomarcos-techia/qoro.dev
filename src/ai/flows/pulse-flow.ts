@@ -143,15 +143,14 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
             updatedAt: FieldValue.serverTimestamp(),
         };
 
-        // Condição para atualizar o título: se o título for genérico e esta for a segunda interação do usuário.
-        if (conversationData?.title === "Nova Conversa" && messages.length > 0 && messages.length < 3) {
-            // A mensagem que contém o assunto é a última do array `messages` que chega aqui.
-            const latestUserMessage = messages[messages.length - 1]?.content;
-            if (latestUserMessage) {
-                const newTitle = await generateConversationTitle(latestUserMessage);
-                if (newTitle !== "Nova Conversa") {
-                    updatePayload.title = newTitle;
-                }
+        const userMessages = finalMessages.filter(m => m.role === 'user');
+        
+        // Condição para atualizar o título: se for genérico e já tivermos 2 mensagens do usuário.
+        if (conversationData?.title === "Nova Conversa" && userMessages.length === 2) {
+            const contextForTitle = userMessages.map(m => m.content).join('\n');
+            const newTitle = await generateConversationTitle(contextForTitle);
+            if (newTitle !== "Nova Conversa") {
+                updatePayload.title = newTitle;
             }
         }
         
