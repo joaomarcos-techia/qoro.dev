@@ -98,7 +98,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
 </EXEMPLOS>
 `.trim();
     
-    const conversationHistory = (messages ?? []).slice(-15).map(m => ({
+    const conversationHistory = messages.map(m => ({
         role: roleMap[m.role] || 'user',
         content: [{ text: m.content ?? '' }],
     }));
@@ -145,7 +145,10 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         };
 
         // Lógica para atualizar o título se for genérico
-        if (conversationData?.title === "Nova Conversa" && messages.length < 3) {
+        // A `messages` aqui é o histórico ANTES da mensagem atual.
+        // A primeira mensagem do usuário está em `messages[0]`, a segunda em `messages[1]`
+        if (conversationData?.title === "Nova Conversa" && messages.length > 0 && messages.length < 3) {
+            // A mensagem que contém o assunto é a última do array `messages` que chega aqui.
             const latestUserMessage = messages[messages.length - 1]?.content;
             if (latestUserMessage) {
                 const newTitle = await generateConversationTitle(latestUserMessage);
