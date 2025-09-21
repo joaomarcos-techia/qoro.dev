@@ -30,7 +30,7 @@ Texto: "${firstUserMessage}"
       },
     });
 
-    const title = result.text?.trim().replace(/^"|"$/g, ''); // Remove aspas do resultado
+    const title = result.text?.trim().replace(/^"|"$/g, '').replace(/\.$/, ''); // Remove aspas e pontos finais.
     
     // Se a IA retornar algo válido (não vazio e não uma saudação), use-o.
     if (title && title.length > 0 && !commonGreetings.includes(title.toLowerCase())) {
@@ -44,8 +44,12 @@ Texto: "${firstUserMessage}"
   // Fallback mais robusto caso a IA falhe ou retorne algo inútil.
   // Pega as primeiras 3 palavras da mensagem do usuário.
   const words = trimmedMessage.split(' ');
-  if (words.length <= 3) {
-      return trimmedMessage;
+  const fallbackTitle = words.slice(0, 3).join(' ');
+  
+  // Evita que o fallback seja uma saudação
+  if (commonGreetings.includes(fallbackTitle.toLowerCase())) {
+    return "Nova Conversa";
   }
-  return words.slice(0, 3).join(' ');
+
+  return fallbackTitle;
 }

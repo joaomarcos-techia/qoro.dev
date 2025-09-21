@@ -131,28 +131,27 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
     const responseMessage: PulseMessage = { role: 'assistant', content: responseText };
 
     let conversationId = input.conversationId;
+    const finalMessages = [...messages, responseMessage];
 
     if (conversationId) {
         const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
         const conversationDoc = await conversationRef.get();
         const conversationData = conversationDoc.data();
         
-        const finalMessages = [...messages, responseMessage];
-        
         const updatePayload: { [key: string]: any } = {
             messages: finalMessages.map(m => ({...m})),
             updatedAt: FieldValue.serverTimestamp(),
         };
 
-        // Lógica para atualizar o título se for genérico
-        // A `messages` aqui é o histórico ANTES da mensagem atual.
-        // A primeira mensagem do usuário está em `messages[0]`, a segunda em `messages[1]`
+        // Condição para atualizar o título: se o título for genérico e esta for a segunda interação do usuário.
         if (conversationData?.title === "Nova Conversa" && messages.length > 0 && messages.length < 3) {
             // A mensagem que contém o assunto é a última do array `messages` que chega aqui.
             const latestUserMessage = messages[messages.length - 1]?.content;
             if (latestUserMessage) {
                 const newTitle = await generateConversationTitle(latestUserMessage);
-                updatePayload.title = newTitle;
+                if (newTitle !== "Nova Conversa") {
+                    updatePayload.title = newTitle;
+                }
             }
         }
         
@@ -161,7 +160,6 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
     } else {
         const firstUserMessageContent = messages.length > 0 ? messages[0].content : "Nova Conversa";
         const title = await generateConversationTitle(firstUserMessageContent);
-        const finalMessages = [...messages, responseMessage];
         
         const addedRef = await adminDb.collection('pulse_conversations').add({
             userId,
