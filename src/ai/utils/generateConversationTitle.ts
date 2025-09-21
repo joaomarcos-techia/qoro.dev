@@ -1,4 +1,5 @@
-// src/utils/generateConversationTitle.ts
+'use server';
+// src/ai/utils/generateConversationTitle.ts
 import { ai } from '../genkit';
 import { googleAI } from '@genkit-ai/googleai';
 
@@ -8,6 +9,13 @@ export async function generateConversationTitle(context: string): Promise<string
   }
 
   const trimmedContext = context.trim().toLowerCase();
+  
+  // Basic check for common greetings
+  const greetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'tudo bem'];
+  if (greetings.includes(trimmedContext)) {
+      return "Nova Conversa";
+  }
+
 
   try {
     const result = await ai.generate({
@@ -18,7 +26,7 @@ O título deve capturar o assunto principal. Retorne apenas o título, sem aspas
 
 Início da Conversa:
 ---
-"${context}"
+"${trimmedContext}"
 ---
 `.trim(),
       config: {
@@ -30,8 +38,8 @@ Início da Conversa:
     const rawTitle = result.text ?? "";
     const title = rawTitle
       .trim()
-      .replace(/^["'`]+|["'`]+$/g, "") // remove aspas iniciais/finais
-      .replace(/[.!?]+$/, ""); // remove pontuação final
+      .replace(/^["'`]+|["'`]+$/g, "") // remove quotes
+      .replace(/[.!?]+$/, ""); // remove final punctuation
 
     if (title && title.length > 1) {
       return title;
@@ -41,7 +49,7 @@ Início da Conversa:
     console.error("Erro ao gerar título com IA:", err);
   }
 
-  // Fallback aprimorado: usa até 4 palavras iniciais do contexto, removendo palavras curtas
+  // Improved Fallback: uses up to 4 initial words, removing short words
   const words = trimmedContext
     .split(/\s+/)
     .filter(w => w.length > 2)

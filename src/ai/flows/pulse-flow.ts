@@ -145,7 +145,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
 
         const userMessages = finalMessages.filter(m => m.role === 'user');
         
-        // Condição para atualizar o título: se for genérico e já tivermos 2 mensagens do usuário.
+        // Corrected logic: Check if title is provisional and if there's enough context to update it.
         if (conversationData?.title === "Nova Conversa" && userMessages.length === 2) {
             const contextForTitle = userMessages.map(m => m.content).join('\n');
             const newTitle = await generateConversationTitle(contextForTitle);
@@ -157,6 +157,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         await conversationRef.update(updatePayload);
 
     } else {
+        // Always create a new conversation with a default title.
         const addedRef = await adminDb.collection('pulse_conversations').add({
             userId,
             messages: finalMessages.map(m => ({...m})),
