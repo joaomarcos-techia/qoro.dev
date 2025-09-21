@@ -21,19 +21,19 @@ env:
   # Para chaves sensíveis (como API keys), é altamente recomendado usar o Secret Manager
   # integrado ao Firebase App Hosting para maior segurança.
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: "seu-valor-aqui"
+    value: "AIzaSyB-v1ynnLnRuIV4-VTJhBtXPPkHpg-ivtU"
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    value: "seu-valor-aqui"
+    value: "qoro-iy1gs.firebaseapp.com"
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    value: "seu-valor-aqui"
+    value: "qoro-iy1gs"
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: "seu-valor-aqui"
+    value: "qoro-iy1gs.firebasestorage.app"
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    value: "seu-valor-aqui"
+    value: "62039220673"
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
     value: "seu-valor-aqui"
   - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
-    value: "seu-valor-aqui"
+    value: "G-L3D1C3SYVV"
 
   # As variáveis de ambiente do Stripe foram removidas para teste.
   # Adicione-as novamente quando for reativar a integração com o Stripe.
