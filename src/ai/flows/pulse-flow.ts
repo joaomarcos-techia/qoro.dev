@@ -100,12 +100,12 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
     
     const conversationHistory = (messages ?? []).slice(-15).map(m => ({
         role: roleMap[m.role] || 'user',
-        content: m.content ?? '',
+        content: [{ text: m.content ?? '' }],
     }));
 
     const genkitPrompt = {
         messages: [
-            { role: 'system' as const, content: systemPrompt },
+            { role: 'system' as const, content: [{ text: systemPrompt }] },
             ...conversationHistory
         ]
     };
@@ -116,7 +116,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         model: googleAI.model('gemini-1.5-flash'),
         prompt: genkitPrompt.messages.map(m => ({
           role: m.role,
-          content: [{ text: m.content }]
+          content: m.content
         })),
         config: {
           temperature: 0.5,
@@ -140,7 +140,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         const finalMessages = [...messages, responseMessage];
         
         const updatePayload: { [key: string]: any } = {
-            messages: finalMessages,
+            messages: finalMessages.map(m => ({...m})),
             updatedAt: FieldValue.serverTimestamp(),
         };
 
@@ -149,9 +149,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
             const latestUserMessage = messages[messages.length - 1]?.content;
             if (latestUserMessage) {
                 const newTitle = await generateConversationTitle(latestUserMessage);
-                if (newTitle !== "Nova Conversa") {
-                    updatePayload.title = newTitle;
-                }
+                updatePayload.title = newTitle;
             }
         }
         
@@ -164,7 +162,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         
         const addedRef = await adminDb.collection('pulse_conversations').add({
             userId,
-            messages: finalMessages,
+            messages: finalMessages.map(m => ({...m})),
             title, 
             createdAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp(),

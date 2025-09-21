@@ -8,7 +8,7 @@ export async function generateConversationTitle(firstUserMessage: string): Promi
   
   const trimmedMessage = firstUserMessage.trim().toLowerCase();
   
-  // Fallback para saudações comuns
+  // Lista de saudações comuns para evitar chamadas desnecessárias à IA na primeira mensagem.
   const commonGreetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'tudo bem', 'tudo bem?', 'e ai', 'eae'];
   if (commonGreetings.some(greeting => trimmedMessage.startsWith(greeting))) {
       return "Nova Conversa";
@@ -19,27 +19,33 @@ export async function generateConversationTitle(firstUserMessage: string): Promi
       model: googleAI.model('gemini-1.5-flash'),
       prompt: `
 Resuma o seguinte texto em **no máximo 3 palavras**.
-Retorne apenas o título curto, nada mais.
+Se o texto for uma saudação ou pergunta curta, use as palavras-chave principais.
+Retorne apenas o título. NADA MAIS.
 
 Texto: "${firstUserMessage}"
 `.trim(),
       config: {
-        temperature: 0.2,
+        temperature: 0.1,
         maxOutputTokens: 10,
       },
     });
 
-    const title = result.text?.trim();
-    // Adiciona uma verificação para não usar saudações como título caso a IA retorne uma
-    if (title && !commonGreetings.includes(title.toLowerCase())) {
+    const title = result.text?.trim().replace(/^"|"$/g, ''); // Remove aspas do resultado
+    
+    // Se a IA retornar algo válido (não vazio e não uma saudação), use-o.
+    if (title && title.length > 0 && !commonGreetings.includes(title.toLowerCase())) {
         return title;
     }
+
   } catch (err) {
     console.error("Erro ao gerar título com IA:", err);
   }
 
-  // fallback se a IA não responder ou retornar uma saudação
-  return firstUserMessage.length > 25
-    ? firstUserMessage.substring(0, 25) + "..."
-    : firstUserMessage;
+  // Fallback mais robusto caso a IA falhe ou retorne algo inútil.
+  // Pega as primeiras 3 palavras da mensagem do usuário.
+  const words = trimmedMessage.split(' ');
+  if (words.length <= 3) {
+      return trimmedMessage;
+  }
+  return words.slice(0, 3).join(' ');
 }
