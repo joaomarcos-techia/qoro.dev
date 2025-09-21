@@ -134,12 +134,29 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
 
     if (conversationId) {
         const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
-        const updatedMessages = [...messages, responseMessage];
-
-        await conversationRef.update({
-            messages: updatedMessages,
+        const conversationDoc = await conversationRef.get();
+        const conversationData = conversationDoc.data();
+        
+        const finalMessages = [...messages, responseMessage];
+        
+        const updatePayload: { [key: string]: any } = {
+            messages: finalMessages,
             updatedAt: FieldValue.serverTimestamp(),
-        });
+        };
+
+        // Lógica para atualizar o título se for genérico
+        if (conversationData?.title === "Nova Conversa" && messages.length < 3) {
+            const latestUserMessage = messages[messages.length - 1]?.content;
+            if (latestUserMessage) {
+                const newTitle = await generateConversationTitle(latestUserMessage);
+                if (newTitle !== "Nova Conversa") {
+                    updatePayload.title = newTitle;
+                }
+            }
+        }
+        
+        await conversationRef.update(updatePayload);
+
     } else {
         const firstUserMessageContent = messages.length > 0 ? messages[0].content : "Nova Conversa";
         const title = await generateConversationTitle(firstUserMessageContent);

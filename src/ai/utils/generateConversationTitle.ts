@@ -1,4 +1,3 @@
-
 import { ai } from '../genkit';
 import { googleAI } from '@genkit-ai/googleai';
 
@@ -10,8 +9,8 @@ export async function generateConversationTitle(firstUserMessage: string): Promi
   const trimmedMessage = firstUserMessage.trim().toLowerCase();
   
   // Fallback para saudações comuns
-  const commonGreetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite'];
-  if (commonGreetings.includes(trimmedMessage)) {
+  const commonGreetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'tudo bem', 'tudo bem?', 'e ai', 'eae'];
+  if (commonGreetings.some(greeting => trimmedMessage.startsWith(greeting))) {
       return "Nova Conversa";
   }
 
