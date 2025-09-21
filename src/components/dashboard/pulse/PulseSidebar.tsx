@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition, useCallback } from 'react';
@@ -125,7 +124,7 @@ export function PulseSidebar() {
                 </Link>
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
-                        <button className="flex-shrink-0 p-1 rounded-md text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                        <button className="flex-shrink-0 p-1 rounded-md text-red-500 opacity-0 group-hover:opacity-100 transition-all focus:outline-none focus:ring-0">
                             <Trash2 className="w-4 h-4"/>
                         </button>
                     </AlertDialogTrigger>
