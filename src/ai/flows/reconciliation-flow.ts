@@ -5,7 +5,7 @@
  * - createReconciliation - Saves a new bank statement file.
  * - getReconciliation - Retrieves a specific reconciliation record.
  * - listReconciliations - Lists all saved reconciliations.
- * - updateReconciliation - Updates a reconciliation record (e.g., name or status).
+ * - updateReconciliation - Updates a reconciliation record (e.g., name).
  * - deleteReconciliation - Deletes a reconciliation record.
  */
 import { ai } from '@/ai/genkit';
@@ -20,7 +20,6 @@ const UpdateReconciliationInputSchema = z.object({
     id: z.string(), 
     actor: z.string(),
     fileName: z.string().optional(), 
-    status: ReconciliationSchema.shape.status.optional(),
 });
 const DeleteReconciliationInputSchema = z.object({ id: z.string(), actor: z.string() });
 

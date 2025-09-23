@@ -8,7 +8,6 @@ import { TransactionProfile, ReconciliationProfile, TransactionSchema } from '@/
 import { CheckCircle, Loader2, GitMerge, PlusCircle, ServerCrash } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { bulkCreateTransactions } from '@/ai/flows/finance-management';
-import { updateReconciliation } from '@/ai/flows/reconciliation-flow';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { z } from 'zod';
@@ -48,7 +47,7 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
     return () => unsubscribe();
   }, []);
 
-  const { matched, unmatchedOfx, unmatchedSystem, isFullyReconciled } = useMemo(() => {
+  const { matched, unmatchedOfx, unmatchedSystem } = useMemo(() => {
     const localOfx = ofxTransactions || [];
     const localSys = systemTransactions || [];
     const systemCopy = [...localSys];
@@ -71,14 +70,11 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
         finalUnmatchedOfx.push(ofxT);
       }
     }
-    
-    const fullyReconciled = finalUnmatchedOfx.length === 0 && systemCopy.length === 0;
 
     return {
       matched: matchedPairs,
       unmatchedOfx: finalUnmatchedOfx,
       unmatchedSystem: systemCopy,
-      isFullyReconciled: fullyReconciled,
     }
 
   }, [ofxTransactions, systemTransactions]);
@@ -103,19 +99,10 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
           actor: currentUser.uid,
       });
 
-      // Directly update the status to 'reconciled' after successfully creating the transactions.
-      // This is the explicit action of reconciling.
-      await updateReconciliation({
-        id: reconciliation.id,
-        actor: currentUser.uid,
-        status: 'reconciled'
-      });
-  
-      // Refresh the entire dataset after all operations are complete
       onRefresh();
 
     } catch(err: any) {
-        console.error("Error during bulk creation or status update:", err);
+        console.error("Error during bulk creation:", err);
         setError(err.message || 'Ocorreu um erro ao criar as transações.');
     } finally {
         setIsBulkCreating(false);
@@ -223,15 +210,10 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
                                 </TableCell>
                               </TableRow>
                           ))}
-                          {unmatchedSystem.length === 0 && (
+                           {unmatchedSystem.length === 0 && (
                             <TableRow>
                                 <TableCell colSpan={2} className="text-center text-muted-foreground h-24">
-                                {isFullyReconciled ? (
-                                    <div className='text-green-400 flex flex-col items-center justify-center gap-2'>
-                                        <CheckCircle className='w-8 h-8'/>
-                                        <span className='font-semibold'>Conciliação completa!</span>
-                                    </div>
-                                ) : "Todas as transações do sistema foram conciliadas."}
+                                    Todas as transações do sistema foram conciliadas.
                                 </TableCell>
                             </TableRow>
                           )}

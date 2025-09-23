@@ -350,7 +350,6 @@ export const ReconciliationSchema = z.object({
     fileName: z.string(),
     ofxContent: z.string(),
     accountId: z.string(),
-    status: z.enum(['pending', 'reconciled']).default('pending'),
 });
 export type Reconciliation = z.infer<typeof ReconciliationSchema>;
 
