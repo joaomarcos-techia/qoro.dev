@@ -298,14 +298,14 @@ export const AccountProfileSchema = AccountSchema.extend({
 export type AccountProfile = z.infer<typeof AccountProfileSchema>;
 
 export const TransactionSchema = z.object({
-    accountId: z.string().min(1, "É necessário selecionar uma conta."),
-    type: z.enum(['income', 'expense']),
-    amount: z.coerce.number().positive('O valor deve ser maior que zero.'),
     description: z.string().min(1, 'A descrição é obrigatória.'),
-    date: z.union([z.string(), z.date()]),
-    category: z.string().min(1, "A categoria é obrigatória."),
-    status: z.enum(['pending', 'paid', 'cancelled']).default('paid'),
-    paymentMethod: z.enum(['cash', 'credit_card', 'debit_card', 'pix', 'bank_transfer', 'boleto']),
+    amount: z.coerce.number().positive('O valor deve ser maior que zero.'),
+    type: z.enum(['income', 'expense']),
+    accountId: z.string().optional(),
+    date: z.union([z.string(), z.date()]).optional(),
+    category: z.string().optional(),
+    status: z.enum(['pending', 'paid', 'cancelled']).optional().default('paid'),
+    paymentMethod: z.enum(['cash', 'credit_card', 'debit_card', 'pix', 'bank_transfer', 'boleto']).optional(),
     tags: z.array(z.string()).optional(),
     customerId: z.string().optional(),
 });

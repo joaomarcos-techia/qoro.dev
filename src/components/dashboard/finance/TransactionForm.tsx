@@ -26,7 +26,7 @@ type TransactionFormProps = {
 };
 
 const FormSchema = TransactionSchema.extend({
-    date: z.date(),
+    date: z.union([z.date(), z.null()]).optional(),
 });
 type FormValues = z.infer<typeof FormSchema>;
 
@@ -39,7 +39,7 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
   const [customerSearch, setCustomerSearch] = useState('');
   const [isCustomerPopoverOpen, setIsCustomerPopoverOpen] = useState(false);
   
-  const isEditMode = !!transaction;
+  const isEditMode = !!transaction?.id;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -80,8 +80,9 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
   useEffect(() => {
     if (transaction) {
         const dateValue = transaction.date;
+        // Check if dateValue is already a Date object or a valid string
         const date = dateValue 
-            ? (typeof dateValue === 'string' ? parseISO(dateValue) : dateValue)
+            ? (dateValue instanceof Date ? dateValue : parseISO(dateValue as string))
             : new Date();
         reset({ ...transaction, date, customerId: transaction.customerId || '' });
     } else {
@@ -111,14 +112,14 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
         if (isEditMode) {
             const submissionData = {
                 ...data,
-                id: transaction.id, // Adiciona o ID para a atualização
-                date: data.date.toISOString(),
+                id: transaction.id, 
+                date: data.date ? data.date.toISOString() : new Date().toISOString(),
             };
             await updateTransaction({ ...submissionData, actor: currentUser.uid });
         } else {
             const submissionData = {
                 ...data,
-                date: data.date.toISOString(),
+                date: data.date ? data.date.toISOString() : new Date().toISOString(),
             };
             await createTransaction({ ...submissionData, actor: currentUser.uid });
         }
@@ -144,12 +145,12 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
         </div>
 
         <div className="space-y-2">
-            <Label>Conta*</Label>
+            <Label>Conta</Label>
              <Controller
                 name="accountId"
                 control={control}
                 render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value || ''}>
                     <SelectTrigger>
                         <SelectValue placeholder="Selecione a conta" />
                     </SelectTrigger>
@@ -184,7 +185,7 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="date">Data da Transação*</Label>
+          <Label htmlFor="date">Data da Transação</Label>
           <Controller name="date" control={control} render={({ field }) => (
             <Popover>
                 <PopoverTrigger asChild>
@@ -193,7 +194,7 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
                     {field.value ? format(field.value, "PPP") : <span>Escolha uma data</span>}
                 </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus /></PopoverContent>
             </Popover>
           )}/>
            {errors.date && <p className="text-destructive text-sm">{errors.date.message}</p>}
@@ -235,15 +236,15 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="category">Categoria*</Label>
+          <Label htmlFor="category">Categoria</Label>
           <Input id="category" {...register('category')} placeholder="Ex: Vendas, Marketing, Software" />
           {errors.category && <p className="text-destructive text-sm">{errors.category.message}</p>}
         </div>
 
         <div className="space-y-2">
-          <Label>Método de Pagamento*</Label>
+          <Label>Método de Pagamento</Label>
           <Controller name="paymentMethod" control={control} render={({ field }) => (
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select onValueChange={field.onChange} value={field.value || 'pix'}>
                 <SelectTrigger><SelectValue/></SelectTrigger>
                 <SelectContent>
                     <SelectItem value="pix">PIX</SelectItem>
@@ -258,9 +259,9 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
         </div>
 
          <div className="space-y-2">
-          <Label>Status*</Label>
+          <Label>Status</Label>
           <Controller name="status" control={control} render={({ field }) => (
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select onValueChange={field.onChange} value={field.value || 'paid'}>
                 <SelectTrigger><SelectValue/></SelectTrigger>
                 <SelectContent>
                     <SelectItem value="paid">Pago</SelectItem>

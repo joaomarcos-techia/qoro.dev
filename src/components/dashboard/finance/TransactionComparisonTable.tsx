@@ -47,7 +47,7 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
     const findMatch = (ofx: OfxTransaction, sys: TransactionProfile[]) => {
       // Use .find() for clarity, handle potential undefined result
       return sys.find(s => {
-        const sameDate = formatDate(s.date) === formatDate(ofx.date);
+        const sameDate = formatDate(s.date as string) === formatDate(ofx.date);
         const sameAmount = Math.abs(s.amount - Math.abs(ofx.amount)) < 0.01;
         return sameDate && sameAmount;
       });
@@ -85,7 +85,7 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
         description: ofxTransaction.description,
         amount: Math.abs(ofxTransaction.amount),
         date: parseISO(ofxTransaction.date),
-        type: ofxTransaction.type,
+        type: ofxTransaction.amount >= 0 ? 'income' : 'expense',
         accountId: reconciliation.accountId,
         status: 'paid',
         paymentMethod: 'bank_transfer', // Default, user can change
@@ -191,7 +191,7 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
                       <TableHeader><TableRow><TableHead>Descrição</TableHead><TableHead className="text-right">Valor</TableHead></TableRow></TableHeader>
                        <TableBody>
                           {unmatchedSystem.map((t) => (
-                               <TableRow key={t.id}><TableCell>{t.description}<br/><span className='text-xs text-muted-foreground'>{formatDate(t.date)}</span></TableCell><TableCell className="text-right font-medium">{formatCurrency(t.amount)}</TableCell></TableRow>
+                               <TableRow key={t.id}><TableCell>{t.description}<br/><span className='text-xs text-muted-foreground'>{formatDate(t.date as string)}</span></TableCell><TableCell className="text-right font-medium">{formatCurrency(t.amount)}</TableCell></TableRow>
                           ))}
                           {unmatchedSystem.length === 0 && <TableRow><TableCell colSpan={2} className="text-center text-muted-foreground h-24">Todas as transações do sistema foram conciliadas.</TableCell></TableRow>}
                        </TableBody>
