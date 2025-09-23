@@ -115,9 +115,11 @@ export default function ConciliacaoDetailPage() {
 
     return (
         <TransactionComparisonTable 
+            reconciliation={reconciliation}
             ofxTransactions={ofxTransactions} 
             systemTransactions={systemTransactions} 
             isLoading={false}
+            onRefresh={fetchData}
         />
     )
   }
