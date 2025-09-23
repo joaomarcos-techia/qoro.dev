@@ -170,7 +170,7 @@ export default function ConciliacaoPage() {
             </TableHeader>
             <TableBody>
               {reconciliations.map((rec) => (
-                <TableRow key={rec.id} className="cursor-pointer" onClick={() => router.push(`/dashboard/finance/conciliacao/${rec.id}`)}>
+                <TableRow key={rec.id}>
                   <TableCell className="font-medium flex items-center">
                     <FileText className="w-4 h-4 mr-3 text-muted-foreground" />
                     {rec.fileName}
