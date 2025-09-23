@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useTransition, useRef, useCallback } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { getDashboardMetrics, listTransactions } from '@/ai/flows/finance-management';
+import { getFinanceDashboardMetrics, listTransactions } from '@/ai/flows/finance-management';
 import { getOrganizationDetails } from '@/ai/flows/user-management';
 import { TransactionProfile, OrganizationProfile } from '@/ai/schemas';
 import { Bar, BarChart as BarChartPrimitive, CartesianGrid, ResponsiveContainer, Pie, PieChart as PieChartPrimitive, Cell } from 'recharts';
@@ -117,7 +117,7 @@ export default function RelatoriosPage() {
                     const dateRange = date?.from && date?.to ? { from: date.from.toISOString(), to: date.to.toISOString() } : undefined;
                     try {
                         const [metricsData, transactionsData, orgData] = await Promise.all([
-                            getDashboardMetrics({ actor: currentUser.uid, dateRange }),
+                            getFinanceDashboardMetrics({ actor: currentUser.uid, dateRange }),
                             listTransactions({ actor: currentUser.uid, dateRange }),
                             getOrganizationDetails({ actor: currentUser.uid })
                         ]);
