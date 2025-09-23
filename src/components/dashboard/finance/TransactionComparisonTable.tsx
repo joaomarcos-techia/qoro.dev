@@ -4,13 +4,14 @@ import * as React from 'react';
 import { useState, useMemo, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { TransactionProfile, ReconciliationProfile } from '@/ai/schemas';
+import { TransactionProfile, ReconciliationProfile, TransactionSchema } from '@/ai/schemas';
 import { ArrowRight, CheckCircle, Loader2, GitMerge, PlusCircle, ServerCrash } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { bulkCreateTransactions } from '@/ai/flows/finance-management';
 import { updateReconciliation } from '@/ai/flows/reconciliation-flow';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { z } from 'zod';
 
 
 export interface OfxTransaction {
@@ -82,34 +83,16 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
 
   }, [ofxTransactions, systemTransactions]);
   
-  useEffect(() => {
-    if(isFullyReconciled && reconciliation && reconciliation.status !== 'reconciled' && currentUser) {
-        const updateStatus = async () => {
-            try {
-                await updateReconciliation({
-                    id: reconciliation.id,
-                    fileName: reconciliation.fileName,
-                    actor: currentUser.uid,
-                    status: 'reconciled'
-                })
-            } catch (err) {
-                console.error("Failed to update reconciliation status", err);
-            }
-        }
-        updateStatus();
-    }
-  }, [isFullyReconciled, reconciliation, currentUser]);
-  
   const handleBulkCreate = async () => {
     if (!reconciliation || !currentUser || unmatchedOfx.length === 0) return;
 
     setIsBulkCreating(true);
     setError(null);
     try {
-        const transactionsToCreate = unmatchedOfx.map(ofx => ({
+        const transactionsToCreate: z.infer<typeof TransactionSchema>[] = unmatchedOfx.map(ofx => ({
             description: ofx.description,
             amount: Math.abs(ofx.amount),
-            date: parseISO(ofx.date).toISOString(),
+            date: parseISO(ofx.date),
             type: ofx.type,
             status: 'paid' as const,
         }));
@@ -119,6 +102,16 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
             accountId: reconciliation.accountId,
             actor: currentUser.uid,
         });
+
+        // After successful bulk creation, if there are no more unmatched system transactions,
+        // it means we are fully reconciled.
+        if (unmatchedSystem.length === 0) {
+            await updateReconciliation({
+                id: reconciliation.id,
+                actor: currentUser.uid,
+                status: 'reconciled'
+            });
+        }
 
         onRefresh();
     } catch(err: any) {
