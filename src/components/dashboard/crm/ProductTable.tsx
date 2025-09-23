@@ -180,7 +180,7 @@ export function ProductTable({ onEdit, onRefresh, itemType }: ProductTableProps)
       try {
         const allItems = await listProducts({ actor: currentUser.uid });
         const filteredItems = allItems.filter(item => {
-            const isService = item.pricingModel === 'per_hour' || item.pricingModel === 'fixed' && item.durationHours;
+            const isService = item.pricingModel === 'per_hour';
             return itemType === 'service' ? isService : !isService;
         })
         setData(filteredItems);
