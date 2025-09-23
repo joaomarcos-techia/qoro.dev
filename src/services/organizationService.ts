@@ -106,14 +106,17 @@ export const listUsers = async (actor: string): Promise<UserProfile[]> => {
     const users: UserProfile[] = [];
     usersSnapshot.forEach(doc => {
         const data = doc.data();
+        // Define default permissions and merge them with existing ones to avoid errors
         const defaultPermissions = { qoroCrm: true, qoroPulse: true, qoroTask: true, qoroFinance: true };
+        const userPermissions = data.permissions || {};
+
         users.push({
             uid: doc.id,
             email: data.email,
             name: data.name,
             organizationId: data.organizationId,
             role: data.role,
-            permissions: { ...defaultPermissions, ...data.permissions },
+            permissions: { ...defaultPermissions, ...userPermissions },
         });
     });
     
