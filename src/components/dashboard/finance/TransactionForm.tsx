@@ -108,18 +108,22 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
     setIsLoading(true);
     setError(null);
     try {
-        const submissionData = {
-            ...data,
-            date: data.date.toISOString(),
-        };
-
         if (isEditMode) {
-            await updateTransaction({ ...submissionData, id: transaction.id, actor: currentUser.uid });
+            const submissionData = {
+                ...data,
+                id: transaction.id, // Adiciona o ID para a atualização
+                date: data.date.toISOString(),
+            };
+            await updateTransaction({ ...submissionData, actor: currentUser.uid });
         } else {
+            const submissionData = {
+                ...data,
+                date: data.date.toISOString(),
+            };
             await createTransaction({ ...submissionData, actor: currentUser.uid });
         }
       onAction();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       setError(`Falha ao ${isEditMode ? 'atualizar' : 'criar'} a transação. Tente novamente.`);
     } finally {
