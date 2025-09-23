@@ -11,10 +11,10 @@ import { getAdminAndOrg } from './utils';
 import { adminDb } from '@/lib/firebase-admin';
 
 export const createReconciliation = async (input: z.infer<typeof ReconciliationSchema> & { actor: string }) => {
-    const { companyId, adminUid } = await getAdminAndOrg(input.actor);
+    const { organizationId, adminUid } = await getAdminAndOrg(input.actor);
 
     const newReconciliationData = {
-        companyId: companyId,
+        companyId: organizationId,
         userId: adminUid,
         fileName: input.fileName,
         ofxContent: input.ofxContent,
@@ -28,11 +28,11 @@ export const createReconciliation = async (input: z.infer<typeof ReconciliationS
 };
 
 export const getReconciliation = async (id: string, actor: string): Promise<z.infer<typeof ReconciliationProfileSchema> | null> => {
-    const { companyId } = await getAdminAndOrg(actor);
+    const { organizationId } = await getAdminAndOrg(actor);
     const docRef = adminDb.collection('reconciliations').doc(id);
     const docSnap = await docRef.get();
 
-    if (!docSnap.exists || docSnap.data()?.companyId !== companyId) {
+    if (!docSnap.exists || docSnap.data()?.companyId !== organizationId) {
         return null;
     }
 
@@ -49,10 +49,10 @@ export const getReconciliation = async (id: string, actor: string): Promise<z.in
 };
 
 export const listReconciliations = async (actor: string): Promise<z.infer<typeof ReconciliationProfileSchema>[]> => {
-    const { companyId } = await getAdminAndOrg(actor);
+    const { organizationId } = await getAdminAndOrg(actor);
 
     const snapshot = await adminDb.collection('reconciliations')
-        .where('companyId', '==', companyId)
+        .where('companyId', '==', organizationId)
         .orderBy('createdAt', 'desc')
         .orderBy('__name__', 'desc')
         .get();
@@ -79,11 +79,11 @@ export const listReconciliations = async (actor: string): Promise<z.infer<typeof
 };
 
 export const updateReconciliation = async (input: {id: string, actor: string, fileName?: string, status?: 'pending' | 'reconciled'}) => {
-    const { companyId } = await getAdminAndOrg(input.actor);
+    const { organizationId } = await getAdminAndOrg(input.actor);
     const docRef = adminDb.collection('reconciliations').doc(input.id);
     const docSnap = await docRef.get();
 
-    if (!docSnap.exists || docSnap.data()?.companyId !== companyId) {
+    if (!docSnap.exists || docSnap.data()?.companyId !== organizationId) {
         throw new Error('Conciliação não encontrada ou acesso negado.');
     }
     
@@ -103,11 +103,11 @@ export const updateReconciliation = async (input: {id: string, actor: string, fi
 };
 
 export const deleteReconciliation = async (id: string, actor: string) => {
-    const { companyId } = await getAdminAndOrg(actor);
+    const { organizationId } = await getAdminAndOrg(actor);
     const docRef = adminDb.collection('reconciliations').doc(id);
     const docSnap = await docRef.get();
     
-    if (!docSnap.exists || docSnap.data()?.companyId !== companyId) {
+    if (!docSnap.exists || docSnap.data()?.companyId !== organizationId) {
         throw new Error('Conciliação não encontrada ou acesso negado.');
     }
 
