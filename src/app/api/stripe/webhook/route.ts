@@ -1,0 +1,84 @@
+// src/app/api/stripe/webhook/route.ts
+import type { Stripe } from 'stripe';
+import { NextResponse } from 'next/server';
+import { stripe } from '@/lib/stripe';
+import { updateSubscription } from '@/ai/flows/billing-flow';
+
+// Desativa o bodyParser padrão do Next.js para que possamos receber o corpo bruto (raw body)
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+/**
+ * Função para ler o corpo da requisição como um buffer.
+ * Necessário para a verificação da assinatura do webhook do Stripe.
+ */
+async function buffer(readable: NodeJS.ReadableStream) {
+  const chunks = [];
+  for await (const chunk of readable) {
+    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
+const relevantEvents = new Set([
+  'checkout.session.completed',
+  'customer.subscription.updated',
+  'customer.subscription.deleted',
+]);
+
+export async function POST(req: Request) {
+  const buf = await buffer(req.body as unknown as NodeJS.ReadableStream);
+  const sig = req.headers.get('stripe-signature') as string;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  let event: Stripe.Event;
+
+  if (!sig || !webhookSecret) {
+    console.error('Webhook Error: A assinatura ou o segredo do webhook não estão configurados.');
+    return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 400 });
+  }
+
+  try {
+    event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
+  } catch (err: any) {
+    console.error(`Webhook signature verification failed: ${err.message}`);
+    return NextResponse.json({ error: `Webhook error: ${err.message}` }, { status: 400 });
+  }
+
+  if (relevantEvents.has(event.type)) {
+    try {
+      switch (event.type) {
+        case 'checkout.session.completed':
+          const checkoutSession = event.data.object as Stripe.Checkout.Session;
+          if (typeof checkoutSession.subscription !== 'string') {
+            throw new Error('ID da assinatura não encontrado na sessão de checkout.');
+          }
+          await updateSubscription({
+            subscriptionId: checkoutSession.subscription,
+            customerId: checkoutSession.customer as string,
+            isCreating: true,
+          });
+          break;
+        case 'customer.subscription.updated':
+        case 'customer.subscription.deleted':
+          const subscription = event.data.object as Stripe.Subscription;
+          await updateSubscription({
+            subscriptionId: subscription.id,
+            customerId: subscription.customer as string,
+            isCreating: false,
+          });
+          break;
+        default:
+          throw new Error(`Unhandled relevant event type: ${event.type}`);
+      }
+    } catch (error) {
+      console.error('Error handling webhook event:', error);
+      return NextResponse.json({ error: 'Webhook handler failed. View logs for more details.' }, { status: 500 });
+    }
+  }
+
+  return NextResponse.json({ received: true });
+}
