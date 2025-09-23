@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { MessageData } from 'genkit';
 
 // Schemas for User and Organization Management
 export const SignUpSchema = z.object({
@@ -8,8 +7,8 @@ export const SignUpSchema = z.object({
     email: z.string().email(),
     password: z.string().min(6),
     cnpj: z.string().min(1, "O CNPJ é obrigatório."),
-    contactEmail: z.string().email({ message: "E-mail de contato inválido." }).optional().or(z.literal('')),
-    contactPhone: z.string().optional().or(z.literal('')),
+    contactEmail: z.union([z.string().email({ message: "E-mail de contato inválido." }), z.literal('')]).optional(),
+    contactPhone: z.union([z.string(), z.literal('')]).optional(),
 });
 
 export const InviteUserSchema = z.object({
@@ -60,18 +59,17 @@ export const OrganizationProfileSchema = z.object({
     cnpj: z.string().optional().nullable(),
     contactEmail: z.string().email().optional().nullable(),
     contactPhone: z.string().optional().nullable(),
-    // Stripe fields
     stripeCustomerId: z.string().optional().nullable(),
     stripeSubscriptionId: z.string().optional().nullable(),
     stripePriceId: z.string().optional().nullable(),
-    stripeCurrentPeriodEnd: z.string().datetime().optional().nullable(),
+    stripeCurrentPeriodEnd: z.string().optional().nullable(),
 });
 export type OrganizationProfile = z.infer<typeof OrganizationProfileSchema>;
 
 export const UpdateOrganizationDetailsSchema = z.object({
     name: z.string(),
     cnpj: z.string().optional(),
-    contactEmail: z.string().email().optional(),
+    contactEmail: z.union([z.string().email(), z.literal('')]).optional(),
     contactPhone: z.string().optional(),
 });
 
@@ -92,7 +90,7 @@ export const CustomerSchema = z.object({
   company: z.string().optional(),
   cpf: z.string().optional(),
   cnpj: z.string().optional(),
-  birthDate: z.union([z.string().datetime(), z.date()]).optional().nullable(),
+  birthDate: z.union([z.string(), z.date()]).optional().nullable(),
   address: AddressSchema.optional(),
   tags: z.array(z.string()).optional(),
   source: z.string().optional(),
@@ -106,7 +104,7 @@ export const UpdateCustomerSchema = CustomerSchema.extend({
 
 export const CustomerProfileSchema = CustomerSchema.extend({
     id: z.string(),
-    createdAt: z.union([z.string().datetime(), z.date()]),
+    createdAt: z.union([z.string(), z.date()]),
 });
 export type CustomerProfile = z.infer<typeof CustomerProfileSchema>;
 
@@ -149,7 +147,7 @@ export const QuoteSchema = z.object({
     subtotal: z.number(),
     discount: z.number().min(0).optional(),
     total: z.number(),
-    validUntil: z.string().datetime(),
+    validUntil: z.union([z.string(), z.date()]),
     notes: z.string().optional(),
 });
 
@@ -165,7 +163,7 @@ export const QuoteProfileSchema = QuoteSchema.extend({
     customerName: z.string().optional(),
     organizationName: z.string().optional(),
     status: z.enum(['draft', 'sent', 'accepted', 'rejected', 'expired']),
-    validUntil: z.string().datetime().nullable(),
+    validUntil: z.string().nullable(),
 });
 export type QuoteProfile = z.infer<typeof QuoteProfileSchema>;
 
@@ -204,7 +202,7 @@ export const TaskCommentSchema = z.object({
     authorId: z.string(),
     authorName: z.string(),
     text: z.string().min(1, "O comentário não pode ser vazio."),
-    createdAt: z.union([z.string().datetime(), z.date()]),
+    createdAt: z.union([z.string(), z.date()]),
 });
 export type TaskComment = z.infer<typeof TaskCommentSchema>;
 
@@ -220,7 +218,7 @@ export const TaskSchema = z.object({
   description: z.string().optional(),
   status: z.enum(['todo', 'in_progress', 'review', 'done']).default('todo'),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
-  dueDate: z.union([z.string().datetime(), z.date(), z.null()]).optional(),
+  dueDate: z.union([z.string(), z.date(), z.null()]).optional(),
   responsibleUserId: z.string().optional(),
   subtasks: z.array(SubtaskSchema).optional().default([]),
   comments: z.array(TaskCommentSchema).optional().default([]),
@@ -237,7 +235,7 @@ export const TaskProfileSchema = TaskSchema.extend({
     updatedAt: z.string().nullable(),
     creatorId: z.string(),
     responsibleUserName: z.string().optional(),
-    completedAt: z.string().datetime().optional().nullable(),
+    completedAt: z.string().optional().nullable(),
 });
 export type TaskProfile = z.infer<typeof TaskProfileSchema>;
 
@@ -304,7 +302,7 @@ export const TransactionSchema = z.object({
     type: z.enum(['income', 'expense']),
     amount: z.coerce.number().positive('O valor deve ser maior que zero.'),
     description: z.string().min(1, 'A descrição é obrigatória.'),
-    date: z.union([z.string().datetime(), z.date()]),
+    date: z.union([z.string(), z.date()]),
     category: z.string().min(1, "A categoria é obrigatória."),
     status: z.enum(['pending', 'paid', 'cancelled']).default('paid'),
     paymentMethod: z.enum(['cash', 'credit_card', 'debit_card', 'pix', 'bank_transfer', 'boleto']),
@@ -329,7 +327,7 @@ export const BillSchema = z.object({
     description: z.string().min(1, 'A descrição é obrigatória.'),
     amount: z.coerce.number().positive('O valor deve ser maior que zero.'),
     type: z.enum(['payable', 'receivable']),
-    dueDate: z.union([z.string().datetime(), z.date()]),
+    dueDate: z.union([z.string(), z.date()]),
     status: z.enum(['pending', 'paid', 'overdue']).default('pending'),
     entityType: z.enum(['customer', 'supplier']).optional(),
     entityId: z.string().optional(),
