@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { TransactionProfile, ReconciliationProfile, TransactionSchema } from '@/ai/schemas';
-import { ArrowRight, CheckCircle, Loader2, GitMerge, PlusCircle, ServerCrash } from 'lucide-react';
+import { CheckCircle, Loader2, GitMerge, PlusCircle, ServerCrash } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { bulkCreateTransactions } from '@/ai/flows/finance-management';
 import { updateReconciliation } from '@/ai/flows/reconciliation-flow';
@@ -92,7 +92,7 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
       const transactionsToCreate: z.infer<typeof TransactionSchema>[] = unmatchedOfx.map(ofx => ({
           description: ofx.description,
           amount: Math.abs(ofx.amount),
-          date: ofx.date,
+          date: new Date(ofx.date),
           type: ofx.type,
           status: 'paid' as const,
       }));
@@ -103,18 +103,17 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
           actor: currentUser.uid,
       });
 
-      // After successful creation, check if everything is now reconciled
-      // This is a more deterministic approach than relying on a separate useEffect
-      if (unmatchedSystem.length === 0) {
-        await updateReconciliation({
-          id: reconciliation.id,
-          actor: currentUser.uid,
-          status: 'reconciled'
-        });
-      }
+      // Directly update the status to 'reconciled' after successfully creating the transactions.
+      // This is the explicit action of reconciling.
+      await updateReconciliation({
+        id: reconciliation.id,
+        actor: currentUser.uid,
+        status: 'reconciled'
+      });
   
       // Refresh the entire dataset after all operations are complete
       onRefresh();
+
     } catch(err: any) {
         console.error("Error during bulk creation or status update:", err);
         setError(err.message || 'Ocorreu um erro ao criar as transações.');
