@@ -1,4 +1,3 @@
-
 'use client';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -11,12 +10,14 @@ export default function QualificationIntroPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-black p-4 text-center">
-        <Link href="/" className="absolute top-8 left-8 text-3xl">
-            <Logo />
-        </Link>
+        <div className="absolute top-8 left-8">
+            <Link href="/" className="text-3xl">
+                <Logo />
+            </Link>
+        </div>
 
       <div className="max-w-2xl">
-        <div className="mx-auto mb-8">
+        <div className="flex justify-center mb-8">
             <Logo height={60} />
         </div>
         <h1 className="text-3xl md:text-5xl font-bold text-white mb-6">
