@@ -239,15 +239,15 @@ export default function QualificationForm() {
               <div className="space-y-6">
                 <div>
                   <Label htmlFor="fullName" className="text-muted-foreground">Nome Completo *</Label>
-                  <Input id="fullName" value={answers['fullName'] || ''} onChange={(e) => handleInputChange('fullName', e.target.value)} className="h-14 text-xl bg-transparent border-0 border-b-2 rounded-none p-2"/>
+                  <Input id="fullName" value={answers['fullName'] || ''} onChange={(e) => handleInputChange('fullName', e.target.value)} className="h-14 text-lg bg-input border-border p-4 rounded-xl"/>
                 </div>
                  <div>
                   <Label htmlFor="role" className="text-muted-foreground">Cargo</Label>
-                  <Input id="role" value={answers['role'] || ''} onChange={(e) => handleInputChange('role', e.target.value)} className="h-14 text-xl bg-transparent border-0 border-b-2 rounded-none p-2"/>
+                  <Input id="role" value={answers['role'] || ''} onChange={(e) => handleInputChange('role', e.target.value)} className="h-14 text-lg bg-input border-border p-4 rounded-xl"/>
                 </div>
                  <div>
                   <Label htmlFor="email" className="text-muted-foreground">E-mail *</Label>
-                  <Input id="email" type="email" value={answers['email'] || ''} onChange={(e) => handleInputChange('email', e.target.value)} className="h-14 text-xl bg-transparent border-0 border-b-2 rounded-none p-2"/>
+                  <Input id="email" type="email" value={answers['email'] || ''} onChange={(e) => handleInputChange('email', e.target.value)} className="h-14 text-lg bg-input border-border p-4 rounded-xl"/>
                 </div>
               </div>
             )}
