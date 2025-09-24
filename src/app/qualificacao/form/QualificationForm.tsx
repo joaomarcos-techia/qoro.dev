@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { submitQualificationForm } from '@/ai/flows/qualification-flow';
 
 const questions = [
   {
@@ -135,10 +136,16 @@ export default function QualificationForm() {
 
   const handleSubmit = async () => {
     setIsLoading(true);
-    console.log('Form Submitted:', answers);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsLoading(false);
-    router.push('/qualificacao/obrigado');
+    try {
+      await submitQualificationForm(answers);
+      router.push('/qualificacao/obrigado');
+    } catch (error) {
+      console.error("Failed to submit form:", error);
+      // Handle error display to the user
+      alert("Ocorreu um erro ao enviar suas respostas. Por favor, tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const isNextButtonDisabled = () => {
