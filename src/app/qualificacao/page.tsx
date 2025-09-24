@@ -1,7 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, FileText } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import Link from 'next/link';
 
@@ -11,12 +11,15 @@ export default function QualificationIntroPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-black p-4 text-center">
         <div className="absolute top-8 left-8">
-            <Link href="/" className="text-3xl">
-                <Logo />
+            <Link href="/">
+                <Button variant="outline" className="rounded-full">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Voltar ao site
+                </Button>
             </Link>
         </div>
 
-      <div className="max-w-2xl">
+      <div className="max-w-2xl text-center">
         <div className="flex justify-center mb-8">
             <Logo height={60} />
         </div>
