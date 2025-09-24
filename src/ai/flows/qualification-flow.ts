@@ -81,11 +81,15 @@ const qualificationFlow = ai.defineFlow(
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
-      secure: true, // true for 465, false for other ports
+      secure: true, // true for 465
       auth: {
         user: SMTP_USER,
         pass: SMTP_PASS,
       },
+      tls: {
+        // Adiciona configuração explícita de segurança para evitar bloqueios do Gmail
+        rejectUnauthorized: false
+      }
     });
 
     const emailHtml = formatAnswersToHtml(answers);
