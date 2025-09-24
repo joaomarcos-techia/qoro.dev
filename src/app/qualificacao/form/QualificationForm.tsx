@@ -19,7 +19,7 @@ const questions = [
     title: 'Qual o tamanho da sua empresa?',
     type: 'radio',
     key: 'companySize',
-    options: ['1 a 5 pessoas', '5 a 10 pessoas', '10 a 20 pessoas', '20 a 50 pessoas', '50 a 100 pessoas', 'mais de 100 pessoas'],
+    options: ['1 a 5 pessoas', '5 a 10 pessoas', '10 a 20 pessoas', '20 a 50 pessoas', '50 a 100 pessoas', 'Mais de 100 pessoas'],
   },
   {
     step: 2,
