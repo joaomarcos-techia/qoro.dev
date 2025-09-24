@@ -3,10 +3,11 @@
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { CustomerSchema, CustomerProfileSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema } from '@/ai/schemas';
+import { CustomerSchema, CustomerProfileSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema, BillSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import type { QuoteProfile, CustomerProfile } from '@/ai/schemas';
 import { adminDb } from '@/lib/firebase-admin';
+import * as billService from './billService';
 
 export const createCustomer = async (input: z.infer<typeof CustomerSchema>, actorUid: string) => {
     const { organizationId } = await getAdminAndOrg(actorUid);
@@ -286,12 +287,29 @@ export const updateQuote = async (quoteId: string, input: z.infer<typeof UpdateQ
         throw new Error('Orçamento não encontrado ou acesso negado.');
     }
 
+    const oldStatus = quoteDoc.data()?.status;
     const { id, ...updateData } = input;
 
     await quoteRef.update({
         ...updateData,
         updatedAt: FieldValue.serverTimestamp(),
     });
+
+    // If status changed to 'accepted'
+    if (updateData.status === 'accepted' && oldStatus !== 'accepted') {
+        const billData: z.infer<typeof BillSchema> = {
+            description: `Orçamento #${quoteDoc.data()?.number}`,
+            amount: updateData.total,
+            type: 'receivable',
+            dueDate: updateData.validUntil,
+            status: 'pending',
+            entityType: 'customer',
+            entityId: updateData.customerId,
+            notes: `Gerado a partir do orçamento ${quoteDoc.data()?.number}.\n${updateData.notes || ''}`,
+            tags: [`quote-${quoteId}`]
+        };
+        await billService.createBill(billData, actorUid);
+    }
 
     return { id: quoteId, number: quoteDoc.data()?.number };
 };

@@ -150,6 +150,7 @@ export const QuoteSchema = z.object({
     total: z.number(),
     validUntil: z.union([z.string(), z.date()]),
     notes: z.string().optional(),
+    status: z.enum(['draft', 'sent', 'accepted', 'rejected', 'expired']).default('draft'),
 });
 
 export const UpdateQuoteSchema = QuoteSchema.extend({
@@ -163,7 +164,6 @@ export const QuoteProfileSchema = QuoteSchema.extend({
     updatedAt: z.string(),
     customerName: z.string().optional(),
     organizationName: z.string().optional(),
-    status: z.enum(['draft', 'sent', 'accepted', 'rejected', 'expired']),
     validUntil: z.string().nullable(),
 });
 export type QuoteProfile = z.infer<typeof QuoteProfileSchema>;
@@ -319,8 +319,8 @@ export const TransactionProfileSchema = TransactionSchema.extend({
     id: z.string(),
     createdAt: z.string(),
     updatedAt: z.string(),
-    accountName: z.string().optional(), // Denormalized for display
-    customerName: z.string().optional(), // Denormalized for display
+    accountName: z.string().optional(),
+    customerName: z.string().optional(),
 });
 export type TransactionProfile = z.infer<typeof TransactionProfileSchema>;
 
@@ -333,6 +333,11 @@ export const BillSchema = z.object({
     entityType: z.enum(['customer', 'supplier']).optional(),
     entityId: z.string().optional(),
     notes: z.string().optional(),
+    // Fields from TransactionSchema
+    accountId: z.string().min(1, "A conta financeira é obrigatória.").optional(),
+    category: z.string().optional(),
+    paymentMethod: z.enum(['cash', 'credit_card', 'debit_card', 'pix', 'bank_transfer', 'boleto']).optional(),
+    tags: z.array(z.string()).optional(),
 });
 
 export const UpdateBillSchema = BillSchema.extend({

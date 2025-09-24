@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -204,21 +205,21 @@ export function QuoteTable() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="rounded-2xl">
                 <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => handlePdfAction(quote, 'view')} className="rounded-xl">
+                <DropdownMenuItem onClick={() => handlePdfAction(quote, 'view')} className="rounded-xl cursor-pointer">
                   <Eye className="mr-2 h-4 w-4" />
                   Visualizar
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handlePdfAction(quote, 'download')} className="rounded-xl">
+                <DropdownMenuItem onClick={() => handlePdfAction(quote, 'download')} className="rounded-xl cursor-pointer">
                   <Download className="mr-2 h-4 w-4" />
                   Exportar PDF
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleEdit(quote)} className="rounded-xl">
+                <DropdownMenuItem onClick={() => handleEdit(quote)} className="rounded-xl cursor-pointer">
                   <Edit className="mr-2 h-4 w-4" />
                   Editar
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <AlertDialogTrigger asChild>
-                  <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400 rounded-xl">
+                  <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400 rounded-xl cursor-pointer">
                     <Trash2 className="mr-2 h-4 w-4" />
                     Excluir
                   </DropdownMenuItem>

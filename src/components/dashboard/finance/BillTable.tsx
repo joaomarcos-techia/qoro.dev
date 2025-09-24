@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -23,8 +24,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, ArrowUpDown, Search, Loader2, Receipt, TrendingUp, TrendingDown, Edit, Trash2 } from 'lucide-react';
-import { listBills, deleteBill } from '@/ai/flows/finance-management';
+import { MoreHorizontal, ArrowUpDown, Search, Loader2, Receipt, TrendingUp, TrendingDown, Edit, Trash2, CheckCircle } from 'lucide-react';
+import { listBills, deleteBill, updateBill } from '@/ai/flows/finance-management';
 import type { BillProfile } from '@/ai/schemas';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -70,6 +71,17 @@ export function BillTable({ onEdit, onRefresh, refreshKey }: BillTableProps) {
         console.error("Failed to delete bill:", err);
     }
   };
+
+  const handleMarkAsPaid = async (bill: BillProfile) => {
+    if (!currentUser) return;
+    try {
+        await updateBill({ ...bill, dueDate: bill.dueDate, status: 'paid', actor: currentUser.uid });
+        onRefresh();
+    } catch (err: any) {
+        console.error("Failed to mark as paid:", err);
+        setError(err.message || "Não foi possível marcar como pago.");
+    }
+  }
 
   const columns: ColumnDef<BillProfile>[] = [
     {
@@ -122,9 +134,15 @@ export function BillTable({ onEdit, onRefresh, refreshKey }: BillTableProps) {
                     <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0 rounded-xl"><span className="sr-only">Abrir menu</span><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="rounded-2xl">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => onEdit(bill)} className="rounded-xl"><Edit className="mr-2 h-4 w-4" />Editar</DropdownMenuItem>
+                        {bill.status === 'pending' && (
+                             <DropdownMenuItem onClick={() => handleMarkAsPaid(bill)} className="rounded-xl cursor-pointer text-green-400 focus:text-green-300">
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                Marcar como Paga
+                            </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem onClick={() => onEdit(bill)} className="rounded-xl cursor-pointer"><Edit className="mr-2 h-4 w-4" />Editar</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <AlertDialogTrigger asChild><DropdownMenuItem className="text-red-500 focus:text-red-400 focus:bg-destructive/20 rounded-xl"><Trash2 className="mr-2 h-4 w-4" />Excluir</DropdownMenuItem></AlertDialogTrigger>
+                        <AlertDialogTrigger asChild><DropdownMenuItem className="text-red-500 focus:text-red-400 focus:bg-destructive/20 rounded-xl cursor-pointer"><Trash2 className="mr-2 h-4 w-4" />Excluir</DropdownMenuItem></AlertDialogTrigger>
                     </DropdownMenuContent>
                 </DropdownMenu>
                 <AlertDialogContent>

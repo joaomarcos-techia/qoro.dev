@@ -12,10 +12,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { createBill, updateBill } from '@/ai/flows/finance-management';
+import { createBill, updateBill, listAccounts } from '@/ai/flows/finance-management';
 import { listCustomers } from '@/ai/flows/crm-management';
 import { listSuppliers } from '@/ai/flows/supplier-management';
-import { BillSchema, CustomerProfile, SupplierProfile, BillProfile } from '@/ai/schemas';
+import { BillSchema, CustomerProfile, SupplierProfile, BillProfile, AccountProfile } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Loader2, AlertCircle, CalendarIcon, Search } from 'lucide-react';
@@ -39,6 +39,7 @@ export function BillForm({ onAction, bill }: BillFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [customers, setCustomers] = useState<CustomerProfile[]>([]);
   const [suppliers, setSuppliers] = useState<SupplierProfile[]>([]);
+  const [accounts, setAccounts] = useState<AccountProfile[]>([]);
   const [entitySearch, setEntitySearch] = useState('');
   const [isEntityPopoverOpen, setIsEntityPopoverOpen] = useState(false);
   
@@ -64,15 +65,19 @@ export function BillForm({ onAction, bill }: BillFormProps) {
     if (currentUser) {
         const fetchData = async () => {
             try {
+                if (accounts.length === 0) {
+                    const accs = await listAccounts({ actor: currentUser.uid });
+                    setAccounts(accs);
+                }
                 if (billType === 'receivable') {
                     if (customers.length === 0) {
-                        const customersData = await listCustomers({ actor: currentUser.uid });
-                        setCustomers(customersData);
+                        const custs = await listCustomers({ actor: currentUser.uid });
+                        setCustomers(custs);
                     }
                 } else {
                     if (suppliers.length === 0) {
-                        const suppliersData = await listSuppliers({ actor: currentUser.uid });
-                        setSuppliers(suppliersData);
+                        const supps = await listSuppliers({ actor: currentUser.uid });
+                        setSuppliers(supps);
                     }
                 }
             } catch (err) {
@@ -82,7 +87,7 @@ export function BillForm({ onAction, bill }: BillFormProps) {
         };
         fetchData();
     }
-  }, [currentUser, billType, customers.length, suppliers.length]);
+  }, [currentUser, billType, customers.length, suppliers.length, accounts.length]);
 
   useEffect(() => {
     if (bill) {
@@ -96,12 +101,14 @@ export function BillForm({ onAction, bill }: BillFormProps) {
             amount: 0,
             entityId: '',
             entityType: 'supplier',
-            notes: ''
+            notes: '',
+            accountId: accounts.length > 0 ? accounts[0].id : '',
+            category: '',
+            paymentMethod: 'pix',
         });
     }
-  }, [bill, reset]);
+  }, [bill, reset, accounts]);
   
-  // Reset entity when type changes
   useEffect(() => {
       setValue('entityId', undefined);
       setValue('entityType', billType === 'payable' ? 'supplier' : 'customer');
@@ -119,9 +126,9 @@ export function BillForm({ onAction, bill }: BillFormProps) {
             await createBill({ ...submissionData, actor: currentUser.uid });
         }
       onAction();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError(`Falha ao ${isEditMode ? 'atualizar' : 'criar'} a conta. Tente novamente.`);
+      setError(err.message || `Falha ao ${isEditMode ? 'atualizar' : 'criar'} a conta.`);
     } finally {
       setIsLoading(false);
     }
@@ -181,6 +188,39 @@ export function BillForm({ onAction, bill }: BillFormProps) {
           )}/>
            {errors.dueDate && <p className="text-destructive text-sm">{errors.dueDate.message}</p>}
         </div>
+        
+        {/* New Fields */}
+        <div className="space-y-2">
+            <Label>Conta Financeira (para pagamento)*</Label>
+             <Controller name="accountId" control={control} render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value || ''}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a conta" /></SelectTrigger>
+                    <SelectContent>{accounts.map(account => (<SelectItem key={account.id} value={account.id}>{account.name}</SelectItem>))}</SelectContent>
+                </Select>
+            )}/>
+             {errors.accountId && <p className="text-destructive text-sm">{errors.accountId.message}</p>}
+        </div>
+         <div className="space-y-2">
+            <Label htmlFor="category">Categoria</Label>
+            <Input id="category" {...register('category')} placeholder="Ex: Vendas, Marketing, Software" />
+        </div>
+         <div className="space-y-2">
+            <Label>Método de Pagamento</Label>
+            <Controller name="paymentMethod" control={control} render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value || 'pix'}><SelectTrigger><SelectValue/></SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="pix">PIX</SelectItem>
+                    <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
+                    <SelectItem value="debit_card">Cartão de Débito</SelectItem>
+                    <SelectItem value="bank_transfer">Transferência</SelectItem>
+                    <SelectItem value="boleto">Boleto</SelectItem>
+                    <SelectItem value="cash">Dinheiro</SelectItem>
+                </SelectContent>
+                </Select>
+            )}/>
+        </div>
+
+
         <div className="space-y-2 md:col-span-2">
             <Label>Notas/Observações</Label>
             <Textarea {...register('notes')} placeholder="Ex: Ref. ao mês de Julho, NF 12345"/>
