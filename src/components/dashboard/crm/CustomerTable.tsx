@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -48,12 +49,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, ArrowUpDown, Users, Search, Loader2, Trash2, Edit, Copy } from 'lucide-react';
-import { listCustomers, deleteCustomer } from '@/ai/flows/crm-management';
+import { MoreHorizontal, ArrowUpDown, Users, Search, Loader2, Trash2, Edit, Copy, Archive } from 'lucide-react';
+import { listCustomers, deleteCustomer, updateCustomerStatus } from '@/ai/flows/crm-management';
 import type { CustomerProfile } from '@/ai/schemas';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { CustomerForm } from './CustomerForm';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 const formatCPF = (value: string) => {
@@ -86,6 +89,7 @@ export function CustomerTable() {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedCustomer, setSelectedCustomer] = React.useState<CustomerProfile | null>(null);
   const [refreshCounter, setRefreshCounter] = React.useState(0);
+  const [showArchived, setShowArchived] = React.useState(false);
 
 
   const statusMap: Record<CustomerProfile['status'], { text: string; color: string }> = {
@@ -109,11 +113,22 @@ export function CustomerTable() {
     try {
         await deleteCustomer({ customerId, actor: currentUser.uid });
         triggerRefresh();
-    } catch(err) {
+    } catch(err: any) {
         console.error("Failed to delete customer:", err);
-        setError("Não foi possível excluir o cliente.");
+        setError(err.message || "Não foi possível excluir o cliente.");
     }
   };
+
+  const handleArchive = async (customer: CustomerProfile) => {
+    if (!currentUser) return;
+    try {
+        await updateCustomerStatus({ customerId: customer.id, status: 'archived', actor: currentUser.uid });
+        triggerRefresh();
+    } catch(err: any) {
+        console.error("Failed to archive customer:", err);
+        setError(err.message || "Não foi possível arquivar o cliente.");
+    }
+  }
 
   const triggerRefresh = () => {
     setRefreshCounter(prev => prev + 1);
@@ -200,6 +215,10 @@ export function CustomerTable() {
                             <Edit className="mr-2 h-4 w-4" />
                             Editar Cliente
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleArchive(customer)} className="rounded-xl">
+                            <Archive className="mr-2 h-4 w-4" />
+                            Arquivar Cliente
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => navigator.clipboard.writeText(customer.cpf || '')} disabled={!customer.cpf} className="rounded-xl">
                             <Copy className="mr-2 h-4 w-4" />
                             Copiar CPF
@@ -217,7 +236,7 @@ export function CustomerTable() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o cliente <span className='font-bold'>{customer.name}</span> e removerá seus dados de nossos servidores.
+                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o cliente <span className='font-bold'>{customer.name}</span>. Esta opção só funciona se não houverem dados financeiros associados ao cliente. Caso contrário, use a opção "Arquivar".
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -240,6 +259,10 @@ export function CustomerTable() {
     return () => unsubscribe();
   }, []);
 
+  const filteredData = React.useMemo(() => {
+    return data.filter(customer => showArchived || customer.status !== 'archived');
+  }, [data, showArchived]);
+
   React.useEffect(() => {
     async function fetchData() {
       if (!currentUser) return;
@@ -260,7 +283,7 @@ export function CustomerTable() {
   }, [currentUser, refreshCounter]);
 
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -313,7 +336,13 @@ export function CustomerTable() {
 
     <div>
        <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-foreground">Sua Lista de Clientes</h2>
+            <div className='flex items-center gap-4'>
+                <h2 className="text-xl font-bold text-foreground">Sua Lista de Clientes</h2>
+                 <div className="flex items-center space-x-2">
+                    <Checkbox id="show-archived" checked={showArchived} onCheckedChange={(checked) => setShowArchived(!!checked)} />
+                    <Label htmlFor="show-archived" className="text-sm font-medium text-muted-foreground">Mostrar arquivados</Label>
+                </div>
+            </div>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input

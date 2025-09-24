@@ -304,7 +304,7 @@ export const updateQuote = async (quoteId: string, input: z.infer<typeof UpdateQ
             description: `Orçamento #${quoteData.number}`,
             amount: updateData.total,
             type: 'receivable',
-            dueDate: updateData.validUntil || new Date(), // Use validUntil or fallback to now
+            dueDate: new Date(updateData.validUntil || Date.now()), // Ensure dueDate is a valid Date
             status: 'pending',
             entityType: 'customer',
             entityId: updateData.customerId,
