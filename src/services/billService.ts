@@ -112,7 +112,7 @@ export const updateBill = async (input: z.infer<typeof UpdateBillSchema>, actorU
         // Use the accountId from the bill itself
         const accountId = updateData.accountId || oldData.accountId;
         if (!accountId) {
-             throw new Error("A conta financeira é obrigatória para marcar como pago.");
+             throw new Error("Por favor, edite esta pendência e associe uma conta financeira antes de marcá-la como paga.");
         }
         
         const transactionData: z.infer<typeof TransactionSchema> = {
