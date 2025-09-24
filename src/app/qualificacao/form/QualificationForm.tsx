@@ -197,7 +197,7 @@ export default function QualificationForm() {
                 value={answers[currentQuestion.key] || ''}
                 onChange={(e) => handleInputChange(currentQuestion.key, e.target.value)}
                 placeholder={currentQuestion.placeholder}
-                className="min-h-[150px] text-lg bg-transparent border-b-2 border-border focus:border-primary rounded-none p-2"
+                className="min-h-[150px] text-lg bg-input border-border focus:border-primary rounded-xl p-4"
               />
             )}
 
