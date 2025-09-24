@@ -297,15 +297,18 @@ export const updateQuote = async (quoteId: string, input: z.infer<typeof UpdateQ
 
     // If status changed to 'accepted'
     if (updateData.status === 'accepted' && oldStatus !== 'accepted') {
+        const quoteData = quoteDoc.data();
+        if (!quoteData) throw new Error("Dados do orçamento não encontrados após a atualização.");
+
         const billData: z.infer<typeof BillSchema> = {
-            description: `Orçamento #${quoteDoc.data()?.number}`,
+            description: `Orçamento #${quoteData.number}`,
             amount: updateData.total,
             type: 'receivable',
-            dueDate: updateData.validUntil,
+            dueDate: updateData.validUntil || new Date(), // Use validUntil or fallback to now
             status: 'pending',
             entityType: 'customer',
             entityId: updateData.customerId,
-            notes: `Gerado a partir do orçamento ${quoteDoc.data()?.number}.\n${updateData.notes || ''}`,
+            notes: `Gerado a partir do orçamento ${quoteData.number}.\n${updateData.notes || ''}`,
             tags: [`quote-${quoteId}`]
         };
         await billService.createBill(billData, actorUid);

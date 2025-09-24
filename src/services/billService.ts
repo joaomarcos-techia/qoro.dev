@@ -68,16 +68,22 @@ export const listBills = async (actorUid: string): Promise<z.infer<typeof BillPr
         const dueDate = data.dueDate?.toDate ? data.dueDate.toDate().toISOString() : new Date().toISOString();
         const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString();
 
-        const rawData = {
+        // Safe parse to avoid crashes on schema mismatch
+        const parsed = BillProfileSchema.safeParse({
             id: doc.id,
             ...data,
             dueDate: dueDate,
             createdAt: createdAt,
             entityName: entityName || undefined,
-        };
+        });
 
-        return BillProfileSchema.parse(rawData);
-    });
+        if (parsed.success) {
+            return parsed.data;
+        } else {
+            console.error(`Failed to parse bill ${doc.id}:`, parsed.error);
+            return null;
+        }
+    }).filter((b): b is z.infer<typeof BillProfileSchema> => b !== null);
     
     return bills;
 };
