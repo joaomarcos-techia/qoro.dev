@@ -19,7 +19,7 @@ const questions = [
     title: 'Qual o tamanho da sua empresa?',
     type: 'radio',
     key: 'companySize',
-    options: ['Micro (até 10)', 'Pequena (11-50)', 'Média (51-200)', 'Grande (201+)'],
+    options: ['1-5 pessoas', '5-10 pessoas', '10-20 pessoas', '20-50 pessoas', '50-100 pessoas', 'mais de 100 pessoas'],
   },
   {
     step: 2,
@@ -173,7 +173,7 @@ export default function QualificationForm() {
               <RadioGroup
                 value={answers[currentQuestion.key] || ''}
                 onValueChange={(value) => handleInputChange(currentQuestion.key, value)}
-                className={cn("grid gap-3", currentQuestion.isScale ? 'grid-cols-6 md:grid-cols-11' : 'grid-cols-1 md:grid-cols-2')}
+                className={cn("grid gap-3", currentQuestion.isScale ? 'grid-cols-6 md:grid-cols-11' : 'grid-cols-1')}
               >
                 {currentQuestion.options.map((option, index) => (
                   <Label key={option} className={cn(
@@ -272,4 +272,3 @@ export default function QualificationForm() {
     </div>
   );
 }
-
