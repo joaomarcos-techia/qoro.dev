@@ -44,20 +44,19 @@ const testimonials = [
   }
 ];
 
+const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+}
+
 const TestimonialCard = ({ testimonial }: { testimonial: typeof testimonials[0] }) => (
   <div className="bg-card border border-border rounded-2xl p-6 h-full flex flex-col transition-all duration-300 hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-1">
     <div className="flex-grow mb-4">
       <p className="text-white/80 italic">"{testimonial.quote}"</p>
     </div>
     <div className="flex items-center">
-      <Image
-        src={testimonial.avatar}
-        alt={`Avatar de ${testimonial.name}`}
-        width={40}
-        height={40}
-        className="rounded-full mr-4"
-        data-ai-hint="person face"
-      />
+      <div className="w-10 h-10 rounded-full mr-4 bg-secondary flex items-center justify-center font-bold text-primary">
+          {getInitials(testimonial.name)}
+      </div>
       <div>
         <p className="font-bold text-white">{testimonial.name}</p>
         <p className="text-sm text-white/60">{testimonial.company}</p>
