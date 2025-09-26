@@ -34,19 +34,23 @@ export function ServicesSection() {
               Nós temos a solução. Analisamos seus desafios e construímos a ferramenta exata que sua operação precisa.
             </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {services.map((service) => {
-            const Icon = service.icon;
-            return (
-              <div key={service.title} className="bg-card border border-border rounded-3xl p-8 flex flex-col text-center items-center transition-all duration-300 hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2">
-                <div className={`inline-block p-4 bg-secondary rounded-xl mb-6 ${service.color}`}>
-                  <Icon className="w-8 h-8" />
+        <div className="max-w-3xl mx-auto">
+          <div className="space-y-12">
+            {services.map((service) => {
+              const Icon = service.icon;
+              return (
+                <div key={service.title} className="flex flex-col sm:flex-row items-start gap-6 sm:gap-8">
+                  <div className={`flex-shrink-0 inline-block p-4 bg-secondary rounded-xl ${service.color}`}>
+                    <Icon className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-2">{service.title}</h3>
+                    <p className="text-white/70 text-base leading-relaxed">{service.description}</p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">{service.title}</h3>
-                <p className="text-white/70 text-sm flex-grow">{service.description}</p>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
       </div>
     </section>
