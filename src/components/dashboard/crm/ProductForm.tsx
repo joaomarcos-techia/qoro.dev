@@ -19,10 +19,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 type ProductFormProps = {
   onProductAction: () => void;
   product?: ProductProfile | null;
-  itemType: 'product' | 'service';
+  defaultType: 'product' | 'service';
 };
 
-export function ProductForm({ onProductAction, product, itemType }: ProductFormProps) {
+export function ProductForm({ onProductAction, product, defaultType }: ProductFormProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,11 +59,11 @@ export function ProductForm({ onProductAction, product, itemType }: ProductFormP
           sku: '',
           price: 0,
           cost: undefined,
-          pricingModel: itemType === 'service' ? 'per_hour' : 'fixed',
+          pricingModel: defaultType === 'service' ? 'per_hour' : 'fixed',
           durationHours: 1,
       });
     }
-  }, [product, reset, itemType]);
+  }, [product, reset, defaultType]);
 
   const pricingModel = watch('pricingModel');
 
@@ -104,22 +104,22 @@ export function ProductForm({ onProductAction, product, itemType }: ProductFormP
         await createProduct({ ...data, actor: currentUser.uid });
       }
       onProductAction();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError(`Falha ao ${isEditMode ? 'atualizar' : 'criar'} o item. Tente novamente.`);
+      setError(err.message || `Falha ao salvar o item. Tente novamente.`);
     } finally {
       setIsLoading(false);
     }
   };
   
-  const itemTypeLabel = itemType === 'service' ? 'Serviço' : 'Produto';
+  const itemTypeLabel = pricingModel === 'per_hour' ? 'Serviço' : 'Produto';
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="name">Nome do {itemTypeLabel}*</Label>
-          <Input id="name" {...register('name')} placeholder={itemType === 'service' ? "Ex: Consultoria SEO" : "Ex: Assinatura Mensal Pro"} />
+          <Input id="name" {...register('name')} placeholder={pricingModel === 'per_hour' ? "Ex: Consultoria SEO" : "Ex: Assinatura Mensal Pro"} />
           {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
         </div>
         <div className="space-y-2 md:col-span-2">
@@ -127,29 +127,24 @@ export function ProductForm({ onProductAction, product, itemType }: ProductFormP
           <Textarea id="description" {...register('description')} placeholder="Detalhes, características, entregáveis, etc." />
         </div>
 
-        {itemType === 'service' ? (
-             <div className="space-y-2">
-                <Label>Modelo de Preço*</Label>
-                <Controller
-                  name="pricingModel"
-                  control={control}
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o modelo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="per_hour">Preço por Hora</SelectItem>
-                        <SelectItem value="fixed">Preço Fixo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-            </div>
-        ) : (
-            // Hidden input for product pricing model
-            <input type="hidden" {...register('pricingModel')} value="fixed" />
-        )}
+        <div className="space-y-2">
+            <Label>Modelo de Preço*</Label>
+            <Controller
+              name="pricingModel"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o modelo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fixed">Preço Fixo (Produto)</SelectItem>
+                    <SelectItem value="per_hour">Preço por Hora (Serviço)</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+        </div>
        
         <div className="space-y-2">
           <Label htmlFor="price">{pricingModel === 'per_hour' ? 'Preço por Hora (R$)*' : 'Preço de Venda (R$)*'}</Label>
