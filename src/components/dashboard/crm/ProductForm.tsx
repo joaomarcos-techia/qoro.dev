@@ -67,6 +67,15 @@ export function ProductForm({ onProductAction, product, itemType }: ProductFormP
 
   const pricingModel = watch('pricingModel');
 
+  useEffect(() => {
+    // When the pricing model changes, nullify the irrelevant field
+    if (pricingModel === 'fixed') {
+        setValue('durationHours', undefined);
+    } else if (pricingModel === 'per_hour') {
+        setValue('cost', undefined);
+    }
+  }, [pricingModel, setValue]);
+
   const handleNumericInput = (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof z.infer<typeof ProductSchema>) => {
     const value = e.target.value;
     if (value === '' || value === null) {
