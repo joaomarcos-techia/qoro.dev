@@ -86,7 +86,7 @@ export const AddressSchema = z.object({
 
 export const CustomerSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
-  email: z.string().email('Email inválido'),
+  email: z.string().email('Email inválido').or(z.literal('')).optional(),
   phone: z.string().optional(),
   company: z.string().optional(),
   cpf: z.string().optional(),

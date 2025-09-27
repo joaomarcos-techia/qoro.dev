@@ -145,7 +145,7 @@ export function CustomerForm({ onCustomerAction, customer }: CustomerFormProps) 
             {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
             </div>
             <div className="space-y-2">
-            <Label htmlFor="email">Email*</Label>
+            <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" {...register('email')} />
             {errors.email && <p className="text-destructive text-sm">{errors.email.message}</p>}
             </div>
