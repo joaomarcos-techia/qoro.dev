@@ -28,13 +28,12 @@ export default function PulsePage() {
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            setAuthLoading(true);
             if (!user) {
                 router.push('/login');
             } else {
                 setCurrentUser(user);
+                setAuthLoading(false);
             }
-            setAuthLoading(false);
         });
         return () => unsubscribe();
     }, [router]);

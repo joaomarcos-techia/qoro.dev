@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
-import { PlusCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { PlusCircle, Loader2, ServerCrash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TransactionTable } from '@/components/dashboard/finance/TransactionTable';
 import {
@@ -14,15 +14,50 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { TransactionForm } from '@/components/dashboard/finance/TransactionForm';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+
 
 export default function TransacoesPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [initialLoading, setInitialLoading] = useState(true);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+    useEffect(() => {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setCurrentUser(user);
+        setInitialLoading(false);
+      });
+      return () => unsubscribe();
+    }, []);
 
     const handleAction = () => {
       setIsModalOpen(false);
       setRefreshKey(prev => prev + 1);
     };
+
+    const renderContent = () => {
+      if (initialLoading) {
+        return (
+          <div className="flex flex-col items-center justify-center min-h-[400px]">
+            <Loader2 className="w-12 h-12 text-finance-primary animate-spin" />
+            <p className="mt-4 text-muted-foreground">Carregando transações...</p>
+          </div>
+        );
+      }
+      
+      if (!currentUser) {
+          return (
+              <div className="flex flex-col items-center justify-center min-h-[400px]">
+                  <ServerCrash className="w-12 h-12 text-destructive" />
+                  <p className="mt-4 text-destructive-foreground">Usuário não autenticado. Por favor, faça login novamente.</p>
+              </div>
+          );
+      }
+  
+      return <TransactionTable key={refreshKey} />;
+    }
 
     return (
       <div>
@@ -56,7 +91,7 @@ export default function TransacoesPage() {
         </div>
 
         <div className="bg-card p-6 rounded-2xl border-border">
-            <TransactionTable key={refreshKey} />
+            {renderContent()}
         </div>
       </div>
     );
