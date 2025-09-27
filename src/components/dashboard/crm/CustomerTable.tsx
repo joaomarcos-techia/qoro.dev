@@ -80,33 +80,48 @@ const formatPhone = (value: string) => {
     return value; // Return original if not a valid phone length
 };
 
-const normalizeString = (str: string) => {
-    if (!str) return '';
-    return str
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase();
-};
-
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
-    const searchTerm = normalizeString(value);
-    
+  // Rank the item
+  const itemRank = rankItem(row.getValue(columnId), value)
+
+  // Store the itemRank info
+  addMeta({
+    itemRank,
+  })
+
+  // Return if the item should be filtered in/out
+  return itemRank.passed
+}
+
+const normalizeString = (str: string) => {
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+const multiFieldFuzzyFilter: FilterFn<any> = (row, columnId, filterValue, addMeta) => {
+
+    const searchTerm = normalizeString(String(filterValue));
+
     // Search name and email (accent-insensitive)
-    const name = normalizeString(row.original.name);
-    const email = normalizeString(row.original.email);
-    const nameRank = rankItem(name, searchTerm);
-    const emailRank = rankItem(email, searchTerm);
-    
+    const name = row.original.name || '';
+    const email = row.original.email || '';
+
+    const nameRank = rankItem(normalizeString(name), searchTerm);
+    const emailRank = rankItem(normalizeString(email), searchTerm);
+
     // Search CPF (digit-only insensitive)
     const cpf = (row.original.cpf || '').replace(/\D/g, '');
     const cleanSearchTerm = searchTerm.replace(/\D/g, '');
-    const cpfRank = rankItem(cpf, cleanSearchTerm);
-
+    
+    // Only rank CPF if the search term contains numbers
+    const cpfRank = /\d/.test(cleanSearchTerm) ? rankItem(cpf, cleanSearchTerm) : {passed: false, rank: 0};
+    
     const highestRank = Math.max(nameRank.rank, emailRank.rank, cpfRank.rank);
     
-    addMeta({ itemRank: highestRank });
-
-    return highestRank > 0;
+    if (addMeta) {
+      addMeta(highestRank);
+    }
+    
+    return nameRank.passed || emailRank.passed || cpfRank.passed;
 }
 
 
@@ -321,7 +336,7 @@ export function CustomerTable() {
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
     onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: fuzzyFilter,
+    globalFilterFn: multiFieldFuzzyFilter,
     getFilteredRowModel: getFilteredRowModel(),
     state: {
       sorting,
@@ -460,3 +475,4 @@ export function CustomerTable() {
     </>
   );
 }
+
