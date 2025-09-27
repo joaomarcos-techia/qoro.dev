@@ -370,7 +370,7 @@ export type ReconciliationProfile = z.infer<typeof ReconciliationProfileSchema>;
 export const QualificationLeadSchema = z.object({
   fullName: z.string().optional(),
   role: z.string().optional(),
-  email: z.string().email().optional(),
+  email: z.string().email({ message: "Por favor, insira um endereço de e-mail válido." }).optional().or(z.literal('')),
   companySize: z.string().optional(),
   inefficientProcesses: z.string().optional(),
   currentTools: z.string().optional(),
