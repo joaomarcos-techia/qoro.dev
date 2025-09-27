@@ -1,22 +1,45 @@
-// This component is now a Server Component by default, which is faster.
-// The 'use client' has been removed.
 
+'use client';
+
+import Link from 'next/link';
 import { Linkedin, Twitter, Mail, Phone, MapPin } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 
+const navLinks = [
+  { href: '/#sobre', label: 'Sobre' },
+  { href: '/#para-quem', label: 'Para Quem é?' },
+  { href: '/#precos', label: 'Planos' },
+  { href: '/#contato', label: 'Contato' },
+];
+
+const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>, href: string) => {
+    if (href.startsWith('/#')) {
+        e.preventDefault();
+        const targetId = href.substring(2);
+        const targetElement = document.getElementById(targetId);
+        if (targetElement) {
+            window.scrollTo({
+                top: targetElement.offsetTop - 100,
+                behavior: 'smooth'
+            });
+        }
+    }
+  };
+
 export function Footer() {
   return (
-    <footer id="contato" className="bg-black border-t border-white/10 py-16">
+    <footer id="footer" className="bg-black border-t border-white/10 pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12 mb-12">
-          <div>
-            <div className="flex items-center gap-2 mb-4 text-xl">
-                <Logo />
-            </div>
-            <p className="text-white/60 mb-6 leading-relaxed">
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-x-8 gap-y-12 mb-12">
+          {/* Coluna da Logo e Descrição */}
+          <div className="lg:col-span-2">
+            <Link href="/#home" onClick={(e) => handleLinkClick(e, '/#home')}>
+              <Logo height={32} />
+            </Link>
+            <p className="text-white/60 mt-4 mb-6 leading-relaxed max-w-sm">
               O fim da desorganização. O começo da clareza.
             </p>
-            <div className="flex space-x-4">
+            <div className="flex space-x-2">
               <a href="#" className="text-white/60 hover:text-primary transition-colors p-2 rounded-xl" aria-label="LinkedIn">
                 <Linkedin className="w-5 h-5" />
               </a>
@@ -26,46 +49,53 @@ export function Footer() {
             </div>
           </div>
           
+          {/* Coluna de Soluções */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Soluções</h3>
+            <h3 className="text-sm font-semibold text-white/80 mb-4 tracking-wider uppercase">Soluções</h3>
             <ul className="space-y-3">
-              <li><a href="#produtos" className="text-white/60 hover:text-white transition-colors">QoroCRM</a></li>
-              <li><a href="#produtos" className="text-white/60 hover:text-white transition-colors">QoroPulse</a></li>
-              <li><a href="#produtos" className="text-white/60 hover:text-white transition-colors">QoroTask</a></li>
-              <li><a href="#produtos" className="text-white/60 hover:text-white transition-colors">QoroFinance</a></li>
+              <li><a href="#produtos" onClick={(e) => handleLinkClick(e, '#produtos')} className="text-white/60 hover:text-white transition-colors">QoroCRM</a></li>
+              <li><a href="#produtos" onClick={(e) => handleLinkClick(e, '#produtos')} className="text-white/60 hover:text-white transition-colors">QoroPulse</a></li>
+              <li><a href="#produtos" onClick={(e) => handleLinkClick(e, '#produtos')} className="text-white/60 hover:text-white transition-colors">QoroTask</a></li>
+              <li><a href="#produtos" onClick={(e) => handleLinkClick(e, '#produtos')} className="text-white/60 hover:text-white transition-colors">QoroFinance</a></li>
             </ul>
           </div>
           
+          {/* Coluna de Empresa */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Empresa</h3>
+            <h3 className="text-sm font-semibold text-white/80 mb-4 tracking-wider uppercase">Empresa</h3>
             <ul className="space-y-3">
-              <li><a href="#sobre" className="text-white/60 hover:text-white transition-colors">Sobre nós</a></li>
-              <li><a href="#" className="text-white/60 hover:text-white transition-colors">Carreiras</a></li>
-              <li><a href="#" className="text-white/60 hover:text-white transition-colors">Blog</a></li>
+              <li><a href="#sobre" onClick={(e) => handleLinkClick(e, '#sobre')} className="text-white/60 hover:text-white transition-colors">Sobre nós</a></li>
+              <li><Link href="/politica-de-privacidade" className="text-white/60 hover:text-white transition-colors">Política de Privacidade</Link></li>
+              <li><Link href="/termos-de-uso" className="text-white/60 hover:text-white transition-colors">Termos de Uso</Link></li>
             </ul>
           </div>
           
+          {/* Coluna de Contato */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Contato</h3>
-            <ul className="space-y-3">
-              <li className="flex items-center text-white/60">
-                <Mail className="mr-3 w-4 h-4 text-primary" />
-                contato@qoro.com
+            <h3 className="text-sm font-semibold text-white/80 mb-4 tracking-wider uppercase">Contato</h3>
+            <ul className="space-y-4">
+              <li className="flex items-start text-white/60">
+                <Mail className="mr-3 w-4 h-4 mt-1 text-primary flex-shrink-0" />
+                <span>contato@qoro.com</span>
               </li>
-              <li className="flex items-center text-white/60">
-                <Phone className="mr-3 w-4 h-4 text-primary" />
-                (88) 99682-2198
+              <li className="flex items-start text-white/60">
+                <Phone className="mr-3 w-4 h-4 mt-1 text-primary flex-shrink-0" />
+                <span>(88) 99682-2198</span>
               </li>
-              <li className="flex items-center text-white/60">
-                <MapPin className="mr-3 w-4 h-4 text-primary" />
-                Ceará, Brasil
+              <li className="flex items-start text-white/60">
+                <MapPin className="mr-3 w-4 h-4 mt-1 text-primary flex-shrink-0" />
+                <span>Ceará, Brasil</span>
               </li>
             </ul>
           </div>
         </div>
         
-        <div className="border-t border-white/10 pt-8 text-center text-white/60">
-          <p>&copy; 2025 Qoro. Todos os direitos reservados.</p>
+        <div className="border-t border-white/10 pt-8 mt-8 flex flex-col sm:flex-row justify-between items-center text-sm text-white/50">
+          <p>&copy; {new Date().getFullYear()} Qoro. Todos os direitos reservados.</p>
+          <div className="flex gap-4 mt-4 sm:mt-0">
+            <Link href="/termos-de-uso" className="hover:text-white transition-colors">Termos</Link>
+            <Link href="/politica-de-privacidade" className="hover:text-white transition-colors">Privacidade</Link>
+          </div>
         </div>
       </div>
     </footer>
