@@ -14,7 +14,7 @@ import {
   getPaginationRowModel,
   FilterFn,
 } from '@tanstack/react-table';
-import { RankingInfo, rankItem } from '@tanstack/match-sorter-utils'
+import { rankItem } from '@tanstack/match-sorter-utils'
 import {
   Table,
   TableBody,
@@ -89,15 +89,19 @@ const normalizeString = (str: string) => {
 };
 
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
+    const searchTerm = normalizeString(value);
+    
+    // Search name and email (accent-insensitive)
     const name = normalizeString(row.original.name);
     const email = normalizeString(row.original.email);
-    const cpf = row.original.cpf || '';
-    const searchTerm = normalizeString(value);
-
     const nameRank = rankItem(name, searchTerm);
     const emailRank = rankItem(email, searchTerm);
-    const cpfRank = rankItem(cpf, searchTerm);
     
+    // Search CPF (digit-only insensitive)
+    const cpf = (row.original.cpf || '').replace(/\D/g, '');
+    const cleanSearchTerm = searchTerm.replace(/\D/g, '');
+    const cpfRank = rankItem(cpf, cleanSearchTerm);
+
     const highestRank = Math.max(nameRank.rank, emailRank.rank, cpfRank.rank);
     
     addMeta({ itemRank: highestRank });
