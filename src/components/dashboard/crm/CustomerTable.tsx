@@ -80,48 +80,35 @@ const formatPhone = (value: string) => {
     return value; // Return original if not a valid phone length
 };
 
-const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
-  // Rank the item
-  const itemRank = rankItem(row.getValue(columnId), value)
-
-  // Store the itemRank info
-  addMeta({
-    itemRank,
-  })
-
-  // Return if the item should be filtered in/out
-  return itemRank.passed
-}
-
 const normalizeString = (str: string) => {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
-const multiFieldFuzzyFilter: FilterFn<any> = (row, columnId, filterValue, addMeta) => {
-
+const alphabeticalFilter: FilterFn<any> = (row, columnId, filterValue, addMeta) => {
     const searchTerm = normalizeString(String(filterValue));
 
-    // Search name and email (accent-insensitive)
-    const name = row.original.name || '';
-    const email = row.original.email || '';
+    if (!searchTerm) return true;
 
-    const nameRank = rankItem(normalizeString(name), searchTerm);
-    const emailRank = rankItem(normalizeString(email), searchTerm);
+    // Check name (accent-insensitive, starts with)
+    const name = normalizeString(row.original.name || '');
+    if (name.startsWith(searchTerm)) {
+        return true;
+    }
 
-    // Search CPF (digit-only insensitive)
-    const cpf = (row.original.cpf || '').replace(/\D/g, '');
-    const cleanSearchTerm = searchTerm.replace(/\D/g, '');
-    
-    // Only rank CPF if the search term contains numbers
-    const cpfRank = /\d/.test(cleanSearchTerm) ? rankItem(cpf, cleanSearchTerm) : {passed: false, rank: 0};
-    
-    const highestRank = Math.max(nameRank.rank, emailRank.rank, cpfRank.rank);
-    
-    if (addMeta) {
-      addMeta(highestRank);
+    // Check email (case-insensitive, starts with)
+    const email = (row.original.email || '').toLowerCase();
+    if (email.startsWith(searchTerm)) {
+        return true;
     }
     
-    return nameRank.passed || emailRank.passed || cpfRank.passed;
+    // Check CPF (digit-only, starts with)
+    const cpf = (row.original.cpf || '').replace(/\D/g, '');
+    const cleanSearchTerm = searchTerm.replace(/\D/g, '');
+    if (cpf.startsWith(cleanSearchTerm)) {
+        return true;
+    }
+    
+    return false;
 }
 
 
@@ -336,7 +323,7 @@ export function CustomerTable() {
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
     onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: multiFieldFuzzyFilter,
+    globalFilterFn: alphabeticalFilter,
     getFilteredRowModel: getFilteredRowModel(),
     state: {
       sorting,
