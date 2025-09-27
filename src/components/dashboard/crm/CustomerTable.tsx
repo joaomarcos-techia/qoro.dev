@@ -12,7 +12,9 @@ import {
   ColumnFiltersState,
   getFilteredRowModel,
   getPaginationRowModel,
+  FilterFn,
 } from '@tanstack/react-table';
+import { RankingInfo, rankItem } from '@tanstack/match-sorter-utils'
 import {
   Table,
   TableBody,
@@ -78,11 +80,36 @@ const formatPhone = (value: string) => {
     return value; // Return original if not a valid phone length
 };
 
+const normalizeString = (str: string) => {
+    if (!str) return '';
+    return str
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+};
+
+const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
+    const name = normalizeString(row.original.name);
+    const email = normalizeString(row.original.email);
+    const cpf = row.original.cpf || '';
+    const searchTerm = normalizeString(value);
+
+    const nameRank = rankItem(name, searchTerm);
+    const emailRank = rankItem(email, searchTerm);
+    const cpfRank = rankItem(cpf, searchTerm);
+    
+    const highestRank = Math.max(nameRank.rank, emailRank.rank, cpfRank.rank);
+    
+    addMeta({ itemRank: highestRank });
+
+    return highestRank > 0;
+}
+
 
 export function CustomerTable() {
   const [data, setData] = React.useState<CustomerProfile[]>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [currentUser, setCurrentUser] = React.useState<FirebaseUser | null>(null);
@@ -289,11 +316,12 @@ export function CustomerTable() {
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
-    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: fuzzyFilter,
     getFilteredRowModel: getFilteredRowModel(),
     state: {
       sorting,
-      columnFilters,
+      globalFilter,
     },
   });
 
@@ -346,12 +374,12 @@ export function CustomerTable() {
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
-                placeholder="Buscar por nome..."
-                value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
+                placeholder="Buscar por nome, email ou CPF..."
+                value={globalFilter ?? ''}
                 onChange={(event) =>
-                    table.getColumn('name')?.setFilterValue(event.target.value)
+                    setGlobalFilter(event.target.value)
                 }
-                className="w-full pl-10 pr-4 py-2 bg-secondary rounded-xl border-border focus:ring-2 focus:ring-primary transition-all duration-300"
+                className="w-full md:w-[300px] pl-10 pr-4 py-2 bg-secondary rounded-xl border-border focus:ring-2 focus:ring-primary transition-all duration-300"
                 />
             </div>
       </div>
