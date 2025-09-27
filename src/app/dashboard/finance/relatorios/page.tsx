@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -50,10 +51,14 @@ export default function RelatoriosFinanceirosPage() {
     from: subDays(new Date(), 29),
     to: new Date(),
   });
+  const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
+      if (!user) {
+        setInitialLoading(false);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -74,7 +79,10 @@ export default function RelatoriosFinanceirosPage() {
                 console.error("Erro ao buscar métricas financeiras:", err);
                 setError('Não foi possível carregar os dados dos relatórios.');
             })
-            .finally(() => setIsLoading(false));
+            .finally(() => {
+              setIsLoading(false);
+              setInitialLoading(false);
+            });
     }
   }, [currentUser, dateRange]);
 
@@ -84,7 +92,7 @@ export default function RelatoriosFinanceirosPage() {
   ];
 
   const renderContent = () => {
-    if (isLoading && !metrics) { // Full page loader only on initial load
+    if (initialLoading) { // Full page loader only on initial load
         return (
           <div className="flex flex-col items-center justify-center h-[calc(100vh-250px)]">
             <Loader2 className="w-12 h-12 text-finance-primary animate-spin" />
@@ -147,7 +155,7 @@ export default function RelatoriosFinanceirosPage() {
                 </p>
             </div>
              <div className="flex items-center gap-4">
-                {isLoading && <Loader2 className="w-5 h-5 text-muted-foreground animate-spin"/>}
+                {isLoading && !initialLoading && <Loader2 className="w-5 h-5 text-muted-foreground animate-spin"/>}
                 <DateRangePicker date={dateRange} setDate={setDateRange} />
              </div>
         </div>

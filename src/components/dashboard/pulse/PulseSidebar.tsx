@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useTransition, useCallback } from 'react';
@@ -65,7 +66,9 @@ export function PulseSidebar() {
 
   const handleNewConversation = () => {
     startTransition(() => {
-        router.push('/dashboard/pulse');
+        // Navigate to a temporary 'new' route that the page component can handle.
+        // This avoids issues with re-using an existing conversation ID.
+        router.push('/dashboard/pulse/new');
     });
   };
 

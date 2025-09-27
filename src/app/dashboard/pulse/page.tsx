@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
@@ -104,7 +105,7 @@ export default function PulsePage() {
 
     if (authLoading) {
         return (
-            <div className="flex flex-col h-full bg-black items-center justify-center">
+            <div className="flex flex-col h-full bg-background items-center justify-center">
                 <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
                 <p className="text-muted-foreground">Verificando autenticação...</p>
             </div>
@@ -112,7 +113,7 @@ export default function PulsePage() {
     }
 
     return (
-        <div className="flex flex-col h-full bg-black">
+        <div className="flex flex-col h-full bg-background">
             <div className="flex-grow flex flex-col items-center w-full px-4 relative">
                 <div className="flex-grow w-full max-w-4xl flex flex-col justify-center items-center pb-32">
                     
@@ -139,7 +140,7 @@ export default function PulsePage() {
                     )}
                 </div>
 
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black to-transparent">
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background/90 to-transparent">
                     <div className="w-full max-w-4xl mx-auto px-4 pt-4 pb-8">
                         <form onSubmit={handleSendMessage} className="relative bg-card border border-border rounded-2xl shadow-2xl">
                             <Textarea

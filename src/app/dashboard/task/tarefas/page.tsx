@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useTransition, useCallback } from 'react';
@@ -39,6 +40,8 @@ export default function ProgressoPage() {
           .then(setUsers)
           .catch((err) => console.error("Failed to load users", err))
           .finally(() => setIsLoadingUsers(false));
+    } else {
+        setIsLoadingUsers(false);
     }
   }, [currentUser]);
 
@@ -136,7 +139,7 @@ export default function ProgressoPage() {
   const renderContent = () => {
     if (loading || isLoadingUsers) {
       return (
-        <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)]">
+        <div className="flex flex-col items-center justify-center h-full">
           <Loader2 className="w-12 h-12 text-task-primary animate-spin" />
           <p className="mt-4 text-muted-foreground">Carregando quadro de progresso...</p>
         </div>
@@ -145,7 +148,7 @@ export default function ProgressoPage() {
 
     if (error) {
       return (
-        <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] bg-destructive/10 rounded-lg p-8 text-center border border-destructive">
+        <div className="flex flex-col items-center justify-center h-full bg-destructive/10 rounded-lg p-8 text-center border border-destructive">
           <ServerCrash className="w-16 h-16 text-destructive mb-4" />
           <h3 className="text-xl font-bold text-destructive">Ocorreu um erro</h3>
           <p className="text-muted-foreground mt-2">{error}</p>
@@ -157,7 +160,7 @@ export default function ProgressoPage() {
   };
 
   return (
-    <div className='h-[calc(100vh-120px)] flex flex-col'>
+    <div className='h-full flex flex-col'>
         <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
@@ -195,7 +198,7 @@ export default function ProgressoPage() {
             </div>
         )}
       </div>
-      <div className="flex-grow overflow-hidden">
+      <div className="flex-grow overflow-auto">
         {renderContent()}
       </div>
     </div>

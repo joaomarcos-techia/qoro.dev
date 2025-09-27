@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, FormEvent, useCallback } from 'react';
@@ -43,26 +44,22 @@ export default function PulseConversationPage() {
     return () => unsubscribe();
   }, [router]);
   
-  const handleSendMessage = useCallback(async (e?: FormEvent, initialMessages?: PulseMessage[]) => {
+  const handleSendMessage = useCallback(async (e?: FormEvent) => {
     e?.preventDefault();
-    if (isSending || !currentUser?.uid) return;
+    if (isSending || !currentUser?.uid || !input.trim()) return;
 
     const currentInput = input.trim();
-    const messagesToSend = initialMessages || [...messages, { role: 'user', content: currentInput }];
-    
-    if (!initialMessages && !currentInput) return;
+    const optimisticUserMessage: PulseMessage = { role: 'user', content: currentInput };
 
-    if (!initialMessages) {
-        setMessages(prev => [...prev, { role: 'user', content: currentInput }]);
-        setInput('');
-    }
+    setMessages(prev => [...prev, optimisticUserMessage]);
+    setInput('');
     
     setIsSending(true);
     setError(null);
     
     try {
       const result = await askPulse({
-        messages: messagesToSend,
+        messages: [...messages, optimisticUserMessage],
         actor: currentUser.uid,
         conversationId,
       });
@@ -74,9 +71,7 @@ export default function PulseConversationPage() {
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao comunicar com a IA.');
-      if (!initialMessages) {
-        setMessages(prev => prev.slice(0, -1)); // Revert optimistic update only for user-sent
-      }
+      setMessages(prev => prev.slice(0, -1)); // Revert optimistic user message on failure
     } finally {
       setIsSending(false);
     }
@@ -91,6 +86,8 @@ export default function PulseConversationPage() {
         const conversation = await getConversation({ conversationId, actor: currentUser.uid });
         if (conversation?.messages) {
             setMessages(conversation.messages);
+        } else if (conversationId === 'new') {
+            setMessages([]); // Start a new conversation
         } else {
             throw new Error('Conversa não encontrada ou acesso negado.');
         }
@@ -106,13 +103,13 @@ export default function PulseConversationPage() {
     if (currentUser) {
         fetchConversation();
     }
-  }, [currentUser, fetchConversation]);
+  }, [currentUser, conversationId, fetchConversation]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isSending]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && !isSending) {
@@ -155,11 +152,11 @@ export default function PulseConversationPage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-black">
+    <div className="flex flex-col h-full bg-background">
       <div className="flex-grow flex flex-col items-center w-full px-4 relative">
         <div ref={scrollAreaRef} className="flex-grow w-full max-w-4xl overflow-y-auto space-y-8 flex flex-col pt-8 pb-32">
           {renderMessages()}
-          {isSending && (
+          {isSending && messages.length > 0 && messages[messages.length - 1].role === 'user' &&(
             <div className="flex items-start gap-4 mx-auto w-full">
               <div className="flex-shrink-0 w-8 h-8 rounded-full bg-pulse-primary text-black flex items-center justify-center"><BrainCircuit size={18} /></div>
               <div className="max-w-lg px-5 py-3 rounded-2xl bg-card text-foreground border flex items-center">
@@ -169,7 +166,7 @@ export default function PulseConversationPage() {
             </div>
           )}
         </div>
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black to-transparent">
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background/90 to-transparent">
           <div className="w-full max-w-4xl mx-auto px-4 pt-4 pb-8">
             <form onSubmit={handleSendMessage} className="relative">
               <div className="relative bg-card border border-border rounded-2xl shadow-2xl">

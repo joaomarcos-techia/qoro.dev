@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -69,7 +70,12 @@ const statusMap: Record<TransactionProfile['status'], { text: string; color: str
     cancelled: { text: 'Cancelada', color: 'bg-gray-500/20 text-gray-300' },
 };
 
-export function TransactionTable() {
+interface TransactionTableProps {
+    refreshKey: number;
+    onAction: () => void;
+}
+
+export function TransactionTable({ refreshKey, onAction }: TransactionTableProps) {
   const [data, setData] = React.useState<TransactionProfile[]>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -80,9 +86,6 @@ export function TransactionTable() {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedTransaction, setSelectedTransaction] = React.useState<TransactionProfile | null>(null);
   
-  const [refreshKey, setRefreshKey] = React.useState(0);
-  const triggerRefresh = () => setRefreshKey(prev => prev + 1);
-
   const handleEdit = (transaction: TransactionProfile) => {
     setSelectedTransaction(transaction);
     setIsModalOpen(true);
@@ -92,7 +95,7 @@ export function TransactionTable() {
     if (!currentUser) return;
     try {
         await deleteTransaction({ transactionId, actor: currentUser.uid });
-        triggerRefresh();
+        onAction(); // Use the callback from props
     } catch(err) {
         console.error("Failed to delete transaction:", err);
         // Display error to user
@@ -102,7 +105,7 @@ export function TransactionTable() {
   const handleModalAction = () => {
     setIsModalOpen(false);
     setSelectedTransaction(null);
-    triggerRefresh();
+    onAction(); // Use the callback from props
   }
 
   const columns: ColumnDef<TransactionProfile>[] = [
