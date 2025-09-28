@@ -140,14 +140,10 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         const updatePayload: { [key: string]: any } = {
           messages: finalMessages.map(m => ({ ...m })),
           updatedAt: FieldValue.serverTimestamp(),
-          title: currentTitle, // Start with the existing title
         };
   
-        // Only try to generate a new title if the current one is the default placeholder.
         if (currentTitle === 'Nova Conversa') {
           const userMessages = finalMessages.filter(m => m.role === 'user');
-          
-          // Wait for at least two user messages to get better context.
           if (userMessages.length >= 2) {
             const contextForTitle = userMessages
               .slice(0, 2)
@@ -166,7 +162,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
       const addedRef = await adminDb.collection('pulse_conversations').add({
         userId,
         messages: finalMessages.map(m => ({ ...m })),
-        title: 'Nova Conversa', // Always start with a placeholder title.
+        title: 'Nova Conversa',
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       });
