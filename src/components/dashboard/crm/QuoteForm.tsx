@@ -11,8 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { createQuote, listCustomers, listProducts, updateQuote, getOrganizationDetails } from '@/ai/flows/crm-management';
-import { QuoteSchema, CustomerProfile, ProductProfile, QuoteProfile, UpdateQuoteSchema, OrganizationProfile } from '@/ai/schemas';
+import { createQuote, listCustomers, listProducts, listServices, updateQuote, getOrganizationDetails } from '@/ai/flows/crm-management';
+import { QuoteSchema, CustomerProfile, ProductProfile, QuoteProfile, UpdateQuoteSchema, OrganizationProfile, ServiceProfile } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Loader2, AlertCircle, CalendarIcon, PlusCircle, Trash2, Package, Wrench, Download, Eye, Percent } from 'lucide-react';
@@ -29,6 +29,7 @@ type QuoteFormProps = {
 };
 
 type ItemType = 'product' | 'service';
+type AnyItem = ProductProfile | ServiceProfile;
 
 const FormSchema = QuoteSchema.extend({
   validUntil: z.date(),
@@ -42,7 +43,7 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
   
   const [customers, setCustomers] = useState<CustomerProfile[]>([]);
   const [products, setProducts] = useState<ProductProfile[]>([]);
-  const [services, setServices] = useState<ProductProfile[]>([]);
+  const [services, setServices] = useState<ServiceProfile[]>([]);
   const [organization, setOrganization] = useState<OrganizationProfile | null>(null);
   
   const [customerSearch, setCustomerSearch] = useState('');
@@ -83,14 +84,15 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
 
   const fetchDependencies = useCallback(async (user: FirebaseUser) => {
     try {
-        const [customersData, allItems, orgData] = await Promise.all([
+        const [customersData, productsData, servicesData, orgData] = await Promise.all([
             listCustomers({ actor: user.uid }),
             listProducts({ actor: user.uid }),
+            listServices({ actor: user.uid }),
             getOrganizationDetails({actor: user.uid})
         ]);
         setCustomers(customersData);
-        setProducts(allItems.filter(item => item.pricingModel !== 'per_hour'));
-        setServices(allItems.filter(item => item.pricingModel === 'per_hour'));
+        setProducts(productsData);
+        setServices(servicesData);
         setOrganization(orgData);
     } catch (err) {
          console.error("Failed to load dependencies", err);
@@ -190,16 +192,17 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
     };
   };
 
-  const addItemToQuote = (item: ProductProfile) => {
+  const addItemToQuote = (item: AnyItem) => {
+    const pricingModel = 'pricingModel' in item ? item.pricingModel : 'fixed';
     append({
-        type: item.pricingModel === 'per_hour' ? 'service' : 'product',
+        type: pricingModel === 'per_hour' ? 'service' : 'product',
         itemId: item.id,
         name: item.name,
         quantity: 1,
         unitPrice: item.price,
         total: item.price,
-        cost: item.cost,
-        pricingModel: item.pricingModel,
+        cost: 'cost' in item ? item.cost : undefined,
+        pricingModel: pricingModel,
     });
     setIsItemPopoverOpen(false);
     setItemSearch('');
@@ -277,19 +280,19 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
                                     {field.value ? customers.find(c => c.id === field.value)?.name : 'Selecione um cliente'}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-[300px] p-0">
+                            <PopoverContent className="w-[300px] p-0 rounded-xl">
                                 <div className="p-2 border-b">
                                      <Input 
                                         placeholder="Buscar cliente..." 
                                         value={customerSearch}
                                         onChange={(e) => setCustomerSearch(e.target.value)}
-                                        className="w-full"
+                                        className="w-full rounded-lg"
                                     />
                                 </div>
                                 <div className="max-h-[200px] overflow-y-auto">
                                     {filteredCustomers.map(customer => (
                                         <div key={customer.id} onClick={() => { field.onChange(customer.id); setIsCustomerPopoverOpen(false); }}
-                                            className="p-2 hover:bg-accent cursor-pointer text-sm">
+                                            className="p-2 hover:bg-accent cursor-pointer text-sm rounded-lg mx-1 my-1">
                                             {customer.name}
                                         </div>
                                     ))}
@@ -341,7 +344,7 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
                             <PlusCircle className="mr-2 w-4 h-4"/> Adicionar Produto/Serviço
                         </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[400px] p-0">
+                    <PopoverContent className="w-[400px] p-0 rounded-xl">
                          <div className="p-2 border-b border-border">
                             <div className="flex border-b border-border mb-2">
                                 <button type="button" onClick={() => setActiveItemTab('product')} className={`px-4 py-2 text-sm font-medium flex items-center ${activeItemTab === 'product' ? 'border-b-2 border-crm-primary text-crm-primary' : 'text-muted-foreground'}`}>
@@ -351,11 +354,11 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
                                     <Wrench className="w-4 h-4 mr-2"/> Serviços
                                 </button>
                             </div>
-                            <Input placeholder={`Buscar ${activeItemTab === 'product' ? 'produto' : 'serviço'}...`} value={itemSearch} onChange={(e) => setItemSearch(e.target.value)} />
+                            <Input placeholder={`Buscar ${activeItemTab === 'product' ? 'produto' : 'serviço'}...`} value={itemSearch} onChange={(e) => setItemSearch(e.target.value)} className="rounded-lg"/>
                         </div>
                         <div className="max-h-[200px] overflow-y-auto">
                             {getFilteredItems().map(item => (
-                                <div key={item.id} onClick={() => addItemToQuote(item)} className="p-2 hover:bg-accent cursor-pointer text-sm">
+                                <div key={item.id} onClick={() => addItemToQuote(item)} className="p-2 hover:bg-accent cursor-pointer text-sm rounded-lg mx-1 my-1">
                                     {item.name}
                                 </div>
                             ))}
@@ -418,5 +421,3 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
     </>
   );
 }
-
-    
