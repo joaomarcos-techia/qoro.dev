@@ -136,28 +136,28 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
       };
       
       const doc = await conversationRef.get();
-      const currentTitle = doc.data()?.title;
+      if (doc.exists) {
+        const currentTitle = doc.data()?.title;
 
-      // Only try to generate a new title if the current one is the default placeholder.
-      if (currentTitle === 'Nova Conversa') {
-        const userMessages = finalMessages.filter(m => m.role === 'user');
-        
-        // Wait for at least two user messages to get better context.
-        if (userMessages.length >= 2) {
-          const contextForTitle = userMessages
-            .slice(0, 2)
-            .map(m => m.content)
-            .join(' ');
-            
-          const newTitle = await generateConversationTitle(contextForTitle);
-          if (newTitle !== 'Nova Conversa') {
-            updatePayload.title = newTitle;
+        // Only try to generate a new title if the current one is the default placeholder.
+        if (currentTitle === 'Nova Conversa') {
+          const userMessages = finalMessages.filter(m => m.role === 'user');
+          
+          // Wait for at least two user messages to get better context.
+          if (userMessages.length >= 2) {
+            const contextForTitle = userMessages
+              .slice(0, 2)
+              .map(m => m.content)
+              .join(' ');
+              
+            const newTitle = await generateConversationTitle(contextForTitle);
+            if (newTitle !== 'Nova Conversa') {
+              updatePayload.title = newTitle;
+            }
           }
         }
+        await conversationRef.update(updatePayload);
       }
-      
-      await conversationRef.update(updatePayload);
-
     } else {
       const addedRef = await adminDb.collection('pulse_conversations').add({
         userId,
