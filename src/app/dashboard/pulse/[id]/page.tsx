@@ -38,38 +38,24 @@ export default function PulseConversationPage() {
   // Ref para garantir que a mensagem inicial seja enviada apenas uma vez
   const initialMessageSentRef = useRef(false);
 
-  // Efeito para lidar com a mensagem inicial para novas conversas
-  useEffect(() => {
-    if (currentConversationId === 'new' && currentUser && !initialMessageSentRef.current) {
-      const initialQuery = searchParams.get('q');
-      if (initialQuery) {
-        initialMessageSentRef.current = true; // Marca como enviado para prevenir re-envios
-        handleSendMessage(undefined, initialQuery);
-      } else {
-        setIsLoadingHistory(false);
-      }
-    }
-  }, [currentConversationId, currentUser, searchParams]);
-
-
   const handleSendMessage = useCallback(async (e?: FormEvent, initialMessage?: string) => {
     e?.preventDefault();
     const messageContent = initialMessage || input.trim();
     if (isSending || !currentUser?.uid || !messageContent) return;
 
-    const optimisticUserMessage: PulseMessage = { role: 'user', content: messageContent };
-    
-    // Atualiza a UI imediatamente com a mensagem do usuário
-    setMessages(prev => [...prev, optimisticUserMessage]);
+    setIsSending(true);
+    setError(null);
     if (!initialMessage) {
       setInput('');
     }
     
-    setIsSending(true);
-    setError(null);
+    const optimisticUserMessage: PulseMessage = { role: 'user', content: messageContent };
+    
+    // Atualiza a UI imediatamente com a mensagem do usuário
+    const messagesToSend = [...messages, optimisticUserMessage];
+    setMessages(messagesToSend);
     
     // Prepara os dados para o fluxo de IA
-    const messagesToSend = [...messages, optimisticUserMessage];
     const conversationIdToSend = currentConversationId === 'new' ? undefined : currentConversationId;
 
     try {
@@ -94,6 +80,7 @@ export default function PulseConversationPage() {
       }
 
     } catch (err: any) {
+      console.error(err);
       setError(err.message || 'Falha ao gerar resposta da IA.');
       // Reverte a UI otimista em caso de erro
       setMessages(prev => prev.slice(0, -1)); 
@@ -102,6 +89,20 @@ export default function PulseConversationPage() {
     }
   }, [currentUser, currentConversationId, isSending, messages, input, router]);
   
+  // Efeito para lidar com a mensagem inicial para novas conversas
+  useEffect(() => {
+    if (currentConversationId === 'new' && currentUser && !initialMessageSentRef.current) {
+      const initialQuery = searchParams.get('q');
+      if (initialQuery) {
+        initialMessageSentRef.current = true; // Marca como enviado para prevenir re-envios
+        handleSendMessage(undefined, initialQuery);
+      } else {
+        setIsLoadingHistory(false);
+      }
+    }
+  }, [currentConversationId, currentUser, searchParams, handleSendMessage]);
+
+
   const fetchConversation = useCallback(async () => {
     if (!currentUser || !currentConversationId || currentConversationId === 'new') {
         setIsLoadingHistory(false);
@@ -137,7 +138,9 @@ export default function PulseConversationPage() {
   }, [router]);
 
   useEffect(() => {
-    fetchConversation();
+    if (currentConversationId !== 'new') {
+        fetchConversation();
+    }
   }, [currentConversationId, fetchConversation]);
 
   useEffect(() => {
@@ -154,7 +157,7 @@ export default function PulseConversationPage() {
   };
 
   const renderMessages = () => {
-    if (isLoadingHistory) {
+    if (isLoadingHistory && currentConversationId !== 'new') {
       return (
         <div className="flex-grow flex flex-col items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
@@ -223,3 +226,5 @@ export default function PulseConversationPage() {
     </div>
   );
 }
+
+    

@@ -128,31 +128,34 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
 
     // Lógica robusta de salvamento e atualização
     let conversationId = existingConvId;
+    let finalTitle = 'Nova Conversa';
 
     try {
       if (conversationId) {
         // --- Atualiza uma conversa existente ---
         const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
         const doc = await conversationRef.get();
-        
-        let newTitle = doc.data()?.title || 'Nova Conversa';
+        const docData = doc.data();
+
+        finalTitle = docData?.title || 'Nova Conversa';
 
         // Gera um novo título apenas se o atual for o padrão e houver mensagens suficientes
-        if (newTitle === 'Nova Conversa' && finalMessages.filter(m => m.role === 'user').length >= 2) {
-          const contextForTitle = finalMessages.filter(m => m.role === 'user').slice(0, 2).map(m => m.content).join(' ');
-          newTitle = await generateConversationTitle(contextForTitle);
+        const userMessages = finalMessages.filter(m => m.role === 'user');
+        if (finalTitle === 'Nova Conversa' && userMessages.length >= 2) {
+          const contextForTitle = userMessages.slice(0, 2).map(m => m.content).join(' ');
+          finalTitle = await generateConversationTitle(contextForTitle);
         }
 
         await conversationRef.update({
           messages: finalMessages.map(m => ({ ...m })), // Garante que é um objeto simples
-          title: newTitle,
+          title: finalTitle,
           updatedAt: FieldValue.serverTimestamp(),
         });
       } else {
         // --- Cria uma nova conversa ---
         const newConversationData = {
           userId,
-          title: 'Nova Conversa', // Começa com um título padrão
+          title: finalTitle, // Começa com o título padrão "Nova Conversa"
           messages: finalMessages.map(m => ({ ...m })),
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
@@ -169,7 +172,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         throw new Error("Não foi possível obter um ID para a conversa.");
     }
 
-    return { response: responseMessage, conversationId };
+    return { response: responseMessage, conversationId, title: finalTitle };
   }
 );
 
@@ -178,3 +181,5 @@ export async function askPulse(
 ): Promise<z.infer<typeof AskPulseOutputSchema>> {
   return pulseFlow(input);
 }
+
+    
