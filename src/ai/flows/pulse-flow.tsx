@@ -105,16 +105,12 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
       content: [{ text: m.content ?? '' }],
     }));
 
-    const genkitMessages = [
-      { role: 'system' as const, content: [{ text: systemPrompt }] },
-      ...conversationHistory,
-    ];
-
     let result;
     try {
       result = await ai.generate({
         model: googleAI.model('gemini-1.5-flash'),
-        messages: genkitMessages,
+        system: systemPrompt,
+        messages: conversationHistory,
         config: { temperature: 0.5, maxOutputTokens: 1024 },
       });
     } catch (err) {
@@ -181,5 +177,3 @@ export async function askPulse(
 ): Promise<z.infer<typeof AskPulseOutputSchema>> {
   return pulseFlow(input);
 }
-
-    
