@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, FormEvent, useCallback, useTransition } from 'react';
@@ -26,22 +27,24 @@ export default function PulseConversationPage() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [currentConversationId, setCurrentConversationId] = useState(useParams().id as string);
+  const params = useParams();
+  const [currentConversationId, setCurrentConversationId] = useState(params.id as string);
   const [isPending, startTransition] = useTransition();
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Effect to handle initial message for new conversations
+  // Ref para garantir que a mensagem inicial seja enviada apenas uma vez
+  const initialMessageSentRef = useRef(false);
+
+  // Efeito para lidar com a mensagem inicial para novas conversas
   useEffect(() => {
-    if (currentConversationId === 'new' && currentUser) {
+    if (currentConversationId === 'new' && currentUser && !initialMessageSentRef.current) {
       const initialQuery = searchParams.get('q');
       if (initialQuery) {
-        // Use a ref to ensure this only runs once
-        if (!isSending) {
-           handleSendMessage(undefined, initialQuery);
-        }
+        initialMessageSentRef.current = true; // Marca como enviado para prevenir re-envios
+        handleSendMessage(undefined, initialQuery);
       } else {
         setIsLoadingHistory(false);
       }
@@ -56,7 +59,7 @@ export default function PulseConversationPage() {
 
     const optimisticUserMessage: PulseMessage = { role: 'user', content: messageContent };
     
-    // Optimistically update UI
+    // Atualiza a UI imediatamente com a mensagem do usuário
     setMessages(prev => [...prev, optimisticUserMessage]);
     if (!initialMessage) {
       setInput('');
@@ -65,11 +68,13 @@ export default function PulseConversationPage() {
     setIsSending(true);
     setError(null);
     
+    // Prepara os dados para o fluxo de IA
+    const messagesToSend = [...messages, optimisticUserMessage];
+    const conversationIdToSend = currentConversationId === 'new' ? undefined : currentConversationId;
+
     try {
-      const conversationIdToSend = currentConversationId === 'new' ? undefined : currentConversationId;
-      
       const result = await askPulse({
-        messages: [...messages, optimisticUserMessage],
+        messages: messagesToSend,
         actor: currentUser.uid,
         conversationId: conversationIdToSend,
       });
@@ -80,6 +85,7 @@ export default function PulseConversationPage() {
         throw new Error('Resposta inválida da IA.');
       }
       
+      // Se era uma nova conversa, atualiza a URL com o novo ID
       if (currentConversationId === 'new' && result.conversationId) {
         setCurrentConversationId(result.conversationId);
         startTransition(() => {
@@ -89,6 +95,7 @@ export default function PulseConversationPage() {
 
     } catch (err: any) {
       setError(err.message || 'Falha ao gerar resposta da IA.');
+      // Reverte a UI otimista em caso de erro
       setMessages(prev => prev.slice(0, -1)); 
     } finally {
       setIsSending(false);
@@ -156,9 +163,7 @@ export default function PulseConversationPage() {
       );
     }
 
-    const displayedMessages = messages;
-
-    return displayedMessages.map((message, index) => (
+    return messages.map((message, index) => (
       <div key={index} className={`flex items-start gap-4 mx-auto w-full ${message.role === 'user' ? 'justify-end' : ''}`}>
         {message.role !== 'user' && (
           <div className="flex-shrink-0 w-8 h-8 rounded-full bg-pulse-primary text-black flex items-center justify-center">

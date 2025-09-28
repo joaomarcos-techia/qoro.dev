@@ -11,11 +11,12 @@ import { generateConversationTitle } from '../utils/generateConversationTitle';
 
 export type { AskPulseInput, AskPulseOutput, PulseMessage } from '@/ai/schemas';
 
+// Mapeia as roles da nossa aplicação para as roles que o modelo da IA entende.
 const roleMap: Record<PulseMessage['role'], 'user' | 'model'> = {
   user: 'user',
   assistant: 'model',
   model: 'model',
-  tool: 'user',
+  tool: 'user', // A role 'tool' é tratada como entrada do usuário para o histórico do modelo.
 };
 
 const pulseFlow = ai.defineFlow(
@@ -25,7 +26,7 @@ const pulseFlow = ai.defineFlow(
     outputSchema: AskPulseOutputSchema,
   },
   async (input: z.infer<typeof AskPulseInputSchema>) => {
-    const { actor, messages } = input;
+    const { actor, messages, conversationId: existingConvId } = input;
     const userId = actor;
 
     const systemPrompt = `
@@ -98,6 +99,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
 </EXEMPLOS>
   `.trim();
 
+    // Formata o histórico de mensagens para o formato que a API do Gemini espera.
     const conversationHistory = messages.map(m => ({
       role: roleMap[m.role] || 'user',
       content: [{ text: m.content ?? '' }],
@@ -113,10 +115,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
       result = await ai.generate({
         model: googleAI.model('gemini-1.5-flash'),
         messages: genkitMessages,
-        config: {
-          temperature: 0.5,
-          maxOutputTokens: 1024,
-        },
+        config: { temperature: 0.5, maxOutputTokens: 1024 },
       });
     } catch (err) {
       console.error('AI Generation Error in pulse-flow:', err);
@@ -125,44 +124,49 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
 
     const responseText = result.text ?? 'Desculpe, não consegui processar sua pergunta. Tente novamente.';
     const responseMessage: PulseMessage = { role: 'assistant', content: responseText };
-
-    let conversationId = input.conversationId;
     const finalMessages = [...messages, responseMessage];
 
-    if (conversationId) {
-      const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
-      const doc = await conversationRef.get();
-      
-      if (doc.exists) {
-        const docData = doc.data();
-        const updatePayload: { [key: string]: any } = {
+    // Lógica robusta de salvamento e atualização
+    let conversationId = existingConvId;
+
+    try {
+      if (conversationId) {
+        // --- Atualiza uma conversa existente ---
+        const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
+        const doc = await conversationRef.get();
+        
+        let newTitle = doc.data()?.title || 'Nova Conversa';
+
+        // Gera um novo título apenas se o atual for o padrão e houver mensagens suficientes
+        if (newTitle === 'Nova Conversa' && finalMessages.filter(m => m.role === 'user').length >= 2) {
+          const contextForTitle = finalMessages.filter(m => m.role === 'user').slice(0, 2).map(m => m.content).join(' ');
+          newTitle = await generateConversationTitle(contextForTitle);
+        }
+
+        await conversationRef.update({
+          messages: finalMessages.map(m => ({ ...m })), // Garante que é um objeto simples
+          title: newTitle,
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      } else {
+        // --- Cria uma nova conversa ---
+        const newConversationData = {
+          userId,
+          title: 'Nova Conversa', // Começa com um título padrão
           messages: finalMessages.map(m => ({ ...m })),
+          createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         };
-  
-        // Only try to generate a new title if the current one is the default
-        if (docData?.title === 'Nova Conversa' && finalMessages.filter(m => m.role === 'user').length >= 2) {
-          const contextForTitle = finalMessages
-              .filter(m => m.role === 'user')
-              .slice(0, 2)
-              .map(m => m.content)
-              .join(' ');
-          const newTitle = await generateConversationTitle(contextForTitle);
-          if (newTitle !== 'Nova Conversa') {
-            updatePayload.title = newTitle;
-          }
-        }
-        await conversationRef.update(updatePayload);
+        const addedRef = await adminDb.collection('pulse_conversations').add(newConversationData);
+        conversationId = addedRef.id;
       }
-    } else {
-      const addedRef = await adminDb.collection('pulse_conversations').add({
-        userId,
-        messages: finalMessages.map(m => ({ ...m })),
-        title: 'Nova Conversa',
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      });
-      conversationId = addedRef.id;
+    } catch (dbError) {
+      console.error("Firestore Error in pulse-flow:", dbError);
+      throw new Error("Falha ao salvar a conversa no banco de dados.");
+    }
+    
+    if (!conversationId) {
+        throw new Error("Não foi possível obter um ID para a conversa.");
     }
 
     return { response: responseMessage, conversationId };
