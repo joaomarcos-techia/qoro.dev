@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, Lock, LogIn, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { signIn, sendPasswordResetEmail } from '@/lib/auth';
 import { Logo } from '@/components/ui/logo';
 
@@ -114,7 +114,11 @@ export default function LoginPage() {
             disabled={isLoading}
             className="w-full bg-primary text-primary-foreground py-3 rounded-xl hover:bg-primary/90 transition-all duration-200 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed"
           >
-            <LogIn className="mr-2 w-5 h-5" />
+            {isLoading ? (
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
+              <LogIn className="mr-2 w-5 h-5" />
+            )}
             {isLoading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
