@@ -111,7 +111,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         model: googleAI.model('gemini-1.5-flash-001'),
         system: systemPrompt,
         messages: conversationHistory,
-        config: { temperature: 0.5, maxOutputTokens: 1024 },
+        config: { temperature: 0.5 },
       });
     } catch (err: any) {
       console.error('AI Generation Error in pulse-flow:', err);

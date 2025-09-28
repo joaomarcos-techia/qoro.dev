@@ -20,7 +20,7 @@ export async function generateConversationTitle(context: string): Promise<string
 
   try {
     const result = await ai.generate({
-      model: googleAI.model('gemini-1.5-flash'),
+      model: googleAI.model('gemini-2.5-flash'),
       prompt: `
 Crie um título curto e preciso de no máximo 3 palavras.
 Ignore saudações (oi, olá, bom dia, etc).
