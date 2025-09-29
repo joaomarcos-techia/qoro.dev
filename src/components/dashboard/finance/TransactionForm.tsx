@@ -79,6 +79,12 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
                 ]);
                 setAccounts(accountsData);
                 setCustomers(customersData);
+
+                // If not in edit mode and there are accounts, set the first one as default
+                if (!transaction && accountsData.length > 0) {
+                    reset(prev => ({ ...prev, accountId: accountsData[0].id }));
+                }
+
             } catch (err) {
                  console.error("Failed to load accounts or customers", err);
                  setError("Não foi possível carregar os dados necessários. Tente novamente.");
@@ -86,7 +92,7 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
         };
         fetchData();
     }
-  }, [currentUser]);
+  }, [currentUser, transaction, reset]);
 
   useEffect(() => {
     if (transaction) {
@@ -95,7 +101,8 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
             ? (dateValue instanceof Date ? dateValue : parseISO(dateValue as string))
             : new Date();
         reset({ ...transaction, date, accountId: transaction.accountId || '', customerId: transaction.customerId || '' });
-    } else {
+    } else if (accounts.length > 0) {
+        // If creating a new one, set default values
         reset({
             type: 'expense',
             status: 'paid',
@@ -103,12 +110,12 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
             date: new Date(),
             description: '',
             amount: 0,
-            accountId: '',
+            accountId: accounts[0].id, // Default to first account
             customerId: '',
             category: ''
         });
     }
-  }, [transaction, reset]);
+  }, [transaction, reset, accounts]);
 
 
   const onSubmit = async (data: FormValues) => {
