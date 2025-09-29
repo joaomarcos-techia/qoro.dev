@@ -45,7 +45,7 @@ export const createTask = async (
       updatedAt: FieldValue.serverTimestamp(),
       completedAt: null,
       subtasks: input.subtasks || [],
-      comments: input.comments || [],
+      comments: [], // Comments are not created with the task
       recurrence: input.recurrence || null,
     };
     const taskRef = await adminDb.collection('tasks').add(newTaskData);
@@ -58,7 +58,7 @@ export const createTask = async (
 
 export const updateTask = async (
   taskId: string, 
-  input: z.infer<typeof UpdateTaskSchema>, 
+  input: z.infer<typeof UpdateTaskSchema> & { __commentOnlyUpdate?: boolean }, 
   actorUid: string
 ) => {
   try {
@@ -71,34 +71,33 @@ export const updateTask = async (
       throw new Error('Tarefa não encontrada ou acesso negado.');
     }
 
+    // If only adding a comment, update only the comments field
+    if (input.__commentOnlyUpdate) {
+        if (input.comments) {
+             const commentsWithDate = input.comments.map(c => ({...c, createdAt: new Date(c.createdAt as string)}));
+             await taskRef.update({
+                comments: commentsWithDate,
+                updatedAt: FieldValue.serverTimestamp(),
+             });
+             return { id: taskId };
+        }
+    }
+
+
     const { id, comments, ...updateData } = input;
     
+    // For full updates, we still manage comments safely.
     const existingComments = (Array.isArray(data.comments) ? data.comments : []).map(c => ({
         ...c,
         createdAt: toISOStringSafe(c.createdAt)
     }));
-    
-    const newComments = (comments || [])
-      .filter(c => !existingComments.some((ec: any) => ec.id === c.id))
-      .map(c => ({
-        ...c,
-        authorId: actorUid,
-        authorName: userData.name || userData.email || 'Usuário',
-        createdAt: new Date().toISOString(),
-      }));
-
-    const allComments = [...existingComments, ...newComments];
 
     await taskRef.update({
       ...updateData,
       dueDate: updateData.dueDate ? new Date(updateData.dueDate) : null,
       updatedAt: FieldValue.serverTimestamp(),
-      comments: allComments.map(c => ({...c, createdAt: new Date(c.createdAt!)})), // Convert back to Date for Firestore
+      comments: existingComments.map(c => ({...c, createdAt: new Date(c.createdAt!)})),
     });
-
-    if (input.subtasks) {
-      await taskRef.update({ subtasks: input.subtasks });
-    }
 
     return { id: taskId };
   } catch (error) {

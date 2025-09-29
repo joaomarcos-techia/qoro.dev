@@ -123,14 +123,15 @@ export function TaskForm({ onTaskAction, task, users, viewOnly = false }: TaskFo
         // Persist only the comment update immediately
         try {
             const currentTaskData = getValues();
-            const updatedComments = [...(currentTaskData.comments || []), optimisticComment].map(c => ({...c, createdAt: new Date(c.createdAt).toISOString()}));
+            const updatedComments = [...(currentTaskData.comments || []), optimisticComment];
 
             await updateTask({ 
                 ...currentTaskData,
                 id: task.id,
                 dueDate: currentTaskData.dueDate ? currentTaskData.dueDate.toISOString() : null,
-                comments: updatedComments,
-                actor: currentUser.uid 
+                comments: updatedComments.map(c => ({...c, createdAt: new Date(c.createdAt).toISOString()})),
+                actor: currentUser.uid,
+                __commentOnlyUpdate: true, // Flag for service
             });
         } catch (err) {
             console.error("Failed to add comment:", err);
@@ -247,27 +248,29 @@ export function TaskForm({ onTaskAction, task, users, viewOnly = false }: TaskFo
         </div>
       </div>
 
-       {/* Comments */}
-       <div className="space-y-4">
-            <Label className="flex items-center"><MessageSquare className="w-4 h-4 mr-2 text-muted-foreground"/>Comentários</Label>
-            <div className="p-4 rounded-xl border border-border bg-secondary/30 space-y-4">
-                <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
-                    {commentFields.map((comment) => (
-                        <div key={comment.id} className="text-sm">
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="font-bold text-foreground">{comment.authorName}</span>
-                                <span className="text-xs text-muted-foreground">{comment.createdAt ? format(new Date(comment.createdAt), "dd/MM HH:mm") : ''}</span>
-                            </div>
-                            <p className="bg-card p-2 rounded-lg whitespace-pre-wrap">{comment.text}</p>
-                        </div>
-                    ))}
-                </div>
-                <div className="flex items-center gap-2 pt-2 border-t border-border">
-                    <Textarea placeholder="Adicionar um comentário..." value={newCommentText} onChange={(e) => setNewCommentText(e.target.value)} rows={1} />
-                    <Button type="button" onClick={handleAddComment} size="icon" className="bg-task-primary text-black hover:bg-task-primary/90 rounded-lg"><Send className="w-4 h-4"/></Button>
-                </div>
-            </div>
-       </div>
+       {/* Comments - Only shown in view-only mode for existing tasks */}
+       {isEditMode && viewOnly && (
+        <div className="space-y-4">
+              <Label className="flex items-center"><MessageSquare className="w-4 h-4 mr-2 text-muted-foreground"/>Comentários</Label>
+              <div className="p-4 rounded-xl border border-border bg-secondary/30 space-y-4">
+                  <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
+                      {commentFields.map((comment) => (
+                          <div key={comment.id} className="text-sm">
+                              <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-bold text-foreground">{comment.authorName}</span>
+                                  <span className="text-xs text-muted-foreground">{comment.createdAt ? format(new Date(comment.createdAt), "dd/MM HH:mm") : ''}</span>
+                              </div>
+                              <p className="bg-card p-2 rounded-lg whitespace-pre-wrap">{comment.text}</p>
+                          </div>
+                      ))}
+                  </div>
+                  <div className="flex items-center gap-2 pt-2 border-t border-border">
+                      <Textarea placeholder="Adicionar um comentário..." value={newCommentText} onChange={(e) => setNewCommentText(e.target.value)} rows={1} />
+                      <Button type="button" onClick={handleAddComment} size="icon" className="bg-task-primary text-black hover:bg-task-primary/90 rounded-lg"><Send className="w-4 h-4"/></Button>
+                  </div>
+              </div>
+        </div>
+       )}
 
        {error && (
             <div className="bg-destructive/20 text-destructive-foreground p-4 rounded-lg flex items-center">
