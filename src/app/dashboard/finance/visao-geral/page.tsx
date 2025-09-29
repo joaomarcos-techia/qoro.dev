@@ -6,13 +6,13 @@ import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 
 /**
- * Esta página foi unificada com a página de Relatórios.
+ * Esta página foi unificada com a página de Relatórios e posteriormente removida.
  * Este componente serve apenas como um redirecionamento para a nova
- * página de entrada do módulo Financeiro, garantindo que links antigos não quebrem.
+ * página de entrada do módulo Financeiro (Transações), garantindo que links antigos não quebrem.
  */
 export default function VisaoGeralRedirectPage() {
   useEffect(() => {
-    redirect('/dashboard/finance/relatorios');
+    redirect('/dashboard/finance/transacoes');
   }, []);
 
   // Renderiza um estado de carregamento para evitar um flash de conteúdo vazio.

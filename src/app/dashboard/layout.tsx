@@ -65,7 +65,6 @@ const navItems: Record<string, NavItem[]> = {
         { href: '/dashboard/task/calendario', label: 'Calendário', icon: Calendar },
     ],
     finance: [
-        { href: '/dashboard/finance/relatorios', label: 'Relatórios', icon: BarChart3 },
         { href: '/dashboard/finance/transacoes', label: 'Transações', icon: ArrowLeftRight },
         { href: '/dashboard/finance/contas', label: 'Contas', icon: Landmark },
         { href: '/dashboard/finance/contas-a-pagar', label: 'A pagar/receber', icon: Receipt },
