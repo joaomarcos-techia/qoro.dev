@@ -144,10 +144,8 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
 
         // Lógica de geração de título na segunda interação do usuário
         if (titleToUpdate === 'Nova Conversa' && existingData.messages?.length >= 1) {
-            const contextForTitle = 
-                `Usuário: ${existingData.messages[0].content}\n` +
-                `Assistente: ${responseText}`;
-            titleToUpdate = await generateConversationTitle(contextForTitle);
+            const contextMessages = [...existingData.messages, messages[messages.length-1]];
+            titleToUpdate = await generateConversationTitle(contextMessages.slice(0, 2));
         }
         finalTitle = titleToUpdate;
 

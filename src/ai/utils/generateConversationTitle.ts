@@ -3,22 +3,31 @@
 
 import { ai } from '../genkit';
 import { googleAI } from '@genkit-ai/googleai';
+import { PulseMessage } from '../schemas';
 
 /**
- * Gera um título curto e preciso para uma conversa com base em seu conteúdo inicial.
- * @param context O conteúdo inicial da conversa.
- * @returns Uma string com o título gerado, com no máximo 3 palavras.
+ * Gera um título curto (máx. 3 palavras) para uma conversa
+ * baseado no contexto das primeiras mensagens.
+ * @param messages Histórico inicial da conversa (PulseMessage[]).
  */
-export async function generateConversationTitle(context: string): Promise<string> {
-  if (!context || context.trim() === '') {
-    return 'Nova Conversa';
+export async function generateConversationTitle(messages: PulseMessage[]): Promise<string> {
+  const fallbackTitle = 'Nova Conversa';
+
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return fallbackTitle;
   }
+
+  // Constrói um contexto mais rico com as primeiras mensagens
+  const context = messages
+    .slice(0, 3) // Pega as 3 primeiras mensagens para contexto
+    .map(m => `${m.role === 'user' ? 'Usuário' : 'Assistente'}: ${m.content}`)
+    .join('\n');
 
   try {
     const aiPrompt = `
-Crie um título curto e preciso de no máximo 3-4 palavras para a conversa abaixo.
-Foque no tema central ou objetivo da conversa.
-Retorne apenas o título, sem pontuação ou aspas.
+Crie um título curto e objetivo (máximo 3 palavras) para a conversa abaixo.
+Foque no tema central da conversa.
+Retorne só o título, sem aspas, sem pontuação.
 
 Início da conversa:
 ---
@@ -27,32 +36,39 @@ ${context}
     `.trim();
 
     const result = await ai.generate({
-      model: googleAI.model('gemini-2.5-flash'),
+      model: googleAI.model('gemini-1.5-flash-001'),
       prompt: aiPrompt,
-      config: { temperature: 0.1, maxOutputTokens: 15 },
+      config: { temperature: 0.1, maxOutputTokens: 10 },
     });
 
-    const rawTitle = result.text ?? '';
-    // Remove aspas do início/fim e pontuação final
-    const title = rawTitle.trim().replace(/^["']|["']$/g, '').replace(/[.!?]+$/, '');
+    let rawTitle = result.text ?? '';
+    let title = rawTitle
+      .trim()
+      .replace(/^["']|["']$/g, '') // remove aspas
+      .replace(/[.!?]+$/, ''); // remove pontuação final
 
-    // Valida se o título gerado é útil
-    if (title && title.split(/\s+/).length <= 5) {
+    // Garante no máximo 3 palavras
+    const words = title.split(/\s+/).slice(0, 3);
+    title = words.join(' ');
+
+    if (title) {
       return title;
     }
   } catch (error) {
-    console.error("Erro ao gerar título com IA:", error);
-    // A execução continua para o fallback
+    console.error('Erro ao gerar título com IA:', error);
   }
 
-  // Fallback: Pega as 3 primeiras palavras úteis se a IA falhar ou retornar algo inválido
-  const usefulWords = context.replace(/\b(user|assistant|model|user:|assistant:|model:)\b/gi, '').trim().split(/\s+/).filter(word => word.length > 2).slice(0, 3);
+  // Fallback: até 3 palavras das primeiras mensagens do usuário
+  const userMessageContent = messages.find(m => m.role === 'user')?.content || '';
+  const usefulWords = userMessageContent
+    .trim()
+    .split(/\s+/)
+    .filter(word => word.length > 3)
+    .slice(0, 3);
 
   if (usefulWords.length > 0) {
     return usefulWords.join(' ');
   }
 
-  return 'Nova Conversa';
+  return fallbackTitle;
 }
-
-    
