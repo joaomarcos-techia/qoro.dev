@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -64,7 +63,6 @@ const navItems: Record<string, NavItem[]> = {
         { href: '/dashboard/task/lista', label: 'Minha Lista', icon: List },
         { href: '/dashboard/task/tarefas', label: 'Quadro', icon: LayoutGrid },
         { href: '/dashboard/task/calendario', label: 'Calendário', icon: Calendar },
-        { href: '/dashboard/task/relatorios', label: 'Relatórios', icon: BarChart3 },
     ],
     finance: [
         { href: '/dashboard/finance/relatorios', label: 'Relatórios', icon: BarChart3 },
@@ -116,12 +114,12 @@ function ModuleSidebar() {
                 <Link
                   href={item.href}
                   className={cn(`flex items-center px-4 py-3 my-1 rounded-xl text-sm font-medium transition-all duration-200 group`,
-                    pathname === item.href
+                    pathname.startsWith(item.href)
                       ? `${bgColor} text-black shadow-lg shadow-${currentModule}-primary/30`
                       : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                   )}
                 >
-                  <item.icon className={cn(`w-5 h-5 mr-3 transition-colors`, pathname === item.href ? 'text-black' : 'text-muted-foreground group-hover:text-foreground')} />
+                  <item.icon className={cn(`w-5 h-5 mr-3 transition-colors`, pathname.startsWith(item.href) ? 'text-black' : 'text-muted-foreground group-hover:text-foreground')} />
                   {item.label}
                 </Link>
               </li>
