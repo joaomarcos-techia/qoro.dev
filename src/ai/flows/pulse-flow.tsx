@@ -136,9 +136,9 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         const doc = await conversationRef.get();
         finalTitle = doc.data()?.title || finalTitle;
 
-        const userMessages = finalMessages.filter(m => m.role === 'user');
-        if (finalTitle === 'Nova Conversa' && userMessages.length >= 2) {
-          const contextForTitle = userMessages.slice(0, 2).map(m => m.content).join(' ');
+        // Se o título ainda for o padrão e esta for a segunda interação do usuário, gere um título contextual.
+        if (finalTitle === 'Nova Conversa' && messages.length >= 2) {
+          const contextForTitle = messages.slice(0, 2).map(m => `${m.role}: ${m.content}`).join('\n');
           finalTitle = await generateConversationTitle(contextForTitle);
         }
 
@@ -149,10 +149,7 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         });
       } else {
         // --- Cria uma nova conversa ---
-        if (messages.length > 0) {
-            finalTitle = await generateConversationTitle(messages[0].content);
-        }
-        
+        // Na primeira interação, o título é sempre "Nova Conversa" para evitar chamadas desnecessárias à IA.
         const newConversationData = {
           userId,
           title: finalTitle, 

@@ -1,3 +1,4 @@
+
 'use server';
 
 import { ai } from '../genkit';
@@ -24,20 +25,22 @@ export async function generateConversationTitle(context: string): Promise<string
     return greetings.some(greeting => text.startsWith(greeting) && text.length < 20);
   };
 
-  if (isGreeting(trimmedContext)) {
+  // Extrai a primeira mensagem do usuário para checar se é apenas uma saudação
+  const firstUserMessage = trimmedContext.split('\n')[0].replace(/^user:\s*/, '').trim();
+
+  if (isGreeting(firstUserMessage)) {
     return 'Nova Conversa';
   }
 
   try {
     const aiPrompt = `
-Crie um título curto e preciso de no máximo 3 palavras.
-Ignore saudações como oi, olá, bom dia, etc.
+Crie um título curto e preciso de no máximo 3 palavras para a conversa abaixo.
 Foque no tema central ou objetivo da conversa.
 Retorne apenas o título, sem pontuação ou aspas.
 
 Início da conversa:
 ---
-"${context}"
+${context}
 ---
     `.trim();
 
@@ -61,7 +64,7 @@ Início da conversa:
   }
 
   // Fallback: Pega as 3 primeiras palavras úteis se a IA falhar ou retornar algo inválido
-  const usefulWords = trimmedContext.split(/\s+/).filter(word => word.length > 1).slice(0, 3);
+  const usefulWords = trimmedContext.replace(/\b(user|assistant|model|user:|assistant:|model:)\b/gi, '').trim().split(/\s+/).filter(word => word.length > 2).slice(0, 3);
 
   if (usefulWords.length > 0) {
     return usefulWords.join(' ');
