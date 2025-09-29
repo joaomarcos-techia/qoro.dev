@@ -3,51 +3,69 @@
 import { ai } from '../genkit';
 import { googleAI } from '@genkit-ai/googleai';
 
+/**
+ * Gera um título curto e preciso para uma conversa com base em seu conteúdo inicial.
+ * @param context O conteúdo inicial da conversa.
+ * @returns Uma string com o título gerado, com no máximo 3 palavras.
+ */
 export async function generateConversationTitle(context: string): Promise<string> {
-  if (!context || context.trim().length === 0) return 'Nova Conversa';
+  if (!context || context.trim() === '') {
+    return 'Nova Conversa';
+  }
 
-  const trimmed = context.trim().toLowerCase();
+  const trimmedContext = context.trim().toLowerCase();
 
   const greetings = [
-    'oi', 'ola', 'olá', 'bom dia', 'boa tarde',
+    'oi', 'ola', 'olá', 'bom dia', 'boa tarde', 
     'boa noite', 'tudo bem', 'e ai', 'eae'
   ];
 
-  const isGreeting = (txt: string) =>
-    greetings.some(g => txt.startsWith(g)) && txt.length < 20;
+  const isGreeting = (text: string): boolean => {
+    return greetings.some(greeting => text.startsWith(greeting) && text.length < 20);
+  };
 
-  if (isGreeting(trimmed)) return 'Nova Conversa';
+  if (isGreeting(trimmedContext)) {
+    return 'Nova Conversa';
+  }
 
   try {
-    const result = await ai.generate({
-      model: googleAI.model('gemini-2.5-flash'),
-      prompt: `
+    const aiPrompt = `
 Crie um título curto e preciso de no máximo 3 palavras.
-Ignore saudações (oi, olá, bom dia, etc).
-Retorne apenas o título, sem aspas ou pontuação.
+Ignore saudações como oi, olá, bom dia, etc.
+Foque no tema central ou objetivo da conversa.
+Retorne apenas o título, sem pontuação ou aspas.
 
 Início da conversa:
 ---
 "${context}"
 ---
-`.trim(),
+    `.trim();
+
+    const result = await ai.generate({
+      model: googleAI.model('gemini-1.5-flash-001'),
+      prompt: aiPrompt,
       config: { temperature: 0.1, maxOutputTokens: 10 },
     });
 
     const rawTitle = result.text ?? '';
-    const title = rawTitle
-      .trim()
-      .replace(/^["'`]+|["'`]+$/g, '') // remove aspas
-      .replace(/[.!?]+$/, ''); // remove pontuação final
+    // Remove aspas do início/fim e pontuação final
+    const title = rawTitle.trim().replace(/^["']|["']$/g, '').replace(/[.!?]+$/, '');
 
+    // Valida se o título gerado é útil
     if (title && title.split(/\s+/).length <= 3 && !isGreeting(title.toLowerCase())) {
       return title;
     }
-  } catch (err) {
-    console.error('Erro ao gerar título com IA:', err);
+  } catch (error) {
+    console.error("Erro ao gerar título com IA:", error);
+    // A execução continua para o fallback
   }
 
-  // Fallback: até 3 palavras úteis
-  const words = trimmed.split(/\s+/).filter(w => w.length > 1).slice(0, 3);
-  return words.length ? words.join(' ') : 'Nova Conversa';
+  // Fallback: Pega as 3 primeiras palavras úteis se a IA falhar ou retornar algo inválido
+  const usefulWords = trimmedContext.split(/\s+/).filter(word => word.length > 1).slice(0, 3);
+
+  if (usefulWords.length > 0) {
+    return usefulWords.join(' ');
+  }
+
+  return 'Nova Conversa';
 }
