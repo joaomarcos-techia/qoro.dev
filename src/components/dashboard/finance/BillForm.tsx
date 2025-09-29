@@ -122,7 +122,7 @@ export function BillForm({ onAction, bill }: BillFormProps) {
     setIsLoading(true);
     setError(null);
     try {
-        const submissionData = { ...data, dueDate: data.dueDate.toISOString(), status: isEditMode ? data.status : 'pending' };
+        const submissionData = { ...data, dueDate: data.dueDate.toISOString() };
         if (isEditMode) {
             await updateBill({ ...submissionData, id: bill.id, actor: currentUser.uid });
         } else {
@@ -192,16 +192,28 @@ export function BillForm({ onAction, bill }: BillFormProps) {
            {errors.dueDate && <p className="text-destructive text-sm">{errors.dueDate.message}</p>}
         </div>
         
-        {/* New Fields */}
         <div className="space-y-2">
-            <Label>Conta Financeira (para pagamento)*</Label>
+          <Label>Status*</Label>
+          <Controller name="status" control={control} render={({ field }) => (
+            <Select onValueChange={field.onChange} value={field.value}>
+              <SelectTrigger><SelectValue/></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pendente</SelectItem>
+                <SelectItem value="paid">Paga</SelectItem>
+                <SelectItem value="overdue">Vencida</SelectItem>
+              </SelectContent>
+            </Select>
+          )}/>
+        </div>
+
+        <div className="space-y-2">
+            <Label>Conta Financeira (para pagamento)</Label>
              <Controller name="accountId" control={control} render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value || ''}>
                     <SelectTrigger><SelectValue placeholder="Selecione a conta" /></SelectTrigger>
                     <SelectContent>{accounts.map(account => (<SelectItem key={account.id} value={account.id}>{account.name}</SelectItem>))}</SelectContent>
                 </Select>
             )}/>
-             {errors.accountId && <p className="text-destructive text-sm">{errors.accountId.message}</p>}
         </div>
          <div className="space-y-2">
             <Label htmlFor="category">Categoria</Label>

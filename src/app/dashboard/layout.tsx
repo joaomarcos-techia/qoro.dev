@@ -108,21 +108,23 @@ function ModuleSidebar() {
         </div>
         <nav className="flex-grow p-4 overflow-y-auto">
           <ul>
-            {moduleItems.map((item) => (
+            {moduleItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
               <li key={item.href}>
                 <Link
                   href={item.href}
                   className={cn(`flex items-center px-4 py-3 my-1 rounded-xl text-sm font-medium transition-all duration-200 group`,
-                    pathname.startsWith(item.href)
+                    isActive
                       ? `${bgColor} text-black shadow-lg shadow-${currentModule}-primary/30`
                       : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                   )}
                 >
-                  <item.icon className={cn(`w-5 h-5 mr-3 transition-colors`, pathname.startsWith(item.href) ? 'text-black' : 'text-muted-foreground group-hover:text-foreground')} />
+                  <item.icon className={cn(`w-5 h-5 mr-3 transition-colors`, isActive ? 'text-black' : 'text-muted-foreground group-hover:text-foreground')} />
                   {item.label}
                 </Link>
               </li>
-            ))}
+            )})}
           </ul>
         </nav>
       </aside>
