@@ -19,7 +19,6 @@ import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { getUserAccessInfo } from '@/ai/flows/user-management';
 import { getCrmDashboardMetrics } from '@/ai/flows/crm-management';
-import { getTaskDashboardMetrics } from '@/ai/flows/task-management';
 import { getFinanceDashboardMetrics } from '@/ai/flows/finance-management';
 import { ErrorBoundary } from 'react-error-boundary';
 import { UserAccessInfo, CustomerProfile } from '@/ai/schemas';
@@ -175,15 +174,14 @@ function DashboardContent() {
         setError(null);
 
         try {
-            const [crm, tasks, finance] = await Promise.all([
+            const [crm, finance] = await Promise.all([
                 getCrmDashboardMetrics({ actor: currentUser.uid }),
-                getTaskDashboardMetrics({ actor: currentUser.uid }),
                 getFinanceDashboardMetrics({ actor: currentUser.uid }),
             ]);
             setMetrics({
                 totalCustomers: crm.totalCustomers,
                 activeLeads: crm.activeLeads,
-                pendingTasks: tasks.pendingTasks,
+                pendingTasks: 0, // Set to 0 as the source function was removed
                 totalBalance: finance.totalBalance,
             });
         } catch (err: any) {
