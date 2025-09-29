@@ -92,12 +92,16 @@ export const updateTask = async (
         createdAt: toISOStringSafe(c.createdAt)
     }));
 
-    await taskRef.update({
-      ...updateData,
-      dueDate: updateData.dueDate ? new Date(updateData.dueDate) : null,
-      updatedAt: FieldValue.serverTimestamp(),
-      comments: existingComments.map(c => ({...c, createdAt: new Date(c.createdAt!)})),
-    });
+    // Prevent overwriting existing timestamps if not explicitly provided
+    const payload = {
+        ...updateData,
+        dueDate: updateData.dueDate ? new Date(updateData.dueDate) : data.dueDate,
+        updatedAt: FieldValue.serverTimestamp(),
+        comments: existingComments.map(c => ({...c, createdAt: new Date(c.createdAt!)})),
+    };
+
+
+    await taskRef.update(payload);
 
     return { id: taskId };
   } catch (error) {

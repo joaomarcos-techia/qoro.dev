@@ -1,7 +1,7 @@
 
 'use client';
 
-import { TaskProfile, UserProfile } from '@/ai/schemas';
+import { TaskProfile, UserProfile, Subtask } from '@/ai/schemas';
 import { TaskKanbanCard } from './TaskKanbanCard';
 import { CheckSquare } from 'lucide-react';
 
@@ -17,9 +17,10 @@ interface TaskKanbanBoardProps {
   onMoveTask: (taskId: string, newStatus: TaskProfile['status']) => void;
   onDeleteTask: (taskId: string) => void;
   onSelectTask: (task: TaskProfile) => void;
+  onUpdateSubtask: (taskId: string, subtasks: Subtask[]) => void;
 }
 
-export function TaskKanbanBoard({ columns, users, onMoveTask, onDeleteTask, onSelectTask }: TaskKanbanBoardProps) {
+export function TaskKanbanBoard({ columns, users, onMoveTask, onDeleteTask, onSelectTask, onUpdateSubtask }: TaskKanbanBoardProps) {
 
   const totalTasks = columns.reduce((acc, col) => acc + col.tasks.length, 0);
   const stageIds = columns.map(c => c.id);
@@ -56,6 +57,7 @@ export function TaskKanbanBoard({ columns, users, onMoveTask, onDeleteTask, onSe
                         onMove={onMoveTask}
                         onDelete={onDeleteTask}
                         onSelect={onSelectTask}
+                        onUpdateSubtask={onUpdateSubtask}
                     />
                 )
             })}

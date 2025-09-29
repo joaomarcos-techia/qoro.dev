@@ -6,9 +6,9 @@ import { Loader2, ServerCrash, CheckCircle, AlertCircle, PlusCircle } from 'luci
 import { TaskKanbanBoard } from '@/components/dashboard/task/TaskKanbanBoard';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { updateTaskStatus, deleteTask } from '@/ai/flows/task-management';
+import { updateTaskStatus, deleteTask, updateTask } from '@/ai/flows/task-management';
 import { listUsers } from '@/ai/flows/user-management';
-import { TaskProfile, UserProfile } from '@/ai/schemas';
+import { TaskProfile, UserProfile, Subtask } from '@/ai/schemas';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TaskForm } from '@/components/dashboard/task/TaskForm';
 import { Button } from '@/components/ui/button';
@@ -92,7 +92,6 @@ export default function ProgressoPage() {
         try {
             await updateTaskStatus({ taskId, status: newStatus, actor: currentUser.uid });
             // The state is already updated optimistically, so we don't need a full refresh.
-            // We could optionally re-fetch just the updated task to get server timestamp, etc.
             if (newStatus === 'done') {
                 showTemporaryFeedback("Tarefa concluída!");
             }
@@ -103,6 +102,35 @@ export default function ProgressoPage() {
             showTemporaryFeedback("Erro ao mover a tarefa.", "error");
         }
     });
+  };
+  
+  const handleUpdateSubtask = (taskId: string, subtasks: Subtask[]) => {
+      startTransition(async () => {
+          if (!currentUser) return;
+
+          const taskToUpdate = tasks.find(t => t.id === taskId);
+          if (!taskToUpdate) return;
+          
+          const originalTask = { ...taskToUpdate };
+          
+          // Optimistic UI update
+          updateTaskInState({ ...taskToUpdate, subtasks });
+
+          try {
+              await updateTask({ 
+                  ...taskToUpdate, 
+                  subtasks, 
+                  id: taskId, 
+                  actor: currentUser.uid, 
+                  dueDate: taskToUpdate.dueDate ? new Date(taskToUpdate.dueDate).toISOString() : null,
+                  comments: taskToUpdate.comments || []
+              });
+          } catch(err) {
+              console.error("Failed to update subtask", err);
+              updateTaskInState(originalTask); // Revert
+              showTemporaryFeedback("Erro ao atualizar o checklist.", "error");
+          }
+      });
   };
 
   const handleDeleteTask = (taskId: string) => {
@@ -156,7 +184,14 @@ export default function ProgressoPage() {
       );
     }
 
-    return <TaskKanbanBoard columns={columns} users={users} onMoveTask={handleMoveTask} onDeleteTask={handleDeleteTask} onSelectTask={handleSelectTask} />;
+    return <TaskKanbanBoard 
+        columns={columns} 
+        users={users} 
+        onMoveTask={handleMoveTask} 
+        onDeleteTask={handleDeleteTask} 
+        onSelectTask={handleSelectTask}
+        onUpdateSubtask={handleUpdateSubtask}
+    />;
   };
 
   return (

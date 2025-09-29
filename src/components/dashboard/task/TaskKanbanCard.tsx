@@ -1,6 +1,7 @@
+
 'use client';
 
-import { TaskProfile } from '@/ai/schemas';
+import { TaskProfile, Subtask } from '@/ai/schemas';
 import { Button } from '@/components/ui/button';
 import {
     AlertDialog,
@@ -15,8 +16,10 @@ import {
 } from "@/components/ui/alert-dialog"
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar, Flag, User, ChevronLeft, ChevronRight, Trash2, Eye, CheckSquare, MessageSquare } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { Calendar, Flag, User, ChevronLeft, ChevronRight, Trash2, Eye, MessageSquare } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
+
 
 interface TaskKanbanCardProps {
   task: TaskProfile;
@@ -24,6 +27,7 @@ interface TaskKanbanCardProps {
   onMove: (taskId: string, newStatus: TaskProfile['status']) => void;
   onDelete: (taskId: string) => void;
   onSelect: (task: TaskProfile) => void;
+  onUpdateSubtask: (taskId: string, subtasks: Subtask[]) => void;
 }
 
 const priorityMap: Record<TaskProfile['priority'], { text: string; color: string }> = {
@@ -33,7 +37,7 @@ const priorityMap: Record<TaskProfile['priority'], { text: string; color: string
     urgent: { text: 'Urgente', color: 'bg-red-500/20 text-red-300 border-red-500/30' },
 };
 
-export function TaskKanbanCard({ task, stageIds, onMove, onDelete, onSelect }: TaskKanbanCardProps) {
+export function TaskKanbanCard({ task, stageIds, onMove, onDelete, onSelect, onUpdateSubtask }: TaskKanbanCardProps) {
   
   const priorityInfo = priorityMap[task.priority] || priorityMap.medium;
   const currentStageIndex = stageIds.findIndex(id => id === task.status);
@@ -44,27 +48,45 @@ export function TaskKanbanCard({ task, stageIds, onMove, onDelete, onSelect }: T
         onMove(task.id, stageIds[newIndex] as TaskProfile['status']);
     }
   };
+  
+  const handleSubtaskChange = (subtaskId: string, isCompleted: boolean) => {
+    const updatedSubtasks = task.subtasks?.map(st => 
+        st.id === subtaskId ? { ...st, isCompleted } : st
+    );
+    if(updatedSubtasks) {
+        onUpdateSubtask(task.id, updatedSubtasks);
+    }
+  };
 
-  const completedSubtasks = task.subtasks?.filter(st => st.isCompleted).length || 0;
-  const totalSubtasks = task.subtasks?.length || 0;
-  const subtaskProgress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0;
   const hasComments = (task.comments?.length || 0) > 0;
 
   return (
     <div className="bg-card rounded-xl p-4 transition-shadow duration-300 border border-border hover:border-task-primary/50 flex flex-col">
       <h3 className="font-bold text-foreground text-base mb-3 break-words cursor-pointer hover:underline" onClick={() => onSelect(task)}>{task.title}</h3>
       
-      <div className="space-y-2 text-sm text-muted-foreground flex-grow">
+      <div className="space-y-3 text-sm text-muted-foreground flex-grow">
         {task.description && <p className="text-xs text-muted-foreground/80 mb-2">{task.description}</p>}
-        {totalSubtasks > 0 && (
-          <div className="space-y-1">
-            <div className="flex justify-between items-center text-xs">
-                <span className="font-medium text-muted-foreground/80">Checklist</span>
-                <span>{completedSubtasks}/{totalSubtasks}</span>
+        
+        {task.subtasks && task.subtasks.length > 0 && (
+            <div className="space-y-2">
+                {task.subtasks.map(subtask => (
+                    <div key={subtask.id} className="flex items-center gap-3 text-xs">
+                        <Checkbox 
+                            id={`subtask-kanban-${subtask.id}`} 
+                            checked={subtask.isCompleted} 
+                            onCheckedChange={(checked) => handleSubtaskChange(subtask.id, !!checked)}
+                        />
+                        <label 
+                            htmlFor={`subtask-kanban-${subtask.id}`}
+                            className={cn("flex-1 cursor-pointer", subtask.isCompleted && "line-through text-muted-foreground/70")}
+                        >
+                            {subtask.text}
+                        </label>
+                    </div>
+                ))}
             </div>
-            <Progress value={subtaskProgress} className="h-1.5"/>
-          </div>
         )}
+
         <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1">
             {task.dueDate && (
                 <div className="flex items-center">
