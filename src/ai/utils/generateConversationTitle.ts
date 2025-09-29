@@ -55,7 +55,7 @@ ${context}
     const title = rawTitle.trim().replace(/^["']|["']$/g, '').replace(/[.!?]+$/, '');
 
     // Valida se o título gerado é útil
-    if (title && title.split(/\s+/).length <= 3 && !isGreeting(title.toLowerCase())) {
+    if (title && title.split(/\s+/).length <= 5 && !isGreeting(title.toLowerCase())) {
       return title;
     }
   } catch (error) {
@@ -72,3 +72,5 @@ ${context}
 
   return 'Nova Conversa';
 }
+
+    
