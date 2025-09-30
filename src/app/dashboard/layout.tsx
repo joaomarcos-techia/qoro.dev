@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -109,7 +110,7 @@ function ModuleSidebar() {
         <nav className="flex-grow p-4 overflow-y-auto">
           <ul>
             {moduleItems.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = pathname.startsWith(item.href);
               return (
               <li key={item.href}>
                 <Link
