@@ -85,7 +85,7 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
     setIsBulkCreating(true);
     setError(null);
     try {
-      const transactionsToCreate: Pick<z.infer<typeof TransactionSchema>, 'description' | 'amount' | 'type' | 'date'>[] = unmatchedOfx.map(ofx => ({
+      const transactionsToCreate = unmatchedOfx.map(ofx => ({
           description: ofx.description,
           amount: Math.abs(ofx.amount),
           date: new Date(ofx.date),
