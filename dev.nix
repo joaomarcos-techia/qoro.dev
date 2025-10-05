@@ -1,7 +1,9 @@
+
 { pkgs ? import <nixpkgs> {} }:
+
 pkgs.mkShell {
-  buildInputs = [
-    pkgs.nodejs_20
-    pkgs.stripe-cli
+  buildInputs = with pkgs; [
+    nodejs_20
+    stripe-cli
   ];
 }
