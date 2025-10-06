@@ -42,7 +42,7 @@ export default function ContasAPagarPage() {
       <div>
         <div className="flex justify-between items-center mb-8">
             <div>
-                 <h1 className="text-4xl font-bold text-foreground">Contas a Pagar e Receber</h1>
+                 <h1 className="text-4xl font-bold text-foreground">Contas a pagar e receber</h1>
                 <p className="text-muted-foreground">
                   Gerencie suas pendências financeiras e mantenha o fluxo de caixa sob controle.
                 </p>
@@ -54,12 +54,12 @@ export default function ContasAPagarPage() {
                         className="bg-finance-primary text-black px-4 py-2 rounded-xl hover:bg-finance-primary/90 transition-all duration-300 border border-transparent hover:border-finance-primary/50 flex items-center justify-center font-semibold"
                     >
                     <PlusCircle className="mr-2 w-5 h-5" />
-                    Adicionar Conta
+                    Adicionar conta
                     </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[700px]">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold text-foreground">{selectedBill ? 'Editar Conta' : 'Adicionar Nova Conta'}</DialogTitle>
+                        <DialogTitle className="text-2xl font-bold text-foreground">{selectedBill ? 'Editar conta' : 'Adicionar nova conta'}</DialogTitle>
                         <DialogDescription>
                             {selectedBill ? 'Altere os dados da pendência abaixo.' : 'Preencha as informações para registrar uma nova conta a pagar ou a receber.'}
                         </DialogDescription>

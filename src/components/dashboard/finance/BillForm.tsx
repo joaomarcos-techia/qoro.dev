@@ -152,7 +152,7 @@ export function BillForm({ onAction, bill }: BillFormProps) {
           <Label>Tipo*</Label>
           <Controller name="type" control={control} render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}><SelectTrigger><SelectValue/></SelectTrigger>
-                <SelectContent><SelectItem value="payable">A Pagar</SelectItem><SelectItem value="receivable">A Receber</SelectItem></SelectContent>
+                <SelectContent><SelectItem value="payable">A pagar</SelectItem><SelectItem value="receivable">A receber</SelectItem></SelectContent>
             </Select>
           )}/>
         </div>
@@ -167,7 +167,7 @@ export function BillForm({ onAction, bill }: BillFormProps) {
                 <Popover open={isEntityPopoverOpen} onOpenChange={setIsEntityPopoverOpen}>
                     <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full justify-start font-normal">
-                            {field.value ? entities.find(e => e.id === field.value)?.name : `Selecione ${entityType === 'supplier' ? 'Fornecedor' : 'Cliente'}`}
+                            {field.value ? entities.find(e => e.id === field.value)?.name : `Selecione ${entityType === 'supplier' ? 'fornecedor' : 'cliente'}`}
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[300px] p-0">
@@ -182,7 +182,7 @@ export function BillForm({ onAction, bill }: BillFormProps) {
             )}/>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="dueDate">Data de Vencimento*</Label>
+          <Label htmlFor="dueDate">Data de vencimento*</Label>
           <Controller name="dueDate" control={control} render={({ field }) => (
             <Popover>
                 <PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}</Button></PopoverTrigger>
@@ -207,7 +207,7 @@ export function BillForm({ onAction, bill }: BillFormProps) {
         </div>
 
         <div className="space-y-2">
-            <Label>Conta Financeira (para pagamento)</Label>
+            <Label>Conta financeira (para pagamento)</Label>
              <Controller name="accountId" control={control} render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value || ''}>
                     <SelectTrigger><SelectValue placeholder="Selecione a conta" /></SelectTrigger>
@@ -220,13 +220,13 @@ export function BillForm({ onAction, bill }: BillFormProps) {
             <Input id="category" {...register('category')} placeholder="Ex: Vendas, Marketing, Software" />
         </div>
          <div className="space-y-2">
-            <Label>Método de Pagamento</Label>
+            <Label>Método de pagamento</Label>
             <Controller name="paymentMethod" control={control} render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value || 'pix'}><SelectTrigger><SelectValue/></SelectTrigger>
                 <SelectContent>
                     <SelectItem value="pix">PIX</SelectItem>
-                    <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
-                    <SelectItem value="debit_card">Cartão de Débito</SelectItem>
+                    <SelectItem value="credit_card">Cartão de crédito</SelectItem>
+                    <SelectItem value="debit_card">Cartão de débito</SelectItem>
                     <SelectItem value="bank_transfer">Transferência</SelectItem>
                     <SelectItem value="boleto">Boleto</SelectItem>
                     <SelectItem value="cash">Dinheiro</SelectItem>
@@ -245,7 +245,7 @@ export function BillForm({ onAction, bill }: BillFormProps) {
       <div className="flex justify-end pt-4">
         <Button type="submit" disabled={isLoading} className="bg-finance-primary text-black px-6 py-3 rounded-xl hover:bg-finance-primary/90 transition-all duration-300 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
           {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
-          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : 'Salvar Conta')}
+          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar alterações' : 'Salvar conta')}
         </Button>
       </div>
     </form>

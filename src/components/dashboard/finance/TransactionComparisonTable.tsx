@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import { useState, useMemo, useEffect } from 'react';
@@ -135,7 +136,7 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
         {/* Matched Transactions */}
         <div>
           <h3 className="text-xl font-bold text-green-400 mb-4 flex items-center">
-              <CheckCircle className="w-6 h-6 mr-3"/> Transações Conciliadas ({matched.length})
+              <CheckCircle className="w-6 h-6 mr-3"/> Transações conciliadas ({matched.length})
           </h3>
           <div className="bg-card p-4 rounded-2xl border border-border">
             <Table>
@@ -169,13 +170,13 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
         {/* Unmatched Transactions */}
          <div>
           <h3 className="text-xl font-bold text-yellow-400 mb-4 flex items-center">
-              <GitMerge className="w-6 h-6 mr-3"/> Transações Não Conciliadas
+              <GitMerge className="w-6 h-6 mr-3"/> Transações não conciliadas
           </h3>
           {error && (
             <div className="bg-destructive/10 border border-destructive p-4 rounded-lg text-destructive-foreground mb-4">
                 <div className="flex items-center">
                     <ServerCrash className="w-5 h-5 mr-3"/>
-                    <p className="font-bold">Falha na Sincronização</p>
+                    <p className="font-bold">Falha na sincronização</p>
                 </div>
                 <p className="text-sm mt-1">{error}</p>
             </div>
@@ -184,7 +185,7 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
               {/* Unmatched OFX */}
               <div className="bg-card p-4 rounded-2xl border border-border">
                   <div className="flex justify-between items-center mb-2">
-                    <h4 className='font-semibold text-center text-muted-foreground'>Do Extrato ({unmatchedOfx.length})</h4>
+                    <h4 className='font-semibold text-center text-muted-foreground'>Do extrato ({unmatchedOfx.length})</h4>
                     <Button 
                         size="sm" 
                         className="bg-finance-primary text-black rounded-lg hover:bg-finance-primary/90" 
@@ -192,7 +193,7 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
                         disabled={isBulkCreating || unmatchedOfx.length === 0}
                     >
                         {isBulkCreating ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <PlusCircle className="w-4 h-4 mr-2" />}
-                        {isBulkCreating ? 'Criando...' : 'Criar Transações Pendentes'}
+                        {isBulkCreating ? 'Criando...' : 'Criar transações pendentes'}
                     </Button>
                   </div>
                    <Table>
@@ -210,7 +211,7 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
               </div>
               {/* Unmatched System */}
               <div className="bg-card p-4 rounded-2xl border border-border">
-                  <h4 className='font-semibold mb-2 text-center text-muted-foreground'>Do Sistema ({unmatchedSystem.length})</h4>
+                  <h4 className='font-semibold mb-2 text-center text-muted-foreground'>Do sistema ({unmatchedSystem.length})</h4>
                    <Table>
                       <TableHeader><TableRow><TableHead>Descrição</TableHead><TableHead className="text-right">Valor</TableHead></TableRow></TableHeader>
                        <TableBody>

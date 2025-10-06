@@ -28,7 +28,7 @@ export default function ContasPage() {
       <div>
         <div className="flex justify-between items-center mb-8">
             <div>
-                 <h1 className="text-4xl font-bold text-foreground">Contas Financeiras</h1>
+                 <h1 className="text-4xl font-bold text-foreground">Contas financeiras</h1>
                 <p className="text-muted-foreground">
                 Gerencie suas contas bancárias, caixas e cartões de crédito.
                 </p>
@@ -40,12 +40,12 @@ export default function ContasPage() {
                         className="bg-finance-primary text-black px-4 py-2 rounded-xl hover:bg-finance-primary/90 transition-all duration-300 border border-transparent hover:border-finance-primary/50 flex items-center justify-center font-semibold"
                     >
                     <PlusCircle className="mr-2 w-5 h-5" />
-                    Adicionar Conta
+                    Adicionar conta
                     </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold text-foreground">Adicionar Nova Conta</DialogTitle>
+                        <DialogTitle className="text-2xl font-bold text-foreground">Adicionar nova conta</DialogTitle>
                         <DialogDescription>
                             Preencha as informações para cadastrar uma nova conta financeira.
                         </DialogDescription>

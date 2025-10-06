@@ -85,13 +85,13 @@ export function AccountForm({ onAccountAction, account }: AccountFormProps) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="name">Nome da Conta*</Label>
+          <Label htmlFor="name">Nome da conta*</Label>
           <Input id="name" {...register('name')} placeholder="Ex: Conta Principal, Caixa da Loja" />
           {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
         </div>
 
         <div className="space-y-2">
-          <Label>Tipo de Conta*</Label>
+          <Label>Tipo de conta*</Label>
           <Controller
             name="type"
             control={control}
@@ -101,9 +101,9 @@ export function AccountForm({ onAccountAction, account }: AccountFormProps) {
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="checking">Conta Corrente</SelectItem>
+                  <SelectItem value="checking">Conta corrente</SelectItem>
                   <SelectItem value="savings">Poupança</SelectItem>
-                  <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
+                  <SelectItem value="credit_card">Cartão de crédito</SelectItem>
                   <SelectItem value="cash">Caixa</SelectItem>
                 </SelectContent>
               </Select>
@@ -118,7 +118,7 @@ export function AccountForm({ onAccountAction, account }: AccountFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="balance">Saldo Inicial (R$)*</Label>
+          <Label htmlFor="balance">Saldo inicial (R$)*</Label>
           <Input id="balance" type="text" inputMode="decimal" {...register('balance')} disabled={isEditMode} placeholder="0.00"/>
            {isEditMode && <p className="text-xs text-muted-foreground">O saldo só pode ser alterado através de transações.</p>}
           {errors.balance && <p className="text-destructive text-sm">{errors.balance.message}</p>}
@@ -133,7 +133,7 @@ export function AccountForm({ onAccountAction, account }: AccountFormProps) {
       <div className="flex justify-end pt-4">
         <Button type="submit" disabled={isLoading} className="bg-finance-primary text-black px-6 py-3 rounded-xl hover:bg-finance-primary/90 transition-all duration-300 border border-transparent hover:border-finance-primary/50 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
           {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
-          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : 'Salvar Conta')}
+          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar alterações' : 'Salvar conta')}
         </Button>
       </div>
     </form>

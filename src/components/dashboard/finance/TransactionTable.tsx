@@ -182,13 +182,13 @@ export function TransactionTable({ refreshKey, onAction }: TransactionTableProps
                     <DropdownMenuLabel>Ações</DropdownMenuLabel>
                      <DropdownMenuItem onClick={() => handleEdit(transaction)} className="rounded-xl">
                         <Edit className="mr-2 h-4 w-4" />
-                        Editar Transação
+                        Editar transação
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <AlertDialogTrigger asChild>
                         <DropdownMenuItem className="text-red-500 focus:text-red-400 focus:bg-destructive/20 rounded-xl">
                             <Trash2 className="mr-2 h-4 w-4" />
-                            Excluir Transação
+                            Excluir transação
                         </DropdownMenuItem>
                     </AlertDialogTrigger>
                     </DropdownMenuContent>
@@ -281,7 +281,7 @@ export function TransactionTable({ refreshKey, onAction }: TransactionTableProps
      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[700px]">
             <DialogHeader>
-                <DialogTitle className="text-2xl font-bold text-foreground">Editar Transação</DialogTitle>
+                <DialogTitle className="text-2xl font-bold text-foreground">Editar transação</DialogTitle>
                 <DialogDescription>
                     Altere as informações da movimentação financeira.
                 </DialogDescription>
@@ -291,7 +291,7 @@ export function TransactionTable({ refreshKey, onAction }: TransactionTableProps
       </Dialog>
     <div>
        <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-foreground">Suas Transações</h2>
+            <h2 className="text-xl font-bold text-foreground">Suas transações</h2>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input

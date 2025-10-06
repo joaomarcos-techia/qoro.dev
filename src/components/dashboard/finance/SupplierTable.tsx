@@ -165,12 +165,12 @@ export function SupplierTable({ onEdit, onRefresh }: SupplierTableProps) {
                 <DropdownMenuLabel>Ações</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => onEdit(supplier)} className="rounded-xl">
                     <Edit className="mr-2 h-4 w-4" />
-                    Editar Fornecedor
+                    Editar fornecedor
                 </DropdownMenuItem>
                  <AlertDialogTrigger asChild>
                     <DropdownMenuItem className="text-red-500 focus:text-red-400 focus:bg-destructive/20 rounded-xl">
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Excluir Fornecedor
+                        Excluir fornecedor
                     </DropdownMenuItem>
                 </AlertDialogTrigger>
               </DropdownMenuContent>
@@ -237,7 +237,7 @@ export function SupplierTable({ onEdit, onRefresh }: SupplierTableProps) {
   return (
     <div>
        <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-foreground">Seus Fornecedores</h2>
+            <h2 className="text-xl font-bold text-foreground">Seus fornecedores</h2>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input

@@ -198,7 +198,7 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="date">Data da Transação</Label>
+          <Label htmlFor="date">Data da transação</Label>
           <Controller name="date" control={control} render={({ field }) => (
             <Popover>
                 <PopoverTrigger asChild>
@@ -214,7 +214,7 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
         </div>
         
         <div className="space-y-2">
-          <Label>Cliente (Opcional)</Label>
+          <Label>Cliente (opcional)</Label>
             <Controller
                 name="customerId"
                 control={control}
@@ -255,14 +255,14 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
         </div>
 
         <div className="space-y-2">
-          <Label>Método de Pagamento</Label>
+          <Label>Método de pagamento</Label>
           <Controller name="paymentMethod" control={control} render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value || 'pix'}>
                 <SelectTrigger><SelectValue/></SelectTrigger>
                 <SelectContent>
                     <SelectItem value="pix">PIX</SelectItem>
-                    <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
-                    <SelectItem value="debit_card">Cartão de Débito</SelectItem>
+                    <SelectItem value="credit_card">Cartão de crédito</SelectItem>
+                    <SelectItem value="debit_card">Cartão de débito</SelectItem>
                     <SelectItem value="bank_transfer">Transferência</SelectItem>
                     <SelectItem value="boleto">Boleto</SelectItem>
                     <SelectItem value="cash">Dinheiro</SelectItem>
@@ -294,7 +294,7 @@ export function TransactionForm({ onAction, transaction }: TransactionFormProps)
       <div className="flex justify-end pt-4">
         <Button type="submit" disabled={isLoading} className="bg-finance-primary text-black px-6 py-3 rounded-xl hover:bg-finance-primary/90 transition-all duration-300 border border-transparent hover:border-finance-primary/50 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
           {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
-          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : 'Salvar Transação')}
+          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar alterações' : 'Salvar transação')}
         </Button>
       </div>
     </form>

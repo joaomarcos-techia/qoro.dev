@@ -121,7 +121,7 @@ export const updateBill = async (input: z.infer<typeof UpdateBillSchema>, actorU
             amount: updateData.amount,
             description: `Pag/Rec: ${updateData.description}`,
             date: new Date(),
-            category: updateData.category || (updateData.type === 'payable' ? 'Pagamento de Contas' : 'Recebimento de Contas'),
+            category: updateData.category || (updateData.type === 'payable' ? 'Pagamento de contas' : 'Recebimento de contas'),
             status: 'paid',
             paymentMethod: updateData.paymentMethod || 'bank_transfer',
             customerId: updateData.entityType === 'customer' ? updateData.entityId : undefined,

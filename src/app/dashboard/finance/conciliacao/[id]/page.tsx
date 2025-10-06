@@ -107,7 +107,7 @@ export default function ConciliacaoDetailPage() {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] bg-destructive/10 p-8 rounded-xl border border-destructive">
                 <ServerCrash className="w-16 h-16 text-destructive mb-4"/>
-                <h3 className="text-xl font-bold text-destructive-foreground">Ocorreu um Erro</h3>
+                <h3 className="text-xl font-bold text-destructive-foreground">Ocorreu um erro</h3>
                 <p className="text-muted-foreground mt-2">{error}</p>
             </div>
         )
@@ -130,9 +130,9 @@ export default function ConciliacaoDetailPage() {
         <div>
           <Button variant="outline" onClick={() => router.push('/dashboard/finance/conciliacao')} className="mb-4 rounded-xl">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar para o Histórico
+              Voltar para o histórico
           </Button>
-          <h1 className="text-4xl font-bold text-foreground">Detalhes da Conciliação</h1>
+          <h1 className="text-4xl font-bold text-foreground">Detalhes da conciliação</h1>
           <p className="text-muted-foreground">
             {reconciliation ? `Comparando extrato '${reconciliation.fileName}' de ${format(new Date(reconciliation.createdAt), 'dd/MM/yyyy', { locale: ptBR })}` : 'Carregando...'}
           </p>

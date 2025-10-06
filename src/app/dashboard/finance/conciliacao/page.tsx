@@ -155,7 +155,7 @@ export default function ConciliacaoPage() {
       return (
         <div className="flex flex-col items-center justify-center min-h-[400px] bg-destructive/10 p-8 rounded-xl border border-destructive">
           <ServerCrash className="w-16 h-16 text-destructive mb-4" />
-          <h3 className="text-xl font-bold text-destructive-foreground">Ocorreu um Erro</h3>
+          <h3 className="text-xl font-bold text-destructive-foreground">Ocorreu um erro</h3>
           <p className="text-muted-foreground mt-2">{error}</p>
         </div>
       );
@@ -178,8 +178,8 @@ export default function ConciliacaoPage() {
             <TableHeader>
               <TableRow className="hover:bg-transparent rounded-lg">
                 <TableHead>Arquivo</TableHead>
-                <TableHead>Conta Bancária</TableHead>
-                <TableHead>Data de Envio</TableHead>
+                <TableHead>Conta bancária</TableHead>
+                <TableHead>Data de envio</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -250,7 +250,7 @@ export default function ConciliacaoPage() {
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent className="rounded-xl">
             <DialogHeader>
-                <DialogTitle>Renomear Arquivo</DialogTitle>
+                <DialogTitle>Renomear arquivo</DialogTitle>
                 <DialogDescription>
                     Altere o nome de identificação para esta conciliação.
                 </DialogDescription>
@@ -264,14 +264,14 @@ export default function ConciliacaoPage() {
       </Dialog>
       <div className="flex justify-between items-start mb-8 gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-foreground">Conciliação Bancária</h1>
+          <h1 className="text-4xl font-bold text-foreground">Conciliação bancária</h1>
           <p className="text-muted-foreground">
             Compare suas transações com o extrato bancário para garantir que tudo esteja correto.
           </p>
         </div>
         <div className="flex items-end gap-4 flex-shrink-0">
             <div className='space-y-2'>
-                <Label htmlFor="account-select">Conta para Conciliação</Label>
+                <Label htmlFor="account-select">Conta para conciliação</Label>
                 <Select value={selectedAccountId} onValueChange={setSelectedAccountId} disabled={accounts.length === 0}>
                     <SelectTrigger id="account-select" className="w-[250px] rounded-xl">
                         <SelectValue placeholder="Selecione uma conta" />
@@ -301,7 +301,7 @@ export default function ConciliacaoPage() {
             ) : (
                 <Upload className="mr-2 w-5 h-5" />
             )}
-            {isUploading ? 'Enviando...' : 'Importar Extrato (OFX)'}
+            {isUploading ? 'Enviando...' : 'Importar extrato (OFX)'}
             </Button>
         </div>
       </div>

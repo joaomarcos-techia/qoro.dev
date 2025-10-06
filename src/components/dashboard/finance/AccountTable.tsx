@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -64,9 +65,9 @@ const formatCurrency = (value: number) => {
 };
 
 const accountTypeMap = {
-    checking: 'Conta Corrente',
+    checking: 'Conta corrente',
     savings: 'Poupança',
-    credit_card: 'Cartão de Crédito',
+    credit_card: 'Cartão de crédito',
     cash: 'Caixa'
 };
 
@@ -112,7 +113,7 @@ export function AccountTable() {
       accessorKey: 'name',
       header: ({ column }) => (
           <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-              Nome da Conta <ArrowUpDown className="ml-2 h-4 w-4" />
+              Nome da conta <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
       ),
       cell: ({ row }) => <div className="font-medium text-foreground">{row.getValue('name')}</div>,
@@ -163,13 +164,13 @@ export function AccountTable() {
                 <DropdownMenuLabel>Ações</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => handleEdit(account)} className="rounded-xl">
                     <Edit className="mr-2 h-4 w-4" />
-                    Editar Conta
+                    Editar conta
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <AlertDialogTrigger asChild>
                     <DropdownMenuItem className="text-red-500 focus:text-red-400 focus:bg-destructive/20 rounded-xl">
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Excluir Conta
+                        Excluir conta
                     </DropdownMenuItem>
                 </AlertDialogTrigger>
               </DropdownMenuContent>
@@ -262,7 +263,7 @@ export function AccountTable() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-                <DialogTitle className="text-2xl font-bold text-foreground">Editar Conta</DialogTitle>
+                <DialogTitle className="text-2xl font-bold text-foreground">Editar conta</DialogTitle>
                 <DialogDescription>
                     Altere as informações da sua conta financeira. O saldo não pode ser editado diretamente.
                 </DialogDescription>
@@ -272,7 +273,7 @@ export function AccountTable() {
       </Dialog>
     <div>
        <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-foreground">Suas Contas</h2>
+            <h2 className="text-xl font-bold text-foreground">Suas contas</h2>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
