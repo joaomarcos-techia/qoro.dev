@@ -74,12 +74,12 @@ export default function ClientesPage() {
           <DialogTrigger asChild>
             <Button className="bg-crm-primary text-black px-4 py-2 rounded-xl hover:bg-crm-primary/90 transition-all duration-300 border border-transparent hover:border-crm-primary/50 flex items-center justify-center font-semibold">
               <PlusCircle className="mr-2 w-5 h-5" />
-              Adicionar Cliente
+              Adicionar cliente
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[750px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-foreground">Adicionar Novo Cliente</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-foreground">Adicionar novo cliente</DialogTitle>
               <DialogDescription>
                 Preencha as informações abaixo para cadastrar um novo cliente no sistema.
               </DialogDescription>

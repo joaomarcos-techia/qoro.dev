@@ -99,7 +99,7 @@ export function ProductForm({ onProductAction, product }: ProductFormProps) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="name">Nome do Produto*</Label>
+          <Label htmlFor="name">Nome do produto*</Label>
           <Input id="name" {...register('name')} placeholder={"Ex: Assinatura Mensal Pro"} />
           {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
         </div>
@@ -109,7 +109,7 @@ export function ProductForm({ onProductAction, product }: ProductFormProps) {
         </div>
        
         <div className="space-y-2">
-          <Label htmlFor="price">Preço de Venda (R$)*</Label>
+          <Label htmlFor="price">Preço de venda (R$)*</Label>
           <Input 
             id="price" 
             type="text" 
@@ -136,7 +136,7 @@ export function ProductForm({ onProductAction, product }: ProductFormProps) {
           <Input id="category" {...register('category')} placeholder="Ex: Software, Assinatura" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="sku">SKU (Código)</Label>
+          <Label htmlFor="sku">SKU (código)</Label>
           <Input id="sku" {...register('sku')} placeholder="Ex: PROD-001" />
         </div>
       </div>
@@ -149,11 +149,9 @@ export function ProductForm({ onProductAction, product }: ProductFormProps) {
       <div className="flex justify-end pt-4">
         <Button type="submit" disabled={isLoading} className="bg-crm-primary text-black px-6 py-3 rounded-xl hover:bg-crm-primary/90 transition-all duration-300 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
           {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
-          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : `Salvar Produto`)}
+          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar alterações' : `Salvar produto`)}
         </Button>
       </div>
     </form>
   );
 }
-
-    

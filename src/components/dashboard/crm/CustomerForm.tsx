@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -149,10 +148,10 @@ export function CustomerForm({ onCustomerAction, customer, customerCount }: Cust
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 py-4">
       {/* Informações Pessoais */}
       <div>
-        <h3 className="text-lg font-semibold text-foreground mb-4 border-b border-border pb-2">Informações Pessoais</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-4 border-b border-border pb-2">Informações pessoais</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-            <Label htmlFor="name">Nome Completo*</Label>
+            <Label htmlFor="name">Nome completo*</Label>
             <Input id="name" {...register('name')} />
             {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
             </div>
@@ -176,7 +175,7 @@ export function CustomerForm({ onCustomerAction, customer, customerCount }: Cust
                 />
             </div>
              <div className="space-y-2">
-                <Label htmlFor="birthDate">Data de Nascimento</Label>
+                <Label htmlFor="birthDate">Data de nascimento</Label>
                 <Input id="birthDate" type="date" {...register('birthDate')} />
             </div>
              <div className="space-y-2">
@@ -198,10 +197,10 @@ export function CustomerForm({ onCustomerAction, customer, customerCount }: Cust
       
        {/* Informações da Empresa */}
       <div>
-        <h3 className="text-lg font-semibold text-foreground mb-4 border-b border-border pb-2">Informações da Empresa (Opcional)</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-4 border-b border-border pb-2">Informações da empresa (opcional)</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-                <Label htmlFor="company">Nome da Empresa</Label>
+                <Label htmlFor="company">Nome da empresa</Label>
                 <Input id="company" {...register('company')} />
             </div>
              <div className="space-y-2">
@@ -250,7 +249,7 @@ export function CustomerForm({ onCustomerAction, customer, customerCount }: Cust
       
        {/* Status e Fonte */}
        <div>
-         <h3 className="text-lg font-semibold text-foreground mb-4 border-b border-border pb-2">Status e Fonte</h3>
+         <h3 className="text-lg font-semibold text-foreground mb-4 border-b border-border pb-2">Status e fonte</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
             <Label>Status</Label>
@@ -263,12 +262,12 @@ export function CustomerForm({ onCustomerAction, customer, customerCount }: Cust
                     <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="new">Novo / Lead Recebido</SelectItem>
-                        <SelectItem value="initial_contact">Contato Inicial</SelectItem>
+                        <SelectItem value="new">Novo / lead recebido</SelectItem>
+                        <SelectItem value="initial_contact">Contato inicial</SelectItem>
                         <SelectItem value="qualification">Qualificação</SelectItem>
                         <SelectItem value="proposal">Proposta</SelectItem>
                         <SelectItem value="negotiation">Negociação</SelectItem>
-                        <SelectItem value="won">Ganho (Fechamento)</SelectItem>
+                        <SelectItem value="won">Ganho (fechamento)</SelectItem>
                         <SelectItem value="lost">Perdido</SelectItem>
                         <SelectItem value="archived">Arquivado</SelectItem>
                     </SelectContent>
@@ -298,7 +297,7 @@ export function CustomerForm({ onCustomerAction, customer, customerCount }: Cust
       <div className="flex justify-end pt-4">
         <Button type="submit" disabled={isLoading || isLimitReached} className="bg-crm-primary text-black px-6 py-3 rounded-xl hover:bg-crm-primary/90 transition-all duration-200 border border-transparent hover:border-crm-primary/50 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
           {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
-          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : 'Salvar Cliente')}
+          {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar alterações' : 'Salvar cliente')}
         </Button>
       </div>
     </form>

@@ -92,12 +92,12 @@ export default function FunilPage() {
   ];
   
   const stageNames: Record<string, string> = {
-      new: 'Novo / Lead Recebido',
-      initial_contact: 'Contato Inicial',
+      new: 'Novo / lead recebido',
+      initial_contact: 'Contato inicial',
       qualification: 'Qualificação',
       proposal: 'Proposta',
       negotiation: 'Negociação',
-      won: 'Ganho (Fechamento)',
+      won: 'Ganho (fechamento)',
       lost: 'Perdido',
       archived: 'Arquivado'
   };
@@ -138,7 +138,7 @@ export default function FunilPage() {
       <div className="flex-shrink-0">
         <div className="flex justify-between items-center mb-6">
             <div>
-            <h1 className="text-4xl font-bold text-foreground">Funil de Clientes</h1>
+            <h1 className="text-4xl font-bold text-foreground">Funil de clientes</h1>
             <p className="text-muted-foreground">
                 Visualize e gerencie a jornada dos seus clientes pelas fases de negociação.
             </p>

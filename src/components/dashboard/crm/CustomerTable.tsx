@@ -99,7 +99,7 @@ export function CustomerTable({ onCountChange }: CustomerTableProps) {
 
   const statusMap: Record<CustomerProfile['status'], { text: string; color: string }> = {
     new: { text: 'Novo', color: 'bg-blue-500/20 text-blue-300' },
-    initial_contact: { text: 'Contato Inicial', color: 'bg-cyan-500/20 text-cyan-300' },
+    initial_contact: { text: 'Contato inicial', color: 'bg-cyan-500/20 text-cyan-300' },
     qualification: { text: 'Qualificação', color: 'bg-purple-500/20 text-purple-300' },
     proposal: { text: 'Proposta', color: 'bg-indigo-500/20 text-indigo-300' },
     negotiation: { text: 'Negociação', color: 'bg-yellow-500/20 text-yellow-300' },
@@ -186,7 +186,7 @@ export function CustomerTable({ onCountChange }: CustomerTableProps) {
           const status = row.getValue('status') as keyof typeof statusMap;
           const { text, color } = statusMap[status] || { text: 'Desconhecido', color: 'bg-gray-500/20 text-gray-300' };
           return (
-            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${color}`}>
+            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${color} capitalize`}>
               {text}
             </span>
           );
@@ -218,12 +218,12 @@ export function CustomerTable({ onCountChange }: CustomerTableProps) {
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => handleEdit(customer)} className="rounded-xl">
                             <Edit className="mr-2 h-4 w-4" />
-                            Editar Cliente
+                            Editar cliente
                         </DropdownMenuItem>
                         {customer.status !== 'archived' && (
                             <DropdownMenuItem onClick={() => handleArchive(customer)} className="rounded-xl">
                                 <Archive className="mr-2 h-4 w-4" />
-                                Arquivar Cliente
+                                Arquivar cliente
                             </DropdownMenuItem>
                         )}
                         <DropdownMenuItem onClick={() => navigator.clipboard.writeText(customer.cpf || '')} disabled={!customer.cpf} className="rounded-xl">
@@ -234,7 +234,7 @@ export function CustomerTable({ onCountChange }: CustomerTableProps) {
                         <AlertDialogTrigger asChild>
                             <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400 rounded-xl">
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Excluir Cliente
+                                Excluir cliente
                             </DropdownMenuItem>
                         </AlertDialogTrigger>
                     </DropdownMenuContent>
@@ -352,7 +352,7 @@ export function CustomerTable({ onCountChange }: CustomerTableProps) {
     <Dialog open={isModalOpen} onOpenChange={handleModalClose}>
         <DialogContent className="sm:max-w-[750px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-foreground">Editar Cliente</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-foreground">Editar cliente</DialogTitle>
               <DialogDescription>
                 Altere as informações do cliente abaixo.
               </DialogDescription>
@@ -364,7 +364,7 @@ export function CustomerTable({ onCountChange }: CustomerTableProps) {
     <div>
        <div className="flex items-center justify-between mb-4">
             <div className='flex items-center gap-4'>
-                <h2 className="text-xl font-bold text-foreground">Sua Lista de Clientes</h2>
+                <h2 className="text-xl font-bold text-foreground">Sua lista de clientes</h2>
                  <div className="flex items-center space-x-2">
                     <Checkbox id="show-archived" checked={showArchived} onCheckedChange={(checked) => setShowArchived(!!checked)} />
                     <Label htmlFor="show-archived" className="text-sm font-medium text-muted-foreground">Mostrar arquivados</Label>

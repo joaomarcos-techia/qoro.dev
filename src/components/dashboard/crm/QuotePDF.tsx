@@ -30,7 +30,7 @@ export const DocumentPDF = React.forwardRef<HTMLDivElement, DocumentPDFProps>(({
                 .pdf-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f3f4f6; padding-bottom: 1rem; margin-bottom: 1.5rem; }
                 .pdf-header .logo h1 { font-size: 1.8rem; font-weight: 700; color: #111827; margin: 0; }
                 .pdf-header .quote-details { text-align: right; }
-                .pdf-header .quote-details h2 { font-size: 1.5rem; color: #8B5CF6; margin: 0 0 0.25rem 0; font-weight: 600; }
+                .pdf-header .quote-details h2 { font-size: 1.5rem; color: #8B5CF6; margin: 0 0 0.25rem 0; font-weight: 600; text-transform: capitalize; }
                 .pdf-header .quote-details p { margin: 0; color: #4b5563; }
                 .customer-info { margin-bottom: 1.5rem; padding: 1rem; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb; }
                 .customer-info h3 { font-size: 1rem; font-weight: 600; margin: 0 0 0.5rem 0; color: #111827; }
@@ -73,9 +73,9 @@ export const DocumentPDF = React.forwardRef<HTMLDivElement, DocumentPDFProps>(({
                     <table className="items-table">
                         <thead>
                             <tr>
-                                <th className="item-name">Descrição do Item</th>
+                                <th className="item-name">Descrição do item</th>
                                 <th className="align-center">Qtd.</th>
-                                <th className="align-right">Preço Unit.</th>
+                                <th className="align-right">Preço unit.</th>
                                 <th className="align-right">Total</th>
                             </tr>
                         </thead>
@@ -111,7 +111,7 @@ export const DocumentPDF = React.forwardRef<HTMLDivElement, DocumentPDFProps>(({
                 </section>
                 {document.notes && (
                     <section className="notes-section">
-                        <h4>Observações e Termos:</h4>
+                        <h4>Observações e termos:</h4>
                         <p>{document.notes}</p>
                     </section>
                 )}

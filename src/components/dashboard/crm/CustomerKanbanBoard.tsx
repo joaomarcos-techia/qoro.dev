@@ -35,7 +35,7 @@ export function CustomerKanbanBoard({ columns, onMoveCustomer }: CustomerKanbanB
       {columns.map((column) => (
         <div key={column.id} className="w-72 lg:w-80 flex-shrink-0 flex flex-col">
           <div className="bg-secondary/30 rounded-xl p-3 flex flex-col flex-grow">
-            <h2 className="text-base font-bold text-foreground mb-4 px-2 flex justify-between items-center flex-shrink-0">
+            <h2 className="text-base font-bold text-foreground mb-4 px-2 flex justify-between items-center flex-shrink-0 capitalize">
               <span>{column.title}</span>
               <span className="text-sm font-medium text-muted-foreground bg-secondary rounded-full px-2.5 py-0.5">
                 {column.customers.length}

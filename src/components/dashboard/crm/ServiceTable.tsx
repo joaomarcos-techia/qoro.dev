@@ -106,8 +106,8 @@ export function ServiceTable({ onEdit, onRefresh }: ServiceTableProps) {
     },
     {
         accessorKey: 'pricingModel',
-        header: 'Modelo de Preço',
-        cell: ({ row }) => row.original.pricingModel === 'per_hour' ? 'Por Hora' : 'Fixo',
+        header: 'Modelo de preço',
+        cell: ({ row }) => row.original.pricingModel === 'per_hour' ? 'Por hora' : 'Fixo',
     },
     {
       accessorKey: 'category',
@@ -136,13 +136,13 @@ export function ServiceTable({ onEdit, onRefresh }: ServiceTableProps) {
                 <DropdownMenuLabel>Ações</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => onEdit(service)} className="rounded-xl">
                     <Edit className="mr-2 h-4 w-4" />
-                    Editar Serviço
+                    Editar serviço
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <AlertDialogTrigger asChild>
                     <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400 rounded-xl">
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Excluir Serviço
+                        Excluir serviço
                     </DropdownMenuItem>
                 </AlertDialogTrigger>
               </DropdownMenuContent>
@@ -226,7 +226,7 @@ export function ServiceTable({ onEdit, onRefresh }: ServiceTableProps) {
   return (
     <div>
        <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-foreground">Seu Catálogo de Serviços</h2>
+            <h2 className="text-xl font-bold text-foreground">Seu catálogo de serviços</h2>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -294,5 +294,3 @@ export function ServiceTable({ onEdit, onRefresh }: ServiceTableProps) {
     </div>
   );
 }
-
-    

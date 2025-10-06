@@ -171,7 +171,7 @@ export function QuoteTable() {
       cell: ({ row }) => {
           const status = row.getValue('status') as keyof typeof statusMap;
           const { text, color } = statusMap[status] || statusMap.draft;
-          return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${color}`}>{text}</span>;
+          return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${color} capitalize`}>{text}</span>;
       },
     },
     {
@@ -181,7 +181,7 @@ export function QuoteTable() {
     },
     {
       accessorKey: 'validUntil',
-      header: 'Válido Até',
+      header: 'Válido até',
       cell: ({ row }) => {
           const dateStr = row.getValue('validUntil') as string | null;
           if (!dateStr) return '-';
@@ -317,7 +317,7 @@ export function QuoteTable() {
        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogContent className="sm:max-w-[800px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-foreground">{selectedQuote ? 'Editar Orçamento' : 'Criar Novo Orçamento'}</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-foreground">{selectedQuote ? 'Editar orçamento' : 'Criar novo orçamento'}</DialogTitle>
               <DialogDescription>
                 {selectedQuote ? 'Altere as informações abaixo.' : 'Selecione o cliente, adicione os itens e defina os termos.'}
               </DialogDescription>
@@ -329,7 +329,7 @@ export function QuoteTable() {
 
       <div>
         <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-foreground">Seus Orçamentos</h2>
+              <h2 className="text-xl font-bold text-foreground">Seus orçamentos</h2>
               <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input

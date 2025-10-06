@@ -135,17 +135,17 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
                 <DropdownMenuLabel>Ações</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => onEdit(product)} className="rounded-xl">
                     <Edit className="mr-2 h-4 w-4" />
-                    Editar Produto
+                    Editar produto
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigator.clipboard.writeText(product.sku || '')} className="rounded-xl">
                     <Copy className="mr-2 h-4 w-4" />
-                    Copiar Código
+                    Copiar código
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <AlertDialogTrigger asChild>
                     <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400 rounded-xl">
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Excluir Produto
+                        Excluir produto
                     </DropdownMenuItem>
                 </AlertDialogTrigger>
               </DropdownMenuContent>
@@ -229,7 +229,7 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
   return (
     <div>
        <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-foreground">Seu Catálogo de Produtos</h2>
+            <h2 className="text-xl font-bold text-foreground">Seu catálogo de produtos</h2>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -297,5 +297,3 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
     </div>
   );
 }
-
-    
