@@ -27,7 +27,7 @@ const plans: Plan[] = [
     priceDetails: 'Até 2 usuários.',
     features: [
       'QoroCRM: Gestão de Clientes e Funil de Vendas',
-      'QoroTask: Gestão de Tarefas em quadro Kanban',
+      'QoroTask: Gestão de tarefas',
       'QoroFinance: Visão geral e registro de transações',
       'Limite de 15 Clientes',
       'Limite de 5 Tarefas',
