@@ -16,12 +16,14 @@ import {
 import { CustomerForm } from '@/components/dashboard/crm/CustomerForm';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { CustomerProfile } from '@/ai/schemas';
 
 export default function ClientesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [initialLoading, setInitialLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [customerCount, setCustomerCount] = useState(0);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -55,7 +57,7 @@ export default function ClientesPage() {
         );
     }
 
-    return <CustomerTable key={refreshCounter} />;
+    return <CustomerTable key={refreshCounter} onCountChange={setCustomerCount}/>;
   }
 
 
@@ -82,7 +84,7 @@ export default function ClientesPage() {
                 Preencha as informações abaixo para cadastrar um novo cliente no sistema.
               </DialogDescription>
             </DialogHeader>
-            <CustomerForm onCustomerAction={handleCustomerAction} />
+            <CustomerForm onCustomerAction={handleCustomerAction} customerCount={customerCount} />
           </DialogContent>
         </Dialog>
       </div>

@@ -23,7 +23,8 @@ import {
   GitCompareArrows,
   Loader2,
   Package,
-  Home
+  Home,
+  Lock,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Header } from '@/components/dashboard/Header';
@@ -31,11 +32,13 @@ import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { PulseSidebar } from '@/components/dashboard/pulse/PulseSidebar';
 import { TasksProvider } from '@/contexts/TasksContext';
+import { PlanProvider, usePlan } from '@/contexts/PlanContext';
 
 interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  permissionKey?: 'qoroCrm' | 'qoroTask' | 'qoroFinance' | 'qoroPulse';
 }
 
 interface NavGroup {
@@ -53,30 +56,31 @@ const navConfig: Record<string, NavGroup> = {
 
 const navItems: Record<string, NavItem[]> = {
     crm: [
-        { href: '/dashboard/crm/clientes', label: 'Clientes', icon: Users },
-        { href: '/dashboard/crm/funil', label: 'Funil', icon: LayoutGrid },
-        { href: '/dashboard/crm/produtos', label: 'Produtos', icon: Package },
-        { href: '/dashboard/crm/servicos', label: 'Serviços', icon: Wrench },
-        { href: '/dashboard/crm/orcamentos', label: 'Orçamentos', icon: FileText },
+        { href: '/dashboard/crm/clientes', label: 'Clientes', icon: Users, permissionKey: 'qoroCrm' },
+        { href: '/dashboard/crm/funil', label: 'Funil', icon: LayoutGrid, permissionKey: 'qoroCrm' },
+        { href: '/dashboard/crm/produtos', label: 'Produtos', icon: Package, permissionKey: 'qoroCrm' },
+        { href: '/dashboard/crm/servicos', label: 'Serviços', icon: Wrench, permissionKey: 'qoroCrm' },
+        { href: '/dashboard/crm/orcamentos', label: 'Orçamentos', icon: FileText, permissionKey: 'qoroCrm' },
     ],
     task: [
-        { href: '/dashboard/task/visao-geral', label: 'Visão Geral', icon: Home },
-        { href: '/dashboard/task/lista', label: 'Minha Lista', icon: List },
-        { href: '/dashboard/task/tarefas', label: 'Quadro', icon: LayoutGrid },
-        { href: '/dashboard/task/calendario', label: 'Calendário', icon: Calendar },
+        { href: '/dashboard/task/visao-geral', label: 'Visão Geral', icon: Home, permissionKey: 'qoroTask' },
+        { href: '/dashboard/task/lista', label: 'Minha Lista', icon: List, permissionKey: 'qoroTask' },
+        { href: '/dashboard/task/tarefas', label: 'Quadro', icon: LayoutGrid, permissionKey: 'qoroTask' },
+        { href: '/dashboard/task/calendario', label: 'Calendário', icon: Calendar, permissionKey: 'qoroTask' },
     ],
     finance: [
-        { href: '/dashboard/finance/transacoes', label: 'Transações', icon: ArrowLeftRight },
-        { href: '/dashboard/finance/contas', label: 'Contas', icon: Landmark },
-        { href: '/dashboard/finance/contas-a-pagar', label: 'A pagar/receber', icon: Receipt },
-        { href: '/dashboard/finance/fornecedores', label: 'Fornecedores', icon: Truck },
-        { href: '/dashboard/finance/conciliacao', label: 'Conciliação', icon: GitCompareArrows },
+        { href: '/dashboard/finance/transacoes', label: 'Transações', icon: ArrowLeftRight, permissionKey: 'qoroFinance' },
+        { href: '/dashboard/finance/contas', label: 'Contas', icon: Landmark, permissionKey: 'qoroFinance' },
+        { href: '/dashboard/finance/contas-a-pagar', label: 'A pagar/receber', icon: Receipt, permissionKey: 'qoroFinance' },
+        { href: '/dashboard/finance/fornecedores', label: 'Fornecedores', icon: Truck, permissionKey: 'qoroFinance' },
+        { href: '/dashboard/finance/conciliacao', label: 'Conciliação', icon: GitCompareArrows, permissionKey: 'qoroFinance' },
     ],
 }
 
 
 function ModuleSidebar() {
     const pathname = usePathname();
+    const { permissions, isLoading } = usePlan();
     const segments = pathname.split('/');
     const currentModule = segments.length > 2 ? segments[2] : 'home';
     const hasModuleSidebar = navConfig.hasOwnProperty(currentModule);
@@ -92,6 +96,12 @@ function ModuleSidebar() {
     const { group, icon: GroupIcon, colorClass } = navConfig[currentModule];
     const moduleItems = navItems[currentModule] || [];
     const [bgColor, textColor] = colorClass.split(' ');
+
+    const isAllowed = (item: NavItem) => {
+      if (isLoading) return false; // Disable while loading to avoid flickering
+      if (!item.permissionKey) return true; // Always allow if no permission key is set
+      return permissions?.[item.permissionKey] ?? false;
+    }
   
     return (
       <aside className="w-64 flex-shrink-0 bg-card border-r border-border flex flex-col">
@@ -111,6 +121,22 @@ function ModuleSidebar() {
           <ul>
             {moduleItems.map((item) => {
               const isActive = pathname.startsWith(item.href);
+              const allowed = isAllowed(item);
+
+              if (!allowed) {
+                return (
+                  <li key={item.href} className="relative">
+                    <div className={cn(`flex items-center justify-between px-4 py-3 my-1 rounded-xl text-sm font-medium text-muted-foreground/50 cursor-not-allowed`)}>
+                      <div className="flex items-center">
+                        <item.icon className={cn(`w-5 h-5 mr-3 text-muted-foreground/50`)} />
+                        {item.label}
+                      </div>
+                      <Lock className="w-4 h-4 text-muted-foreground/50" />
+                    </div>
+                  </li>
+                )
+              }
+
               return (
               <li key={item.href}>
                 <Link
@@ -132,7 +158,7 @@ function ModuleSidebar() {
     );
   }
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const segments = pathname.split('/');
     const currentModule = segments.length > 2 ? segments[2] : 'home';
@@ -154,4 +180,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
     </TasksProvider>
   );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <PlanProvider>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </PlanProvider>
+  )
 }

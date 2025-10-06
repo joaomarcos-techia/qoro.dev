@@ -80,7 +80,11 @@ const normalizeString = (str: string) => {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
-export function CustomerTable() {
+interface CustomerTableProps {
+  onCountChange: (count: number) => void;
+}
+
+export function CustomerTable({ onCountChange }: CustomerTableProps) {
   const [data, setData] = React.useState<CustomerProfile[]>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState('');
@@ -297,6 +301,7 @@ export function CustomerTable() {
       try {
         const customers = await listCustomers({ actor: currentUser.uid });
         setData(customers);
+        onCountChange(customers.length);
       } catch (err) {
         console.error('Failed to fetch customers:', err);
         setError('Não foi possível carregar os clientes. Tente novamente mais tarde.');
@@ -305,7 +310,7 @@ export function CustomerTable() {
       }
     }
     fetchData();
-  }, [currentUser, refreshCounter]);
+  }, [currentUser, refreshCounter, onCountChange]);
 
   const table = useReactTable({
     data: filteredData,
@@ -352,7 +357,7 @@ export function CustomerTable() {
                 Altere as informações do cliente abaixo.
               </DialogDescription>
             </DialogHeader>
-            <CustomerForm onCustomerAction={handleCustomerAction} customer={selectedCustomer} />
+            <CustomerForm onCustomerAction={handleCustomerAction} customer={selectedCustomer} customerCount={data.length} />
           </DialogContent>
     </Dialog>
 
