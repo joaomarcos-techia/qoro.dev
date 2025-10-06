@@ -1,4 +1,5 @@
 
+
 'use server';
 /**
  * @fileOverview Task management services.
@@ -8,6 +9,10 @@ import { z } from 'zod';
 import { TaskSchema, TaskProfileSchema, UpdateTaskSchema, UserProfile } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import { adminDb } from '@/lib/firebase-admin';
+
+const FREE_PLAN_LIMITS = {
+    tasks: 5,
+};
 
 // Helper function to safely convert Firestore Timestamps or ISO strings to a Date object string.
 const toISOStringSafe = (date: any): string | null => {
@@ -35,7 +40,17 @@ export const createTask = async (
   actorUid: string
 ) => {
   try {
-    const { organizationId } = await getAdminAndOrg(actorUid);
+    const { organizationId, planId } = await getAdminAndOrg(actorUid);
+
+    if (planId === 'free') {
+        const query = adminDb.collection('tasks').where('companyId', '==', organizationId);
+        const snapshot = await query.count().get();
+        const count = snapshot.data().count;
+        if (count >= FREE_PLAN_LIMITS.tasks) {
+            throw new Error(`Limite de ${FREE_PLAN_LIMITS.tasks} tarefas atingido para o plano gratuito.`);
+        }
+    }
+
     const newTaskData = {
       ...input,
       dueDate: input.dueDate ? new Date(input.dueDate) : null,

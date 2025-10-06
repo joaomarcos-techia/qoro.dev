@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { FieldValue } from 'firebase-admin/firestore';
@@ -9,8 +10,22 @@ import type { QuoteProfile, CustomerProfile } from '@/ai/schemas';
 import { adminDb } from '@/lib/firebase-admin';
 import * as billService from './billService';
 
+const FREE_PLAN_LIMITS = {
+    customers: 15,
+};
+
 export const createCustomer = async (input: z.infer<typeof CustomerSchema>, actorUid: string) => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
+    const { organizationId, planId } = await getAdminAndOrg(actorUid);
+
+    if (planId === 'free') {
+        const query = adminDb.collection('customers').where('companyId', '==', organizationId);
+        const snapshot = await query.count().get();
+        const count = snapshot.data().count;
+        if (count >= FREE_PLAN_LIMITS.customers) {
+            throw new Error(`Limite de ${FREE_PLAN_LIMITS.customers} clientes atingido para o plano gratuito.`);
+        }
+    }
+
 
     const newCustomerData = {
         ...input,
@@ -146,7 +161,10 @@ export const getOrganizationDetails = async (actorUid: string) => {
 
 // Product services
 export const createProduct = async (input: z.infer<typeof ProductSchema>, actorUid: string) => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
+    const { organizationId, planId } = await getAdminAndOrg(actorUid);
+     if (planId === 'free') {
+        throw new Error("O cadastro de produtos não está disponível no plano gratuito.");
+    }
     const newProductData = {
         ...input,
         companyId: organizationId,
@@ -215,7 +233,10 @@ export const deleteProduct = async (productId: string, actorUid: string) => {
 
 // Service services
 export const createService = async (input: z.infer<typeof ServiceSchema>, actorUid: string) => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
+    const { organizationId, planId } = await getAdminAndOrg(actorUid);
+     if (planId === 'free') {
+        throw new Error("O cadastro de serviços não está disponível no plano gratuito.");
+    }
     const newServiceData = {
         ...input,
         companyId: organizationId,
@@ -282,7 +303,10 @@ export const deleteService = async (serviceId: string, actorUid: string) => {
 
 // Quote Services
 export const createQuote = async (input: z.infer<typeof QuoteSchema>, actorUid: string) => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
+    const { organizationId, planId } = await getAdminAndOrg(actorUid);
+    if (planId === 'free') {
+        throw new Error("A criação de orçamentos não está disponível no plano gratuito.");
+    }
     
     const quoteNumber = `QT-${Date.now().toString().slice(-6)}`;
     
@@ -395,5 +419,3 @@ export const deleteQuote = async (quoteId: string, actorUid: string) => {
     await quoteRef.delete();
     return { id: quoteId, success: true };
 };
-
-    

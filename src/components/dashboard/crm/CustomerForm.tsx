@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,21 +14,25 @@ import { createCustomer, updateCustomer } from '@/ai/flows/crm-management';
 import { CustomerSchema, CustomerProfile } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { Loader2, AlertCircle, CalendarIcon } from 'lucide-react';
+import { Loader2, AlertCircle, Info } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
+import { usePlan } from '@/contexts/PlanContext';
 
 type CustomerFormProps = {
   onCustomerAction: () => void;
   customer?: CustomerProfile | null;
+  customerCount: number;
 };
 
 const FormSchema = CustomerSchema.extend({
     birthDate: z.string().optional().nullable(),
 });
 type FormValues = z.infer<typeof FormSchema>;
+
+const FREE_PLAN_LIMIT = 15;
 
 // --- Funções de formatação ---
 const formatCPF = (value: string) => {
@@ -60,12 +65,15 @@ const formatPhone = (value: string) => {
 };
 // -----------------------------
 
-export function CustomerForm({ onCustomerAction, customer }: CustomerFormProps) {
+export function CustomerForm({ onCustomerAction, customer, customerCount }: CustomerFormProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { planId } = usePlan();
 
   const isEditMode = !!customer;
+  const isLimitReached = !isEditMode && planId === 'free' && customerCount >= FREE_PLAN_LIMIT;
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -106,6 +114,10 @@ export function CustomerForm({ onCustomerAction, customer }: CustomerFormProps) 
     if (!currentUser) {
       setError('Você precisa estar autenticado para executar esta ação.');
       return;
+    }
+    if (isLimitReached) {
+        setError(`Limite de ${FREE_PLAN_LIMIT} clientes atingido. Faça upgrade para adicionar mais.`);
+        return;
     }
     setIsLoading(true);
     setError(null);
@@ -277,8 +289,14 @@ export function CustomerForm({ onCustomerAction, customer }: CustomerFormProps) 
               <span className="text-sm">{error}</span>
             </div>
         )}
+        {isLimitReached && (
+             <div className="bg-yellow-500/20 border-l-4 border-yellow-500 text-yellow-300 p-4 rounded-lg flex items-center">
+                <Info className="w-5 h-5 mr-3" />
+                <span className="text-sm">Você atingiu o limite de {FREE_PLAN_LIMIT} clientes do plano gratuito. <a href="/#precos" className="font-bold underline">Faça upgrade</a> para adicionar mais.</span>
+            </div>
+        )}
       <div className="flex justify-end pt-4">
-        <Button type="submit" disabled={isLoading} className="bg-crm-primary text-black px-6 py-3 rounded-xl hover:bg-crm-primary/90 transition-all duration-200 border border-transparent hover:border-crm-primary/50 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
+        <Button type="submit" disabled={isLoading || isLimitReached} className="bg-crm-primary text-black px-6 py-3 rounded-xl hover:bg-crm-primary/90 transition-all duration-200 border border-transparent hover:border-crm-primary/50 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
           {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
           {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar Alterações' : 'Salvar Cliente')}
         </Button>

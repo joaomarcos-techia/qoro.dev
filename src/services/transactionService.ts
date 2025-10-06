@@ -5,9 +5,21 @@ import { TransactionSchema, TransactionProfile, UpdateTransactionSchema, Transac
 import { getAdminAndOrg } from './utils';
 import { adminDb } from '@/lib/firebase-admin';
 
+const FREE_PLAN_LIMITS = {
+    transactions: 10,
+};
 
 export const createTransaction = async (input: z.infer<typeof TransactionSchema>, actorUid: string) => {
-    const { organizationId } = await getAdminAndOrg(actorUid);
+    const { organizationId, planId } = await getAdminAndOrg(actorUid);
+
+    if (planId === 'free') {
+        const query = adminDb.collection('transactions').where('companyId', '==', organizationId);
+        const snapshot = await query.count().get();
+        const count = snapshot.data().count;
+        if (count >= FREE_PLAN_LIMITS.transactions) {
+            throw new Error(`Limite de ${FREE_PLAN_LIMITS.transactions} transações atingido para o plano gratuito.`);
+        }
+    }
 
     const accountId = input.accountId;
     if (!accountId) {
@@ -273,4 +285,3 @@ export const bulkCreateTransactions = async (
         throw new Error(`Falha ao salvar as transações: ${error.message}`);
     }
 };
-    
