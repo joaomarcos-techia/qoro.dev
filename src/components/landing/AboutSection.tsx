@@ -6,7 +6,7 @@ export function AboutSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row gap-12 items-center">
           <div className="lg:w-1/2 lg:pr-10 text-left">
-            <div className="text-sm font-medium text-primary mb-4 tracking-wider uppercase">Construído para Empreendedores como Você</div>
+            <div className="text-sm font-medium text-primary mb-4 tracking-wider uppercase">Construído para empreendedores como você</div>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">
                 Menos tempo gerenciando, mais tempo crescendo.
             </h2>

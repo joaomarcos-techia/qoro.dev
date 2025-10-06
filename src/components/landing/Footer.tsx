@@ -51,8 +51,8 @@ export function Footer() {
             <div>
               <h3 className="text-sm font-semibold text-white/80 mb-4 tracking-wider uppercase">Empresa</h3>
               <ul className="space-y-3">
-                <li><button onClick={() => setPopupContent('policy')} className="text-white/60 hover:text-white transition-colors text-left">Política de Privacidade</button></li>
-                <li><button onClick={() => setPopupContent('terms')} className="text-white/60 hover:text-white transition-colors text-left">Termos de Uso</button></li>
+                <li><button onClick={() => setPopupContent('policy')} className="text-white/60 hover:text-white transition-colors text-left">Política de privacidade</button></li>
+                <li><button onClick={() => setPopupContent('terms')} className="text-white/60 hover:text-white transition-colors text-left">Termos de uso</button></li>
               </ul>
             </div>
             

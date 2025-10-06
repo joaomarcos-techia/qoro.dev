@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Check, Loader2 } from 'lucide-react';
@@ -26,14 +25,14 @@ const plans: Plan[] = [
     price: 'Grátis',
     priceDetails: 'Até 2 usuários.',
     features: [
-      'QoroCRM: Gestão de Clientes e Funil de Vendas',
+      'QoroCRM: Gestão de clientes e funil de vendas',
       'QoroTask: Gestão de tarefas',
       'QoroFinance: Visão geral e registro de transações',
-      'Limite de 15 Clientes',
-      'Limite de 5 Tarefas',
-      'Limite de 10 Registros Financeiros',
+      'Limite de 15 clientes',
+      'Limite de 5 tarefas',
+      'Limite de 10 registros financeiros',
     ],
-    buttonText: 'Começar Grátis',
+    buttonText: 'Começar grátis',
     isPopular: false,
   },
   {
@@ -46,9 +45,9 @@ const plans: Plan[] = [
     priceDetails: 'Inclui até 5 usuários.',
     features: [
       'Tudo do plano Essencial, sem limites de registros',
-      'QoroCRM: Criação de Orçamentos profissionais',
-      'QoroFinance: Gestão de Contas a Pagar e Receber',
-      'QoroTask: Visão de Calendário para prazos',
+      'QoroCRM: Criação de orçamentos profissionais',
+      'QoroFinance: Gestão de contas a pagar e receber',
+      'QoroTask: Visão de calendário para prazos',
       'Gestão de permissões de usuário por módulo',
     ],
     buttonText: 'Escolher Growth',
@@ -65,8 +64,8 @@ const plans: Plan[] = [
     features: [
       'Tudo do plano Growth, e mais:',
       'QoroPulse: IA com sugestões proativas de negócio',
-      'QoroFinance: Gestão de Fornecedores e Conciliação Bancária',
-      'Relatórios detalhados de CRM e Finanças',
+      'QoroFinance: Gestão de fornecedores e conciliação bancária',
+      'Relatórios detalhados de CRM e finanças',
       'Acesso antecipado a novas funcionalidades',
     ],
     buttonText: 'Escolher Performance',
@@ -96,7 +95,7 @@ const PricingCard = ({ plan }: { plan: Plan }) => {
         {plan.isPopular && (
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                 <div className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium">
-                    Mais Popular
+                    Mais popular
                 </div>
             </div>
         )}

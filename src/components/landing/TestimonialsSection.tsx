@@ -7,7 +7,7 @@ const testimonials = [
     name: 'Ana P.',
     company: 'CEO, InovaTech',
     avatar: 'https://picsum.photos/100/100?random=1',
-    highlight: 'Aumento de 30% nas Vendas',
+    highlight: 'Aumento de 30% nas vendas',
     color: 'text-crm-primary',
   },
   {
@@ -15,7 +15,7 @@ const testimonials = [
     name: 'Bruno L.',
     company: 'Diretor, Soluções Criativas',
     avatar: 'https://picsum.photos/100/100?random=2',
-    highlight: 'Decisões mais Inteligentes',
+    highlight: 'Decisões mais inteligentes',
     color: 'text-pulse-primary',
   },
   {
@@ -23,7 +23,7 @@ const testimonials = [
     name: 'Carlos M.',
     company: 'Fundador, Agência Vértice',
     avatar: 'https://picsum.photos/100/100?random=3',
-    highlight: 'Controle Financeiro Total',
+    highlight: 'Controle financeiro total',
     color: 'text-finance-primary',
   },
   {
@@ -31,7 +31,7 @@ const testimonials = [
     name: 'Daniela F.',
     company: 'Gerente de Projetos, Construtora Futuro',
     avatar: 'https://picsum.photos/100/100?random=4',
-    highlight: 'Produtividade em Dobro',
+    highlight: 'Produtividade em dobro',
     color: 'text-task-primary',
   },
   {
@@ -76,7 +76,7 @@ export function TestimonialsSection() {
     <section id="depoimentos" className="py-20 bg-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <div className="text-sm font-medium text-primary mb-4 tracking-wider uppercase">Testemunhos</div>
+          <div className="text-sm font-medium text-primary mb-4 tracking-wider uppercase">Depoimentos</div>
           <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
             O que nossos clientes dizem
           </h2>

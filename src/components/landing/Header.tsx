@@ -25,7 +25,7 @@ export function Header() {
 
   const navLinks = [
     { href: '/#sobre', label: 'Sobre' },
-    { href: '/#para-quem', label: 'Para Quem é?' },
+    { href: '/#para-quem', label: 'Para quem é?' },
     { href: '/#precos', label: 'Planos' },
     { href: '/#contato', label: 'Contato' },
   ];

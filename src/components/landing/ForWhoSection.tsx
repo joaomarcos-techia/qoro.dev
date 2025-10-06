@@ -14,7 +14,7 @@ const targetAudiences = [
   },
   {
     icon: Users,
-    title: 'Pequenas e Médias Empresas',
+    title: 'Pequenas e médias empresas',
     description: 'Alinhe suas equipes, otimize processos e tome decisões baseadas em dados, não em achismos.',
     benefits: [
       'Funil de vendas colaborativo',
@@ -25,7 +25,7 @@ const targetAudiences = [
   },
   {
     icon: Briefcase,
-    title: 'Agências e Consultorias',
+    title: 'Agências e consultorias',
     description: 'Gerencie múltiplos clientes e projetos com eficiência, garantindo entregas no prazo e rentabilidade.',
     benefits: [
       'Gestão de múltiplos projetos',
@@ -41,7 +41,7 @@ export function ForWhoSection() {
     <section id="para-quem" className="py-20 bg-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <div className="text-sm font-medium text-primary mb-4 tracking-wider uppercase">Para Quem é a Qoro?</div>
+          <div className="text-sm font-medium text-primary mb-4 tracking-wider uppercase">Para quem é a Qoro?</div>
           <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
             Desenhado para o seu tipo de negócio
           </h2>
