@@ -6,12 +6,18 @@ import Link from 'next/link';
 import { Mail, Lock, LogIn, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { signIn, sendPasswordResetEmail } from '@/lib/auth';
 import { Logo } from '@/components/ui/logo';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+
+// Função para aguardar um determinado tempo
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Entrando...');
   const [showResend, setShowResend] = useState(false);
   const [resendSuccess, setResendSuccess] = useState<string | null>(null);
 
@@ -23,10 +29,31 @@ export default function LoginPage() {
     setShowResend(false);
     setResendSuccess(null);
     setIsLoading(true);
+    setLoadingMessage('Autenticando...');
 
     try {
-      await signIn(email, password);
+      const user = await signIn(email, password);
+      
+      // --- Verificação de Sincronização ---
+      setLoadingMessage('Sincronizando conta...');
+      let userDocExists = false;
+      for (let i = 0; i < 5; i++) { // Tenta por até 5 segundos
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          userDocExists = true;
+          break;
+        }
+        await delay(1000); // Espera 1 segundo antes de tentar novamente
+      }
+
+      if (!userDocExists) {
+        throw new Error('Falha na sincronização da conta. Tente novamente ou contate o suporte se o erro persistir.');
+      }
+      // ------------------------------------
+
       router.push('/dashboard');
+
     } catch (err: any) {
       if ((err as any).code === 'auth/email-not-verified') {
         setError('Seu e-mail ainda não foi verificado.');
@@ -44,6 +71,7 @@ export default function LoginPage() {
   const handleResendVerification = async () => {
     setError(null);
     setIsLoading(true);
+    setLoadingMessage('Enviando e-mail...');
     try {
         // Firebase uses the password reset flow to also handle verification for new accounts
         await sendPasswordResetEmail(email);
@@ -121,7 +149,7 @@ export default function LoginPage() {
             ) : (
               <LogIn className="mr-2 w-5 h-5" />
             )}
-            {isLoading ? 'Entrando...' : 'Entrar'}
+            {isLoading ? loadingMessage : 'Entrar'}
           </button>
         </form>
 
