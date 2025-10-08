@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -25,8 +24,11 @@ export const createUserAndSendVerification = async (email: string, password: str
         await sendEmailVerification(user);
         return user;
     } catch (error: any) {
-        if (error.code === 'auth/email-already-exists') {
-            throw new Error('Este e-mail já está em uso.');
+        if (error.code === 'auth/email-already-in-use') {
+            throw new Error('Este e-mail já está em uso. Se você excluiu uma conta com este e-mail recentemente, pode ser necessário aguardar um tempo ou usar um e-mail diferente.');
+        }
+        if (error.code === 'auth/weak-password') {
+            throw new Error('A senha é muito fraca. Ela deve ter pelo menos 6 caracteres.');
         }
         throw new Error('Ocorreu um erro ao criar o usuário. Tente novamente.');
     }
@@ -49,6 +51,11 @@ export const signIn = async (email: string, password: string): Promise<User> => 
       console.error("Error signing in:", error);
       if (error.code === 'auth/email-not-verified') {
           throw error;
+      }
+       if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        const customError = new Error('E-mail ou senha inválidos.');
+        (customError as any).code = 'auth/invalid-credential';
+        throw customError;
       }
       throw new Error('E-mail ou senha inválidos. Por favor, tente novamente.');
     }
