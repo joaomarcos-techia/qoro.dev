@@ -1,4 +1,5 @@
 
+
 'use server';
 /**
  * @fileOverview Service for managing bank reconciliations in Firestore.
@@ -112,4 +113,21 @@ export const deleteReconciliation = async (id: string, actor: string) => {
 
     await docRef.delete();
     return { id, success: true };
+};
+
+export const updateReconciliationStatus = async (input: {id: string, actor: string, status: 'reconciled' | 'pending'}) => {
+    const { organizationId } = await getAdminAndOrg(input.actor);
+    const docRef = adminDb.collection('reconciliations').doc(input.id);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists || docSnap.data()?.companyId !== organizationId) {
+        throw new Error('Conciliação não encontrada ou acesso negado.');
+    }
+    
+    await docRef.update({
+        status: input.status,
+        updatedAt: FieldValue.serverTimestamp(),
+    });
+    
+    return { id: input.id, success: true };
 };
