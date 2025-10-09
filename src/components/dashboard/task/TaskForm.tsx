@@ -22,6 +22,7 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTasks } from '@/contexts/TasksContext';
+import { usePlan } from '@/contexts/PlanContext';
 
 const FormSchema = TaskSchema.extend({
     dueDate: z.union([z.date(), z.null()]).optional(),
@@ -42,7 +43,8 @@ export function TaskForm({ onTaskAction, task, users, viewOnly = false }: TaskFo
   const [error, setError] = useState<string | null>(null);
   const [newSubtaskText, setNewSubtaskText] = useState('');
   const [newCommentText, setNewCommentText] = useState('');
-  const { planId, tasks } = useTasks();
+  const { planId } = usePlan();
+  const { tasks } = useTasks();
   
   const isEditMode = !!task;
   const FREE_PLAN_LIMIT = 5;
@@ -126,7 +128,6 @@ export function TaskForm({ onTaskAction, task, users, viewOnly = false }: TaskFo
         appendComment(optimisticComment);
         setNewCommentText('');
         
-        // Persist only the comment update immediately
         try {
             const currentTaskData = getValues();
             const updatedComments = [...(currentTaskData.comments || []), optimisticComment];
@@ -137,12 +138,10 @@ export function TaskForm({ onTaskAction, task, users, viewOnly = false }: TaskFo
                 dueDate: currentTaskData.dueDate ? currentTaskData.dueDate.toISOString() : null,
                 comments: updatedComments.map(c => ({...c, createdAt: new Date(c.createdAt).toISOString()})),
                 actor: currentUser.uid,
-                __commentOnlyUpdate: true, // Flag for service
+                __commentOnlyUpdate: true, 
             });
         } catch (err) {
             console.error("Failed to add comment:", err);
-            // Optionally revert the optimistic update
-            // removeComment(optimisticComment.id); 
             setError("Não foi possível adicionar o comentário.");
         }
     }
@@ -157,7 +156,7 @@ export function TaskForm({ onTaskAction, task, users, viewOnly = false }: TaskFo
         setError(`Limite de ${FREE_PLAN_LIMIT} tarefas atingido no plano gratuito. Faça upgrade para adicionar mais.`);
         return;
     }
-    if (viewOnly) { // If it's view only, the main button shouldn't submit the whole form
+    if (viewOnly) { 
         onTaskAction();
         return;
     }
@@ -188,7 +187,6 @@ export function TaskForm({ onTaskAction, task, users, viewOnly = false }: TaskFo
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
-      {/* Main Task Info */}
       <div className="space-y-4">
         <div className="space-y-2">
             <Label htmlFor="title">Título da tarefa*</Label>
@@ -201,7 +199,6 @@ export function TaskForm({ onTaskAction, task, users, viewOnly = false }: TaskFo
         </div>
       </div>
       
-       {/* Details Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Status</Label>
@@ -238,7 +235,6 @@ export function TaskForm({ onTaskAction, task, users, viewOnly = false }: TaskFo
         </div>
       </div>
 
-      {/* Subtasks */}
       <div className="space-y-4">
         <Label className="flex items-center"><CheckSquare className="w-4 h-4 mr-2 text-muted-foreground"/>Subtarefas (checklist)</Label>
         <div className="p-4 rounded-xl border border-border bg-secondary/30 space-y-2">
@@ -258,7 +254,6 @@ export function TaskForm({ onTaskAction, task, users, viewOnly = false }: TaskFo
         </div>
       </div>
 
-       {/* Comments - Only shown in view-only mode for existing tasks */}
        {isEditMode && viewOnly && (
         <div className="space-y-4">
               <Label className="flex items-center"><MessageSquare className="w-4 h-4 mr-2 text-muted-foreground"/>Comentários</Label>

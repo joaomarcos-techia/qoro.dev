@@ -24,7 +24,7 @@ import { usePlan } from '@/contexts/PlanContext';
 type TransactionFormProps = {
   onAction: () => void;
   transaction?: TransactionProfile | null;
-  transactionCount: number;
+  transactionCount?: number;
 };
 
 const FormSchema = TransactionSchema.extend({
@@ -34,7 +34,7 @@ type FormValues = z.infer<typeof FormSchema>;
 
 const FREE_PLAN_LIMIT = 10;
 
-export function TransactionForm({ onAction, transaction, transactionCount }: TransactionFormProps) {
+export function TransactionForm({ onAction, transaction, transactionCount = 0 }: TransactionFormProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +87,6 @@ export function TransactionForm({ onAction, transaction, transactionCount }: Tra
                 setAccounts(accountsData);
                 setCustomers(customersData);
 
-                // If not in edit mode and there are accounts, set the first one as default
                 if (!transaction && accountsData.length > 0) {
                     reset(prev => ({ ...prev, accountId: accountsData[0].id }));
                 }
@@ -109,7 +108,6 @@ export function TransactionForm({ onAction, transaction, transactionCount }: Tra
             : new Date();
         reset({ ...transaction, date, accountId: transaction.accountId || '', customerId: transaction.customerId || '' });
     } else if (accounts.length > 0) {
-        // If creating a new one, set default values
         reset({
             type: 'expense',
             status: 'paid',
@@ -117,7 +115,7 @@ export function TransactionForm({ onAction, transaction, transactionCount }: Tra
             date: new Date(),
             description: '',
             amount: 0,
-            accountId: accounts[0].id, // Default to first account
+            accountId: accounts[0].id, 
             customerId: '',
             category: ''
         });
