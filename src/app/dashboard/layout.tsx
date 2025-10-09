@@ -70,7 +70,7 @@ const navItems: Record<string, NavItem[]> = {
     ],
     finance: [
         { href: '/dashboard/finance/transacoes', label: 'Transações', icon: ArrowLeftRight, permissionKey: 'qoroFinance', plan: ['free', 'growth', 'performance'] },
-        { href: '/dashboard/finance/contas', label: 'Contas', icon: Landmark, permissionKey: 'qoroFinance', plan: ['free', 'growth', 'performance'] },
+        { href: '/dashboard/finance/contas', label: 'Contas', icon: Landmark, permissionKey: 'qoroFinance', plan: ['growth', 'performance'] },
         { href: '/dashboard/finance/contas-a-pagar', label: 'A pagar/receber', icon: Receipt, permissionKey: 'qoroFinance', plan: ['growth', 'performance'] },
         { href: '/dashboard/finance/fornecedores', label: 'Fornecedores', icon: Truck, permissionKey: 'qoroFinance', plan: ['performance'] },
         { href: '/dashboard/finance/conciliacao', label: 'Conciliação', icon: GitCompareArrows, permissionKey: 'qoroFinance', plan: ['performance'] },
