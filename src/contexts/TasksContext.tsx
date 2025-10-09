@@ -90,12 +90,3 @@ export const useTasks = () => {
   }
   return context;
 };
-
-// Renamed to avoid conflict with PlanContext's usePlan
-export const usePlanInTasks = () => {
-    const context = useContext(TasksContext);
-    if (!context) {
-      throw new Error('usePlanInTasks must be used within a TasksProvider');
-    }
-    return { planId: context.planId, tasks: context.tasks };
-};

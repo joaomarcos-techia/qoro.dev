@@ -20,7 +20,6 @@ import { Loader2, AlertCircle, CalendarIcon, Search, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { usePlan } from '@/contexts/PlanContext';
-import { adminDb } from '@/lib/firebase-admin';
 
 type TransactionFormProps = {
   onAction: () => void;
@@ -33,6 +32,8 @@ const FormSchema = TransactionSchema.extend({
 });
 type FormValues = z.infer<typeof FormSchema>;
 
+const FREE_PLAN_LIMIT = 10;
+
 export function TransactionForm({ onAction, transaction, transactionCount }: TransactionFormProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,7 +45,6 @@ export function TransactionForm({ onAction, transaction, transactionCount }: Tra
   const { planId } = usePlan();
   
   const isEditMode = !!transaction?.id;
-  const FREE_PLAN_LIMIT = 10;
   const isLimitReached = !isEditMode && planId === 'free' && transactionCount >= FREE_PLAN_LIMIT;
 
 
@@ -139,7 +139,7 @@ export function TransactionForm({ onAction, transaction, transactionCount }: Tra
     try {
         const submissionData = {
             ...data,
-            date: data.date ? data.date.toISOString() : new Date().toISOString(),
+            date: data.date ? data.date : new Date(),
         };
 
         if (isEditMode) {
@@ -150,7 +150,7 @@ export function TransactionForm({ onAction, transaction, transactionCount }: Tra
       onAction();
     } catch (err: any) {
       console.error(err);
-      setError(`Falha ao ${isEditMode ? 'atualizar' : 'criar'} a transação. Tente novamente.`);
+      setError(err.message || `Falha ao ${isEditMode ? 'atualizar' : 'criar'} a transação. Tente novamente.`);
     } finally {
       setIsLoading(false);
     }
@@ -309,7 +309,7 @@ export function TransactionForm({ onAction, transaction, transactionCount }: Tra
             </div>
         )}
       <div className="flex justify-end pt-4">
-        <Button type="submit" disabled={isLoading || isLimitReached} className="bg-finance-primary text-black px-6 py-3 rounded-xl hover:bg-finance-primary/90 transition-all duration-300 border border-transparent hover:border-finance-primary/50 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
+        <Button type="submit" disabled={isLoading || (isLimitReached && !isEditMode)} className="bg-finance-primary text-black px-6 py-3 rounded-xl hover:bg-finance-primary/90 transition-all duration-300 border border-transparent hover:border-finance-primary/50 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
           {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
           {isLoading ? 'Salvando...' : (isEditMode ? 'Salvar alterações' : 'Salvar transação')}
         </Button>

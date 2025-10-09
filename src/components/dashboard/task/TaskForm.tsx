@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Checkbox } from '@/components/ui/checkbox';
-import { usePlan } from '@/contexts/TasksContext';
+import { useTasks } from '@/contexts/TasksContext';
 
 const FormSchema = TaskSchema.extend({
     dueDate: z.union([z.date(), z.null()]).optional(),
@@ -42,7 +42,7 @@ export function TaskForm({ onTaskAction, task, users, viewOnly = false }: TaskFo
   const [error, setError] = useState<string | null>(null);
   const [newSubtaskText, setNewSubtaskText] = useState('');
   const [newCommentText, setNewCommentText] = useState('');
-  const { planId, tasks } = usePlan();
+  const { planId, tasks } = useTasks();
   
   const isEditMode = !!task;
   const FREE_PLAN_LIMIT = 5;
@@ -295,7 +295,7 @@ export function TaskForm({ onTaskAction, task, users, viewOnly = false }: TaskFo
             </div>
         )}
       <div className="flex justify-end pt-4">
-        <Button type="submit" disabled={isLoading || isLimitReached} className="bg-task-primary text-black px-6 py-3 rounded-xl hover:bg-task-primary/90 transition-all duration-300 border border-transparent hover:border-task-primary/50 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
+        <Button type="submit" disabled={isLoading || (isLimitReached && !isEditMode)} className="bg-task-primary text-black px-6 py-3 rounded-xl hover:bg-task-primary/90 transition-all duration-300 border border-transparent hover:border-task-primary/50 flex items-center justify-center font-semibold disabled:opacity-75 disabled:cursor-not-allowed">
           {isLoading ? <Loader2 className="mr-2 w-5 h-5 animate-spin" /> : null}
           {viewOnly ? 'Fechar' : (isEditMode ? 'Salvar alterações' : 'Salvar tarefa')}
         </Button>
