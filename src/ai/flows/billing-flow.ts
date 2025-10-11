@@ -7,7 +7,7 @@
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { adminDb } from '@/lib/firebase-admin';
+import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import { stripe } from '@/lib/stripe';
 import { getAdminAndOrg } from '@/services/utils';
 import type { Stripe } from 'stripe';
@@ -15,6 +15,11 @@ import type { Stripe } from 'stripe';
 const CreateCheckoutSessionSchema = z.object({
   priceId: z.string(),
   actor: z.string(),
+  name: z.string(),
+  organizationName: z.string(),
+  cnpj: z.string(),
+  contactEmail: z.string().optional(),
+  contactPhone: z.string().optional(),
 });
 
 const CreateBillingPortalSessionSchema = z.object({
@@ -62,36 +67,35 @@ const createCheckoutSessionFlow = ai.defineFlow(
     inputSchema: CreateCheckoutSessionSchema,
     outputSchema: z.object({ sessionId: z.string() }),
   },
-  async ({ priceId, actor }) => {
-    const { organizationId, organizationName, userData } = await getAdminAndOrg(actor);
-    const orgRef = adminDb.collection('organizations').doc(organizationId);
-    const orgDoc = await orgRef.get();
-    const orgData = orgDoc.data();
+  async ({ priceId, actor, name, organizationName, cnpj, contactEmail, contactPhone }) => {
+    
+    const user = await adminAuth.getUser(actor);
 
-    let stripeCustomerId = orgData?.stripeCustomerId;
-
-    if (!stripeCustomerId) {
-      const customer = await stripe.customers.create({
-        email: userData.email,
-        name: userData.name || undefined,
-        metadata: {
-          firebaseUID: actor,
-          organizationId: organizationId,
-          organizationName: organizationName,
-        },
-      });
-      stripeCustomerId = customer.id;
-      await orgRef.update({ stripeCustomerId });
-    }
+    const customer = await stripe.customers.create({
+      email: user.email,
+      name: name,
+      metadata: {
+        firebaseUID: actor,
+        organizationName: organizationName,
+        cnpj: cnpj,
+        contactEmail: contactEmail || '',
+        contactPhone: contactPhone || '',
+      },
+    });
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
       billing_address_collection: 'required',
-      customer: stripeCustomerId,
+      customer: customer.id,
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?payment_success=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?payment_cancelled=true`,
+      subscription_data: {
+        metadata: {
+          firebaseUID: actor,
+        }
+      },
     });
 
     if (!session.url) {
@@ -135,41 +139,77 @@ const updateSubscriptionFlow = ai.defineFlow(
       outputSchema: z.object({ success: z.boolean() }),
     },
     async ({ subscriptionId, customerId, isCreating }) => {
-      const orgQuery = await adminDb
-        .collection('organizations')
-        .where('stripeCustomerId', '==', customerId)
-        .limit(1)
-        .get();
-  
-      if (orgQuery.empty) {
-        throw new Error(`Organização não encontrada para o customerId: ${customerId}`);
-      }
-      const orgDoc = orgQuery.docs[0];
-  
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
-        expand: ['default_payment_method'],
-      });
-  
-      const subscriptionData = {
-        stripeSubscriptionId: subscription.id,
-        stripePriceId: subscription.items.data[0].price.id,
-        stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
-        stripeSubscriptionStatus: subscription.status,
-      };
-  
-      await orgDoc.ref.update(subscriptionData);
       
-      // On creation, copy billing details to the customer object in Stripe
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+        expand: ['default_payment_method', 'items.data.price'],
+      });
+      
+      const firebaseUID = subscription.metadata.firebaseUID;
+      if (!firebaseUID) {
+        throw new Error('Firebase UID not found in subscription metadata.');
+      }
+      
+      const userRef = adminDb.collection('users').doc(firebaseUID);
+      let orgRef;
+
       if (isCreating) {
+        const customer = await stripe.customers.retrieve(customerId);
+        if (customer.deleted) {
+             throw new Error('Stripe customer has been deleted.');
+        }
+        const { organizationName, cnpj, contactEmail, contactPhone } = customer.metadata;
+
+        orgRef = await adminDb.collection('organizations').add({
+          name: organizationName,
+          cnpj,
+          contactEmail,
+          contactPhone,
+          owner: firebaseUID,
+          stripeCustomerId: customerId,
+          stripeSubscriptionId: subscription.id,
+          stripePriceId: subscription.items.data[0].price.id,
+          stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          stripeSubscriptionStatus: subscription.status,
+          createdAt: FieldValue.serverTimestamp(),
+        });
+        
+        const planId = subscription.items.data[0].price.id === process.env.NEXT_PUBLIC_STRIPE_PERFORMANCE_PLAN_PRICE_ID ? 'performance' : 'growth';
+
+        await userRef.update({
+            organizationId: orgRef.id,
+            planId: planId,
+            stripeSubscriptionStatus: subscription.status,
+        });
+
+        await adminAuth.setCustomUserClaims(firebaseUID, { organizationId: orgRef.id, role: 'admin', planId });
+        
         const customerUpdateParams = copyBillingDetailsToCustomer(
-          subscription.default_payment_method,
-          subscription.customer
+            subscription.default_payment_method,
+            subscription.customer
         );
         if (customerUpdateParams) {
-          await stripe.customers.update(customerId, customerUpdateParams);
+            await stripe.customers.update(customerId, customerUpdateParams);
         }
+
+      } else {
+         const userDoc = await userRef.get();
+         const organizationId = userDoc.data()?.organizationId;
+         if (!organizationId) {
+             throw new Error(`Organização não encontrada para o UID: ${firebaseUID}`);
+         }
+         orgRef = adminDb.collection('organizations').doc(organizationId);
+
+         const subscriptionData = {
+          stripeSubscriptionId: subscription.id,
+          stripePriceId: subscription.items.data[0].price.id,
+          stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          stripeSubscriptionStatus: subscription.status,
+        };
+    
+        await orgRef.update(subscriptionData);
+        await userRef.update({ stripeSubscriptionStatus: subscription.status });
       }
-  
+
       return { success: true };
     }
 );

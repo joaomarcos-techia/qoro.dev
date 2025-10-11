@@ -76,14 +76,7 @@ export default function SignUpForm() {
       // Step 1: Create the user in Firebase Auth on the client to send the verification email
       const user = await createUserAndSendVerification(formData.email, formData.password);
 
-      // Step 2: Create the organization and user document in Firestore via the backend flow
-      await signUp({
-        ...formData,
-        uid: user.uid,
-        cnpj: formData.cnpj.replace(/\D/g, ''), 
-      });
-
-      // Step 3: Handle payment for paid plans
+      // Step 2: Handle plan selection
       if (plan === 'growth' || plan === 'performance') {
         const priceId = plan === 'growth' 
             ? process.env.NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID
@@ -96,12 +89,23 @@ export default function SignUpForm() {
         const { sessionId } = await createCheckoutSession({
             priceId: priceId,
             actor: user.uid,
+            // Pass registration data to be stored in Stripe metadata
+            name: formData.name,
+            organizationName: formData.organizationName,
+            cnpj: formData.cnpj.replace(/\D/g, ''),
+            contactEmail: formData.contactEmail,
+            contactPhone: formData.contactPhone
         });
 
         // Redirect to Stripe checkout
         router.push(sessionId); // Assuming sessionId is the checkout URL from Stripe
       } else {
-        // Free plan success message
+        // For the free plan, create the organization directly
+        await signUp({
+          ...formData,
+          uid: user.uid,
+          planId: plan
+        });
         setSuccessMessage('Conta criada! Verifique seu e-mail para ativar sua conta e depois faça o login.');
       }
 

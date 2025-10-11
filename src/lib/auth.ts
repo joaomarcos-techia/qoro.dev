@@ -12,7 +12,8 @@ import {
   reauthenticateWithCredential,
   sendPasswordResetEmail as firebaseSendPasswordResetEmail,
 } from 'firebase/auth';
-import { app } from './firebase';
+import { app, db } from './firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 const auth = getAuth(app);
 
@@ -46,10 +47,20 @@ export const signIn = async (email: string, password: string): Promise<User> => 
         throw notVerifiedError;
       }
       
+      const orgDoc = await getDoc(doc(db, 'users', user.uid));
+      if (orgDoc.exists()) {
+        const orgData = orgDoc.data();
+        // If it's a paid plan and the subscription isn't active, block login
+        if (orgData?.planId !== 'free' && orgData?.stripeSubscriptionStatus !== 'active') {
+             await firebaseSignOut(auth);
+             throw new Error('Seu pagamento está pendente. Por favor, conclua a assinatura para acessar sua conta.');
+        }
+      }
+
       return user;
     } catch (error: any) {
       console.error("Error signing in:", error);
-      if (error.code === 'auth/email-not-verified') {
+      if (error.code === 'auth/email-not-verified' || error.message.includes('pagamento está pendente')) {
           throw error;
       }
        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {

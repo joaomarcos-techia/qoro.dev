@@ -18,11 +18,12 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin';
 // Refactored signUp to only handle Firestore document creation, not Auth user creation.
 // The user should be created on the client-side first to handle email verification.
 const ServerSignUpSchema = SignUpSchema.extend({
-    uid: z.string(), // Expect the UID from the already created Firebase Auth user
+    uid: z.string(),
+    planId: z.string(),
 });
 
 export const signUp = async (input: z.infer<typeof ServerSignUpSchema>): Promise<{uid: string}> => {
-    const { uid, name, organizationName, cnpj, contactEmail, contactPhone, email } = input;
+    const { uid, name, organizationName, cnpj, contactEmail, contactPhone, email, planId } = input;
     
     // Check if user already has an organization
     const existingUserDoc = await adminDb.collection('users').doc(uid).get();
@@ -30,30 +31,48 @@ export const signUp = async (input: z.infer<typeof ServerSignUpSchema>): Promise
         throw new Error("Este usuário já pertence a uma organização.");
     }
 
-    const orgRef = await adminDb.collection('organizations').add({
-        name: organizationName,
-        owner: uid,
-        createdAt: FieldValue.serverTimestamp(),
-        cnpj: cnpj,
-        contactEmail: contactEmail || null,
-        contactPhone: contactPhone || null,
-    });
-
-    await adminDb.collection('users').doc(uid).set({
-        name: name || '',
-        email: email, // Storing email for reference
-        organizationId: orgRef.id,
-        role: 'admin',
-        createdAt: FieldValue.serverTimestamp(),
-        permissions: {
-            qoroCrm: true,
-            qoroPulse: true,
-            qoroTask: true,
-            qoroFinance: true,
-        },
-    });
+    // For free plan, create org and user doc immediately.
+    // For paid plans, this function will be called by the webhook after payment.
+    if (planId === 'free') {
+        const orgRef = await adminDb.collection('organizations').add({
+            name: organizationName,
+            owner: uid,
+            createdAt: FieldValue.serverTimestamp(),
+            cnpj: cnpj,
+            contactEmail: contactEmail || null,
+            contactPhone: contactPhone || null,
+            stripePriceId: 'free', // Mark as free plan
+        });
     
-    await adminAuth.setCustomUserClaims(uid, { organizationId: orgRef.id, role: 'admin' });
+        await adminDb.collection('users').doc(uid).set({
+            name: name || '',
+            email: email, // Storing email for reference
+            organizationId: orgRef.id,
+            role: 'admin',
+            planId: 'free',
+            createdAt: FieldValue.serverTimestamp(),
+            permissions: {
+                qoroCrm: true,
+                qoroPulse: false, // Pulse is not on free plan
+                qoroTask: true,
+                qoroFinance: true,
+            },
+        });
+        
+        await adminAuth.setCustomUserClaims(uid, { organizationId: orgRef.id, role: 'admin', planId: 'free' });
+    } else {
+        // For paid plans, just create a user record with a pending status.
+        // The webhook will create the organization and update the user record.
+        await adminDb.collection('users').doc(uid).set({
+            name: name || '',
+            email: email,
+            planId: planId, // e.g., 'growth' or 'performance'
+            role: 'admin', // Tentative role
+            createdAt: FieldValue.serverTimestamp(),
+            // No organizationId yet, no full permissions
+        });
+         await adminAuth.setCustomUserClaims(uid, { role: 'admin', planId: planId }); // No orgId yet
+    }
 
     return { uid };
 };
