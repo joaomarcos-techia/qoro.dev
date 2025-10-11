@@ -5,13 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, AlertCircle, CheckCircle, User, Building, FileText, Phone, ArrowRight, Loader2 } from 'lucide-react';
 import { signUp } from '@/ai/flows/user-management';
+import { createCheckoutSession } from '@/ai/flows/billing-flow';
 import { createUserAndSendVerification } from '@/lib/auth';
 import { Logo } from '@/components/ui/logo';
 
 export default function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const plan = searchParams.get('plan');
+  const plan = searchParams.get('plan') || 'free';
 
   const [formData, setFormData] = useState({
     email: '',
@@ -82,7 +83,27 @@ export default function SignUpForm() {
         cnpj: formData.cnpj.replace(/\D/g, ''), 
       });
 
-      setSuccessMessage('Conta criada! Verifique seu e-mail para ativar sua conta e depois faça o login.');
+      // Step 3: Handle payment for paid plans
+      if (plan === 'growth' || plan === 'performance') {
+        const priceId = plan === 'growth' 
+            ? process.env.NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID
+            : process.env.NEXT_PUBLIC_STRIPE_PERFORMANCE_PLAN_PRICE_ID;
+        
+        if (!priceId) {
+            throw new Error('ID do plano de preços não configurado para o checkout.');
+        }
+        
+        const { sessionId } = await createCheckoutSession({
+            priceId: priceId,
+            actor: user.uid,
+        });
+
+        // Redirect to Stripe checkout
+        router.push(sessionId); // Assuming sessionId is the checkout URL from Stripe
+      } else {
+        // Free plan success message
+        setSuccessMessage('Conta criada! Verifique seu e-mail para ativar sua conta e depois faça o login.');
+      }
 
     } catch (err: any) {
       setError(err.message || 'Ocorreu um erro ao criar a conta. Tente novamente.');

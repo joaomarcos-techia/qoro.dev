@@ -94,11 +94,11 @@ const createCheckoutSessionFlow = ai.defineFlow(
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?payment_cancelled=true`,
     });
 
-    if (!session.id) {
-      throw new Error('Failed to create Stripe checkout session.');
+    if (!session.url) {
+      throw new Error('Failed to create Stripe checkout session URL.');
     }
 
-    return { sessionId: session.id };
+    return { sessionId: session.url };
   }
 );
 
