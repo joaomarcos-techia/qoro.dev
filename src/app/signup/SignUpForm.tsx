@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, Lock, AlertCircle, CheckCircle, User, Building, FileText, Phone, ArrowRight, Loader2 } from 'lucide-react';
+import { Mail, Lock, AlertCircle, CheckCircle, User, Building, FileText, Phone, ArrowRight, Loader2, CreditCard } from 'lucide-react';
 import { signUp } from '@/ai/flows/user-management';
 import { createCheckoutSession } from '@/ai/flows/billing-flow';
 import { createUserAndSendVerification } from '@/lib/auth';
@@ -27,6 +27,7 @@ export default function SignUpForm() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
 
   const formatCNPJ = (value: string) => {
     if (!value) return "";
@@ -60,6 +61,8 @@ export default function SignUpForm() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccessMessage(null);
+    setCheckoutUrl(null);
     setIsLoading(true);
 
     if (formData.password.length < 6) {
@@ -90,7 +93,6 @@ export default function SignUpForm() {
         const { sessionId } = await createCheckoutSession({
             priceId: priceId,
             actor: user.uid,
-            // Pass registration data to be stored in Stripe metadata
             name: formData.name,
             organizationName: formData.organizationName,
             cnpj: formData.cnpj.replace(/\D/g, ''),
@@ -98,8 +100,10 @@ export default function SignUpForm() {
             contactPhone: formData.contactPhone
         });
 
-        // Redirect to Stripe checkout
-        window.location.assign(sessionId); // Correct way to redirect to an external URL
+        // Show success message with a button to go to checkout
+        setCheckoutUrl(sessionId);
+        setSuccessMessage('Credenciais criadas! O próximo passo é concluir o pagamento.');
+
       } else {
         // For the free plan, create the organization directly
         await signUp({
@@ -131,11 +135,23 @@ export default function SignUpForm() {
         {successMessage ? (
           <div className="bg-green-800/20 border-l-4 border-green-500 text-green-300 p-6 rounded-lg flex items-center text-center flex-col">
             <CheckCircle className="w-10 h-10 mb-4 text-green-400" />
-            <h3 className="text-xl font-bold text-white mb-2">Conta Criada com Sucesso!</h3>
+            <h3 className="text-xl font-bold text-white mb-2">{checkoutUrl ? 'Quase lá!' : 'Conta Criada com Sucesso!'}</h3>
             <p className="text-sm font-semibold mb-6">{successMessage}</p>
-            <Link href="/login" className="w-full bg-primary text-primary-foreground py-3 rounded-xl hover:bg-primary/90 transition-all duration-200 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
-                Ir para o Login
-            </Link>
+            
+            {checkoutUrl ? (
+                <a href={checkoutUrl} target="_blank" rel="noopener noreferrer" className="w-full bg-primary text-primary-foreground py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
+                    <CreditCard className="mr-2 h-5 w-5" />
+                    Ir para o Pagamento
+                </a>
+            ) : (
+                <Link href="/login" className="w-full bg-primary text-primary-foreground py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
+                    Ir para o Login
+                </Link>
+            )}
+             <p className="text-xs text-muted-foreground mt-4">
+                {checkoutUrl ? 'Após pagar, verifique seu e-mail para ativar sua conta e depois faça o login.' : ''}
+            </p>
+
           </div>
         ) : (
           <form onSubmit={handleSignUp} className="space-y-8">
