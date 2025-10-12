@@ -44,6 +44,7 @@ export const createUserProfile = async (input: z.infer<typeof UserProfileCreatio
         stripeCustomerId: input.stripeCustomerId || null,
         stripeSubscriptionId: input.stripeSubscriptionId || null,
         stripePriceId: planId, // Usa o planId diretamente
+        stripeSubscriptionStatus: input.stripeSubscriptionStatus || 'free',
     });
 
     const isPaidPlan = planId !== 'free';

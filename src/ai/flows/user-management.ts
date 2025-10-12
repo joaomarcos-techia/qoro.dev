@@ -3,7 +3,7 @@
 'use server';
 /**
  * @fileOverview User and organization management flows.
- * - signUp - Creates a new user and organization.
+ * - signUp - Creates a new user and organization for the free plan.
  * - inviteUser - Invites a user to an organization via email.
  * - listUsers - Lists all users within the caller's organization.
  * - updateUserPermissions - Updates the application permissions for a specific user.
