@@ -13,6 +13,7 @@ import { stripe } from '@/lib/stripe';
 import { getAdminAndOrg } from '@/services/utils';
 import type { Stripe } from 'stripe';
 import { FieldValue } from 'firebase-admin/firestore';
+import * as orgService from '@/services/organizationService';
 
 const CreateCheckoutSessionSchema = z.object({
   priceId: z.string(),
@@ -28,39 +29,20 @@ const CreateBillingPortalSessionSchema = z.object({
   actor: z.string(),
 });
 
+// Schema para validar os metadados esperados do webhook da assinatura
 const UpdateSubscriptionSchema = z.object({
   subscriptionId: z.string(),
   isCreating: z.boolean(),
+  customerId: z.string(),
+  firebaseUID: z.string(),
+  planId: z.enum(['growth', 'performance']), // Garante que o planId é válido
+  // Adiciona os campos de organização como obrigatórios no momento da criação
+  organizationName: z.string().min(1, 'Nome da organização é obrigatório.'),
+  cnpj: z.string().min(1, 'CNPJ é obrigatório.'),
+  contactEmail: z.string().optional(),
+  contactPhone: z.string().optional(),
 });
 
-// --- Helper Functions ---
-
-/**
- * Copies billing details from a payment method or customer to a new customer object.
- * This ensures that when a user subscribes, their billing information (name, address, etc.)
- * is correctly mirrored from the checkout session to their customer profile in Stripe.
- */
-function copyBillingDetailsToCustomer(
-  payment_method: Stripe.PaymentMethod | string | null,
-  customer: Stripe.Customer | string | null
-): Stripe.CustomerUpdateParams | undefined {
-  if (!payment_method || typeof payment_method === 'string' || !customer || typeof customer !== 'string') {
-    return;
-  }
-  const billingDetails = payment_method.billing_details;
-  if (!billingDetails) return;
-
-  const customerUpdate: Stripe.CustomerUpdateParams = {
-    name: billingDetails.name ?? undefined,
-    phone: billingDetails.phone ?? undefined,
-    address: billingDetails.address ?? undefined,
-  };
-
-  return customerUpdate;
-}
-
-
-// --- Genkit Flows ---
 
 const createCheckoutSessionFlow = ai.defineFlow(
   {
@@ -72,13 +54,22 @@ const createCheckoutSessionFlow = ai.defineFlow(
     
     const user = await adminAuth.getUser(actor);
 
-    const customer = await stripe.customers.create({
-      email: user.email,
-      name: name,
-      metadata: {
-        firebaseUID: actor,
-      },
-    });
+    // Verifique se já existe um cliente Stripe para este usuário para evitar duplicatas
+    const customers = await stripe.customers.list({ email: user.email!, limit: 1 });
+    let customer;
+    if (customers.data.length > 0) {
+        customer = customers.data[0];
+    } else {
+        customer = await stripe.customers.create({
+            email: user.email,
+            name: name,
+            metadata: {
+                firebaseUID: actor,
+            },
+        });
+    }
+
+    const planId = priceId === process.env.NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID ? 'growth' : 'performance';
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -87,7 +78,7 @@ const createCheckoutSessionFlow = ai.defineFlow(
       customer: customer.id,
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/login?payment_success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/signup?plan=growth&payment_cancelled=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/signup?plan=${planId}&payment_cancelled=true`,
       subscription_data: {
         metadata: {
             firebaseUID: actor,
@@ -95,6 +86,7 @@ const createCheckoutSessionFlow = ai.defineFlow(
             cnpj: cnpj,
             contactEmail: contactEmail || '',
             contactPhone: contactPhone || '',
+            planId: planId, // Passa o planId para o webhook
         }
       },
     });
@@ -136,50 +128,69 @@ const createBillingPortalSessionFlow = ai.defineFlow(
 const updateSubscriptionFlow = ai.defineFlow(
     {
       name: 'updateSubscriptionFlow',
-      inputSchema: UpdateSubscriptionSchema,
+      inputSchema: z.any(), // Entrada flexível para o webhook, validação será feita internamente
       outputSchema: z.object({ success: z.boolean() }),
     },
-    async ({ subscriptionId, isCreating }) => {
-      
+    async (rawInput) => {
+        
+      const { subscriptionId, isCreating } = rawInput;
+
       const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
         expand: ['default_payment_method'],
       });
       
-      const { firebaseUID, organizationName, cnpj, contactEmail, contactPhone } = subscription.metadata;
-
+      const firebaseUID = subscription.metadata.firebaseUID;
       if (!firebaseUID) {
         console.error('CRITICAL: Firebase UID not found in subscription metadata for subscription ID:', subscriptionId);
         throw new Error('Firebase UID not found in subscription metadata.');
       }
       
       const userRef = adminDb.collection('users').doc(firebaseUID);
-      let orgRef;
 
       if (isCreating) {
-        if (!organizationName || !cnpj) {
-            console.error('CRITICAL: Organization details missing in subscription metadata for subscription ID:', subscriptionId);
-            throw new Error('Organization details missing in subscription metadata.');
+        // Valida os dados da assinatura para garantir que temos tudo para criar a organização
+        const validatedInput = UpdateSubscriptionSchema.safeParse({
+            ...rawInput,
+            firebaseUID: firebaseUID,
+            customerId: subscription.customer,
+            planId: subscription.metadata.planId,
+            organizationName: subscription.metadata.organizationName,
+            cnpj: subscription.metadata.cnpj,
+            contactEmail: subscription.metadata.contactEmail,
+            contactPhone: subscription.metadata.contactPhone,
+        });
+
+        if (!validatedInput.success) {
+            console.error("Validation error on subscription creation:", validatedInput.error.flatten());
+            throw new Error(`Dados de metadados da assinatura inválidos: ${validatedInput.error.message}`);
+        }
+        
+        const { data } = validatedInput;
+
+        // Idempotency Check: Verifique se já existe uma organização para este usuário
+        const existingOrgQuery = await adminDb.collection('organizations').where('owner', '==', firebaseUID).limit(1).get();
+        if (!existingOrgQuery.empty) {
+            console.log(`Idempotency check: Organization already exists for user ${firebaseUID}. Skipping creation.`);
+            return { success: true };
         }
 
-        orgRef = await adminDb.collection('organizations').add({
-          name: organizationName,
-          cnpj,
-          contactEmail,
-          contactPhone,
+        const orgRef = await adminDb.collection('organizations').add({
+          name: data.organizationName,
+          cnpj: data.cnpj,
+          contactEmail: data.contactEmail,
+          contactPhone: data.contactPhone,
           owner: firebaseUID,
-          stripeCustomerId: subscription.customer,
+          stripeCustomerId: data.customerId,
           stripeSubscriptionId: subscription.id,
           stripePriceId: subscription.items.data[0].price.id,
           stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
           stripeSubscriptionStatus: subscription.status,
           createdAt: FieldValue.serverTimestamp(),
         });
-        
-        const planId = subscription.items.data[0].price.id === process.env.NEXT_PUBLIC_STRIPE_PERFORMANCE_PLAN_PRICE_ID ? 'performance' : 'growth';
 
         await userRef.set({
             organizationId: orgRef.id,
-            planId: planId,
+            planId: data.planId,
             stripeSubscriptionStatus: subscription.status,
             role: 'admin',
             permissions: {
@@ -188,19 +199,11 @@ const updateSubscriptionFlow = ai.defineFlow(
                 qoroTask: true,
                 qoroFinance: true,
             }
-        }, { merge: true });
+        }, { merge: true }); // Use merge para não sobrescrever dados parciais do sign-up
 
-        await adminAuth.setCustomUserClaims(firebaseUID, { organizationId: orgRef.id, role: 'admin', planId });
-        
-        const customerUpdateParams = copyBillingDetailsToCustomer(
-            subscription.default_payment_method,
-            subscription.customer
-        );
-        if (customerUpdateParams) {
-            await stripe.customers.update(subscription.customer as string, customerUpdateParams);
-        }
+        await adminAuth.setCustomUserClaims(firebaseUID, { organizationId: orgRef.id, role: 'admin', planId: data.planId });
 
-      } else {
+      } else { // Atualizando uma assinatura existente (cancelamento, etc.)
          const userDoc = await userRef.get();
          if (!userDoc.exists) {
             console.error(`CRITICAL: User document not found for UID: ${firebaseUID} during subscription update.`);
@@ -210,7 +213,7 @@ const updateSubscriptionFlow = ai.defineFlow(
          if (!organizationId) {
              throw new Error(`Organização não encontrada para o UID: ${firebaseUID}`);
          }
-         orgRef = adminDb.collection('organizations').doc(organizationId);
+         const orgRef = adminDb.collection('organizations').doc(organizationId);
 
          const subscriptionData = {
           stripeSubscriptionId: subscription.id,

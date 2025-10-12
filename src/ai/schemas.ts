@@ -10,6 +10,7 @@ export const SignUpSchema = z.object({
     cnpj: z.string().min(1, "O CNPJ é obrigatório."),
     contactEmail: z.union([z.string().email({ message: "E-mail de contato inválido." }), z.literal('')]).optional(),
     contactPhone: z.union([z.string(), z.literal('')]).optional(),
+    planId: z.string().optional(), // Adicionado para o fluxo unificado
 });
 
 export const InviteUserSchema = z.object({

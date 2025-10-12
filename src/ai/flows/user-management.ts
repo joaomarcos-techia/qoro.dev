@@ -37,8 +37,19 @@ const UserProfileOutputSchema = z.object({
 
 // Define flows
 const signUpFlow = ai.defineFlow(
-    { name: 'signUpFlow', inputSchema: SignUpSchema.extend({ uid: z.string() }), outputSchema: z.object({ uid: z.string() }) },
-    async (input) => orgService.signUp(input)
+    { 
+        name: 'signUpFlow', 
+        inputSchema: SignUpSchema.extend({ uid: z.string() }), 
+        outputSchema: z.object({ uid: z.string() }) 
+    },
+    async (input) => {
+        // This flow now only handles the free plan directly.
+        // Paid plans are handled via the billing webhook which calls the service directly.
+        if (input.planId !== 'free') {
+            throw new Error("Este endpoint destina-se apenas ao plano gratuito. Planos pagos são ativados via webhook de pagamento.");
+        }
+        return orgService.createUserProfile(input);
+    }
 );
 
 const inviteUserFlow = ai.defineFlow(
