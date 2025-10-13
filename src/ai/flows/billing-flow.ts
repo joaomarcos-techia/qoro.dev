@@ -8,10 +8,9 @@
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { adminDb, adminAuth } from '@/lib/firebase-admin';
+import { adminDb } from '@/lib/firebase-admin';
 import { stripe } from '@/lib/stripe';
 import { getAdminAndOrg } from '@/services/utils';
-import type { Stripe } from 'stripe';
 import * as orgService from '@/services/organizationService';
 import { UserProfileCreationSchema } from '@/ai/schemas';
 
@@ -42,21 +41,13 @@ const createCheckoutSessionFlow = ai.defineFlow(
   },
   async ({ priceId, actor, name, organizationName, cnpj, contactEmail, contactPhone }) => {
     
-    const user = await adminAuth.getUser(actor);
-
-    const customers = await stripe.customers.list({ email: user.email!, limit: 1 });
-    let customer;
-    if (customers.data.length > 0) {
-        customer = customers.data[0];
-    } else {
-        customer = await stripe.customers.create({
-            email: user.email,
-            name: name,
-            metadata: {
-                firebaseUID: actor,
-            },
-        });
-    }
+    // Temporarily creating a simplified customer object in Stripe
+    const customer = await stripe.customers.create({
+        name: name,
+        metadata: {
+            firebaseUID: actor,
+        },
+    });
 
     const planId = priceId === process.env.NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID ? 'growth' : 'performance';
     
@@ -74,8 +65,8 @@ const createCheckoutSessionFlow = ai.defineFlow(
         metadata: {
             firebaseUID: actor,
             organizationName: organizationName,
-            userName: name, // Passing user's name
-            userEmail: user.email!, // Passing user's email
+            userName: name,
+            userEmail: '', // Email will be set on the user object by Firebase Auth
             cnpj: cnpj,
             contactEmail: contactEmail || '',
             contactPhone: contactPhone || '',
@@ -136,9 +127,9 @@ const updateSubscriptionFlow = ai.defineFlow(
             console.log('✅ Handling subscription creation event...');
             const metadata = subscription.metadata;
 
-            if (!metadata || !metadata.firebaseUID || !metadata.organizationName) {
-                console.error('CRITICAL: Firebase UID or Organization Name not found in subscription metadata for ID:', subscriptionId);
-                throw new Error('Metadados essenciais (firebaseUID, organizationName) não encontrados na assinatura.');
+            if (!metadata || !metadata.firebaseUID) {
+                console.error('CRITICAL: Firebase UID not found in subscription metadata for ID:', subscriptionId);
+                throw new Error('Metadados essenciais (firebaseUID) não encontrados na assinatura.');
             }
             
             const { firebaseUID, organizationName, userName, userEmail, cnpj, contactEmail, contactPhone, planId, stripePriceId } = metadata;
@@ -147,13 +138,13 @@ const updateSubscriptionFlow = ai.defineFlow(
                 uid: firebaseUID,
                 name: userName || organizationName,
                 email: userEmail,
-                organizationName: organizationName,
+                organizationName: organizationName || 'Nova Organização',
                 cnpj: cnpj,
                 contactEmail: contactEmail,
                 contactPhone: contactPhone,
                 planId: planId,
                 stripePriceId: stripePriceId,
-                password: '', // Password is not needed here
+                password: '', // Password is not handled here
                 stripeCustomerId: subscription.customer as string,
                 stripeSubscriptionId: subscription.id,
                 stripeSubscriptionStatus: subscription.status,
