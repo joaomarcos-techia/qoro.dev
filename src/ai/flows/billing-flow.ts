@@ -132,6 +132,7 @@ const updateSubscriptionFlow = ai.defineFlow(
         
         if (isCreating) {
             console.log('✅ Handling subscription creation event...');
+            // Correctly use the subscription's metadata which contains the firebaseUID.
             const metadata = subscription.metadata;
 
             if (!metadata || !metadata.firebaseUID || !metadata.organizationName) {
@@ -160,7 +161,8 @@ const updateSubscriptionFlow = ai.defineFlow(
                 stripeSubscriptionId: subscription.id,
                 stripeSubscriptionStatus: subscription.status,
             };
-
+            
+            // This is the crucial call that was failing before.
             await orgService.createUserProfile(creationData);
             console.log(`✅ User profile and organization created for UID: ${firebaseUID}`);
 
