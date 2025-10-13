@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -49,31 +50,31 @@ export const PlanProvider = ({ children }: { children: React.ReactNode }) => {
     const delay = 3000;
 
     const attemptFetch = async () => {
-      if (!isMounted) return;
+        if (!isMounted) return;
 
-      try {
-        const accessInfo = await getUserAccessInfo({ actor: user.uid });
-        if (accessInfo) {
-          if (isMounted) {
-            setPlanId(accessInfo.planId);
-            setPermissions(accessInfo.permissions);
-            setError(null);
-            setIsLoading(false);
-          }
-        } else {
-          throw new Error("User data not ready");
+        try {
+            const accessInfo = await getUserAccessInfo({ actor: user.uid });
+            if (accessInfo) {
+                if (isMounted) {
+                    setPlanId(accessInfo.planId);
+                    setPermissions(accessInfo.permissions);
+                    setError(null);
+                    setIsLoading(false);
+                }
+            } else {
+                throw new Error("User data not ready");
+            }
+        } catch (err) {
+            if (isMounted && attempts < maxAttempts) {
+                attempts++;
+                console.log(`User data not ready, retrying... Attempt ${attempts}`);
+                setTimeout(attemptFetch, delay);
+            } else if (isMounted) {
+                console.error("Failed to fetch plan info after multiple retries.");
+                setError("USER_DATA_NOT_FOUND");
+                setIsLoading(false);
+            }
         }
-      } catch (err) {
-        if (isMounted && attempts < maxAttempts) {
-          attempts++;
-          console.log(`User data not ready, retrying... Attempt ${attempts}`);
-          setTimeout(attemptFetch, delay);
-        } else if (isMounted) {
-          console.error("Failed to fetch plan info after multiple retries.");
-          setError("USER_DATA_NOT_FOUND");
-          setIsLoading(false);
-        }
-      }
     };
 
     if (user) {
@@ -88,10 +89,14 @@ export const PlanProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-
   useEffect(() => {
     if (currentUser) {
-      fetchPlan(currentUser);
+      const cleanup = fetchPlan(currentUser);
+      return () => {
+        if (typeof cleanup === 'function') {
+          cleanup();
+        }
+      };
     }
   }, [currentUser, fetchPlan]);
 

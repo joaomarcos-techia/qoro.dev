@@ -29,7 +29,7 @@ const CreateBillingPortalSessionSchema = z.object({
   actor: z.string(),
 });
 
-const UpdateSubscriptionSchema = z.object({
+const WebhookInputSchema = z.object({
     subscriptionId: z.string(),
     isCreating: z.boolean(),
 });
@@ -120,11 +120,13 @@ const createBillingPortalSessionFlow = ai.defineFlow(
 const updateSubscriptionFlow = ai.defineFlow(
     {
         name: 'updateSubscriptionFlow',
-        inputSchema: UpdateSubscriptionSchema,
+        inputSchema: WebhookInputSchema,
         outputSchema: z.object({ success: z.boolean() }),
     },
     async ({ subscriptionId, isCreating }) => {
-        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+            expand: ['default_payment_method'],
+        });
         
         if (isCreating) {
             console.log('✅ Handling subscription creation event...');
@@ -205,6 +207,6 @@ export async function createBillingPortalSession(input: z.infer<typeof CreateBil
   return createBillingPortalSessionFlow(input);
 }
 
-export async function updateSubscription(input: z.infer<typeof UpdateSubscriptionSchema>): Promise<{ success: boolean }> {
+export async function updateSubscription(input: z.infer<typeof WebhookInputSchema>): Promise<{ success: boolean }> {
   return updateSubscriptionFlow(input);
 }
