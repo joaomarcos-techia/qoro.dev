@@ -132,21 +132,23 @@ const updateSubscriptionFlow = ai.defineFlow(
         
         if (isCreating) {
             console.log('✅ Handling subscription creation event...');
-            // CRITICAL FIX: Use metadata from the retrieved subscription object
             const metadata = subscription.metadata;
 
-            if (!metadata || !metadata.firebaseUID) {
-                console.error('CRITICAL: Firebase UID not found in subscription metadata for ID:', subscriptionId);
-                throw new Error('Firebase UID não encontrado nos metadados da assinatura.');
+            if (!metadata || !metadata.firebaseUID || !metadata.organizationName) {
+                console.error('CRITICAL: Firebase UID or Organization Name not found in subscription metadata for ID:', subscriptionId);
+                throw new Error('Metadados essenciais não encontrados na assinatura.');
             }
             
             const { firebaseUID, organizationName, cnpj, contactEmail, contactPhone, planId, stripePriceId } = metadata;
-            const userRecord = await adminAuth.getUser(firebaseUID);
+            
+            // Retrieve email from Stripe customer object as a fallback
+            const customer = await stripe.customers.retrieve(subscription.customer as string);
+            const userEmail = ('email' in customer && customer.email) ? customer.email : 'email_not_found';
             
             const creationData: z.infer<typeof UserProfileCreationSchema> = {
                 uid: firebaseUID,
-                name: userRecord.displayName || organizationName,
-                email: userRecord.email!,
+                name: organizationName, // Use a reliable field, org name is good
+                email: userEmail,
                 organizationName: organizationName,
                 cnpj: cnpj,
                 contactEmail: contactEmail,
