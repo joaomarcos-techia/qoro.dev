@@ -4,7 +4,7 @@
  * @fileOverview Billing and subscription management flows.
  * - createCheckoutSession: Creates a Stripe Checkout session for a user to subscribe.
  * - createBillingPortalSession: Creates a Stripe Billing Portal session for a user to manage their subscription.
- * - updateSubscription: Updates the subscription status in Firestore based on Stripe webhook events.
+ * - updateSubscription: Handles Stripe webhook events for creating or updating a subscription.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
@@ -26,6 +26,11 @@ const CreateCheckoutSessionSchema = z.object({
 
 const CreateBillingPortalSessionSchema = z.object({
   actor: z.string(),
+});
+
+const UpdateSubscriptionSchema = z.object({
+    subscriptionId: z.string(),
+    isCreating: z.boolean(),
 });
 
 const createCheckoutSessionFlow = ai.defineFlow(
@@ -114,7 +119,7 @@ const createBillingPortalSessionFlow = ai.defineFlow(
 const updateSubscriptionFlow = ai.defineFlow(
     {
         name: 'updateSubscriptionFlow',
-        inputSchema: z.object({ subscriptionId: z.string(), isCreating: z.boolean() }),
+        inputSchema: UpdateSubscriptionSchema,
         outputSchema: z.object({ success: z.boolean() }),
     },
     async ({ subscriptionId, isCreating }) => {
@@ -123,6 +128,7 @@ const updateSubscriptionFlow = ai.defineFlow(
         if (isCreating) {
             console.log('✅ Handling subscription creation event...');
             const metadata = subscription.metadata;
+
             if (!metadata || !metadata.firebaseUID) {
                 console.error('CRITICAL: Firebase UID not found in subscription metadata for ID:', subscriptionId);
                 throw new Error('Firebase UID não encontrado nos metadados da assinatura.');
@@ -131,6 +137,7 @@ const updateSubscriptionFlow = ai.defineFlow(
             const { firebaseUID, organizationName, cnpj, contactEmail, contactPhone, planId, stripePriceId } = metadata;
             const userRecord = await adminAuth.getUser(firebaseUID);
             
+            // This is the correct, robust data object for creating a user profile.
             const creationData = {
                 uid: firebaseUID,
                 name: userRecord.displayName || organizationName,
@@ -141,7 +148,7 @@ const updateSubscriptionFlow = ai.defineFlow(
                 contactPhone: contactPhone,
                 planId: planId,
                 stripePriceId: stripePriceId,
-                password: '', // Password is set on client
+                password: '', // Password is set on client, not needed here
                 stripeCustomerId: subscription.customer as string,
                 stripeSubscriptionId: subscription.id,
                 stripeSubscriptionStatus: subscription.status,
@@ -152,10 +159,8 @@ const updateSubscriptionFlow = ai.defineFlow(
 
         } else {
             console.log(`🔄 Handling subscription update event for status: ${subscription.status}...`);
-            const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
             
-            // Stripe Customer metadata is not a reliable source for firebaseUID after creation.
-            // A more robust way is to query our own DB.
+            // For updates, we find the user by their subscription ID.
             const usersSnapshot = await adminDb.collection('users')
                 .where('stripeSubscriptionId', '==', subscriptionId)
                 .limit(1)
@@ -201,6 +206,6 @@ export async function createBillingPortalSession(input: z.infer<typeof CreateBil
   return createBillingPortalSessionFlow(input);
 }
 
-export async function updateSubscription(input: { subscriptionId: string, isCreating: boolean }): Promise<{ success: boolean }> {
+export async function updateSubscription(input: z.infer<typeof UpdateSubscriptionSchema>): Promise<{ success: boolean }> {
   return updateSubscriptionFlow(input);
 }

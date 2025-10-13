@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -41,24 +42,18 @@ export const PlanProvider = ({ children }: { children: React.ReactNode }) => {
     });
     return () => unsubscribe();
   }, []);
-
-  useEffect(() => {
-    if (!currentUser) {
-      setIsLoading(false);
-      return;
-    }
-    
+  
+  const fetchPlan = useCallback(async (user: FirebaseUser) => {
     let isMounted = true;
-    let retries = 0;
-    const maxRetries = 10;
-    const retryDelay = 3000;
+    let attempts = 0;
+    const maxAttempts = 10;
+    const delay = 3000;
 
-    const fetchPlan = async () => {
+    const attemptFetch = async () => {
       if (!isMounted) return;
-      setIsLoading(true);
-      
+
       try {
-        const accessInfo = await getUserAccessInfo({ actor: currentUser.uid });
+        const accessInfo = await getUserAccessInfo({ actor: user.uid });
         if (accessInfo) {
           if (isMounted) {
             setPlanId(accessInfo.planId);
@@ -70,10 +65,10 @@ export const PlanProvider = ({ children }: { children: React.ReactNode }) => {
           throw new Error("User data not ready");
         }
       } catch (err) {
-        if (retries < maxRetries) {
-          retries++;
-          console.log(`User data not ready, retrying... Attempt ${retries}`);
-          setTimeout(fetchPlan, retryDelay);
+        if (isMounted && attempts < maxAttempts) {
+          attempts++;
+          console.log(`User data not ready, retrying... Attempt ${attempts}`);
+          setTimeout(attemptFetch, delay);
         } else if (isMounted) {
           console.error("Failed to fetch plan info after multiple retries.");
           setError("Não foi possível carregar as informações do seu plano. Por favor, tente recarregar a página.");
@@ -82,12 +77,24 @@ export const PlanProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    fetchPlan();
-
+    if (user) {
+        setIsLoading(true);
+        attemptFetch();
+    } else {
+        setIsLoading(false);
+    }
+    
     return () => {
-      isMounted = false; // Cleanup to prevent state updates on unmounted component
+      isMounted = false;
     };
-  }, [currentUser]);
+  }, []);
+
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchPlan(currentUser);
+    }
+  }, [currentUser, fetchPlan]);
 
 
   return (
