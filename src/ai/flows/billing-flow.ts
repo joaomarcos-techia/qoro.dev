@@ -13,6 +13,7 @@ import { stripe } from '@/lib/stripe';
 import { getAdminAndOrg } from '@/services/utils';
 import type { Stripe } from 'stripe';
 import * as orgService from '@/services/organizationService';
+import { UserProfileCreationSchema } from '@/ai/schemas';
 
 const CreateCheckoutSessionSchema = z.object({
   priceId: z.string(),
@@ -137,8 +138,7 @@ const updateSubscriptionFlow = ai.defineFlow(
             const { firebaseUID, organizationName, cnpj, contactEmail, contactPhone, planId, stripePriceId } = metadata;
             const userRecord = await adminAuth.getUser(firebaseUID);
             
-            // This is the correct, robust data object for creating a user profile.
-            const creationData = {
+            const creationData: z.infer<typeof UserProfileCreationSchema> = {
                 uid: firebaseUID,
                 name: userRecord.displayName || organizationName,
                 email: userRecord.email!,
@@ -148,7 +148,7 @@ const updateSubscriptionFlow = ai.defineFlow(
                 contactPhone: contactPhone,
                 planId: planId,
                 stripePriceId: stripePriceId,
-                password: '', // Password is set on client, not needed here
+                password: '', 
                 stripeCustomerId: subscription.customer as string,
                 stripeSubscriptionId: subscription.id,
                 stripeSubscriptionStatus: subscription.status,
@@ -160,7 +160,6 @@ const updateSubscriptionFlow = ai.defineFlow(
         } else {
             console.log(`🔄 Handling subscription update event for status: ${subscription.status}...`);
             
-            // For updates, we find the user by their subscription ID.
             const usersSnapshot = await adminDb.collection('users')
                 .where('stripeSubscriptionId', '==', subscriptionId)
                 .limit(1)
