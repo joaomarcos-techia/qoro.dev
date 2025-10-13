@@ -19,6 +19,7 @@ export const UserProfileCreationSchema = SignUpSchema.extend({
     stripeCustomerId: z.string().optional(),
     stripeSubscriptionId: z.string().optional(),
     stripeSubscriptionStatus: z.string().optional(),
+    stripePriceId: z.string().optional(),
 });
 
 
@@ -86,15 +87,14 @@ export const UpdateOrganizationDetailsSchema = z.object({
 
 // Schema para validar os metadados esperados do webhook da assinatura
 export const UpdateSubscriptionSchema = z.object({
-  subscriptionId: z.string(),
   isCreating: z.boolean(),
-  customerId: z.string().optional(), // Opcional porque pode não vir no primeiro evento
   firebaseUID: z.string(), // Obrigatório para a criação
   planId: z.enum(['growth', 'performance']), // Obrigatório para a criação
   organizationName: z.string().min(1, 'Nome da organização é obrigatório.'),
   cnpj: z.string().min(1, 'CNPJ é obrigatório.'),
   contactEmail: z.string().optional(),
   contactPhone: z.string().optional(),
+  stripePriceId: z.string().min(1, 'ID do preço do Stripe é obrigatório.'),
 });
 
 

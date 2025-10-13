@@ -72,7 +72,8 @@ const createCheckoutSessionFlow = ai.defineFlow(
             cnpj: cnpj,
             contactEmail: contactEmail || '',
             contactPhone: contactPhone || '',
-            planId: planId, // Passa o planId para o webhook
+            planId: planId,
+            stripePriceId: priceId, // Adicionado para passar o ID do preço
         }
       },
     });
@@ -141,7 +142,6 @@ const updateSubscriptionFlow = ai.defineFlow(
             // Valida os dados da assinatura para garantir que temos tudo para criar a organização
             const validatedMetadata = UpdateSubscriptionSchema.safeParse({
                 ...subscription.metadata, // Passa todos os metadados da assinatura
-                subscriptionId: subscription.id,
                 isCreating: isCreating,
             });
 
@@ -166,6 +166,7 @@ const updateSubscriptionFlow = ai.defineFlow(
                 stripeCustomerId: subscription.customer as string,
                 stripeSubscriptionId: subscription.id,
                 stripeSubscriptionStatus: subscription.status,
+                stripePriceId: data.stripePriceId,
             });
 
         } else { // Atualizando uma assinatura existente (cancelamento, etc.)

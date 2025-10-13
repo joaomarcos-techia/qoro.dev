@@ -53,13 +53,17 @@ export async function POST(req: Request) {
 
   if (relevantEvents.has(event.type)) {
     try {
+      let subscription: Stripe.Subscription;
+      let isCreating = false;
+
       switch (event.type) {
         case 'checkout.session.completed':
           const checkoutSession = event.data.object as Stripe.Checkout.Session;
           if (typeof checkoutSession.subscription !== 'string') {
             throw new Error('ID da assinatura não encontrado na sessão de checkout.');
           }
-          await updateSubscription({
+           isCreating = true;
+           await updateSubscription({
             subscriptionId: checkoutSession.subscription,
             isCreating: true,
           });
@@ -68,7 +72,7 @@ export async function POST(req: Request) {
         case 'customer.subscription.deleted':
         case 'customer.subscription.paused':
         case 'customer.subscription.resumed':
-          const subscription = event.data.object as Stripe.Subscription;
+          subscription = event.data.object as Stripe.Subscription;
           await updateSubscription({
             subscriptionId: subscription.id,
             isCreating: false,

@@ -18,7 +18,7 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin';
 
 
 export const createUserProfile = async (input: z.infer<typeof UserProfileCreationSchema>): Promise<{uid: string}> => {
-    const { uid, name, organizationName, cnpj, contactEmail, contactPhone, email, planId } = input;
+    const { uid, name, organizationName, cnpj, contactEmail, contactPhone, email, planId, stripePriceId } = input;
     
     // Idempotency Check: se o usuário já tem uma org, não faz nada.
     const existingUserDoc = await adminDb.collection('users').doc(uid).get();
@@ -36,7 +36,7 @@ export const createUserProfile = async (input: z.infer<typeof UserProfileCreatio
         contactPhone: contactPhone || null,
         stripeCustomerId: input.stripeCustomerId || null,
         stripeSubscriptionId: input.stripeSubscriptionId || null,
-        stripePriceId: planId, // Usa o planId diretamente
+        stripePriceId: stripePriceId || planId, // Usa o stripePriceId se existir, senão o planId (para o 'free')
         stripeSubscriptionStatus: input.stripeSubscriptionStatus || 'free',
     });
 
