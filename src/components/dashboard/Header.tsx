@@ -9,6 +9,7 @@ import { auth } from '@/lib/firebase';
 import { getUserProfile } from '@/ai/flows/user-management';
 import Link from 'next/link';
 import { Logo } from '@/components/ui/logo';
+import { usePlan } from '@/contexts/PlanContext';
 
 interface UserProfile {
   name: string;
@@ -20,29 +21,29 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { isLoading: isPlanLoading } = usePlan();
 
   const fetchUserProfile = useCallback(async (user: FirebaseUser) => {
-    setIsLoading(true);
+    setIsLoadingProfile(true);
     setError(null);
     try {
         const profile = await getUserProfile({ actor: user.uid });
-        // Only set profile if it's not null (i.e., user doc is ready)
         if (profile) {
             setUserProfile(profile);
         } else {
-            // If profile is null, it might be syncing. Don't set an error yet.
-            // The loading state will remain true, driven by the context.
-            return;
+            // This case is now handled by the PlanContext polling
+            // We just wait for the user data to be available.
+            return; 
         }
     } catch (err) {
         console.error("Falha ao buscar perfil do usuário:", err);
         setError("Não foi possível carregar os dados do perfil.");
         setUserProfile(null); 
     } finally {
-        setIsLoading(false);
+        setIsLoadingProfile(false);
     }
   }, []);
 
@@ -50,17 +51,19 @@ export function Header() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setCurrentUser(user);
-        fetchUserProfile(user);
+        if (!isPlanLoading) {
+            fetchUserProfile(user);
+        }
       } else {
         setCurrentUser(null);
-        setIsLoading(false);
+        setIsLoadingProfile(false);
         setUserProfile(null);
         router.push('/');
       }
     });
 
     return () => unsubscribe();
-  }, [router, fetchUserProfile]);
+  }, [router, fetchUserProfile, isPlanLoading]);
 
 
   const toggleMenu = () => {
@@ -85,8 +88,7 @@ export function Header() {
   }, []);
   
   const renderDropdownContent = () => {
-    // Show loading if the initial fetch is happening or if the profile is still null (pending sync)
-    if (isLoading || !userProfile) {
+    if (isLoadingProfile || isPlanLoading) {
       return <div className="p-4 text-center text-sm text-muted-foreground">Carregando...</div>;
     }
   
@@ -104,6 +106,10 @@ export function Header() {
             </button>
         </div>
       );
+    }
+    
+    if (!userProfile) {
+         return <div className="p-4 text-center text-sm text-muted-foreground">Aguardando dados do usuário...</div>;
     }
   
     return (

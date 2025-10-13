@@ -25,7 +25,7 @@ export const PlanProvider = ({ children }: { children: React.ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setCurrentUser(user);
-        setIsLoading(true); // Start loading when user is detected
+        setIsLoading(true); 
       } else {
         setCurrentUser(null);
         setIsLoading(false);
@@ -42,29 +42,41 @@ export const PlanProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
     
-    // This function will now be called repeatedly until it gets data.
-    try {
-      const accessInfo = await getUserAccessInfo({ actor: currentUser.uid });
-      
-      if (accessInfo) {
-        setPlanId(accessInfo.planId);
-        setPermissions(accessInfo.permissions);
-        setIsLoading(false);
-      } else {
-        // If accessInfo is null, it means the user doc is not ready.
-        // We will retry after a short delay.
-        setTimeout(fetchPlan, 3000);
+    let attempts = 0;
+    const maxAttempts = 10;
+    const delay = 3000;
+
+    const attemptFetch = async () => {
+      try {
+        const accessInfo = await getUserAccessInfo({ actor: currentUser.uid });
+        if (accessInfo) {
+          setPlanId(accessInfo.planId);
+          setPermissions(accessInfo.permissions);
+          setIsLoading(false);
+        } else {
+          throw new Error('User data not ready');
+        }
+      } catch (error) {
+        attempts++;
+        if (attempts < maxAttempts) {
+          console.log(`User data not ready, retrying... Attempt ${attempts}`);
+          setTimeout(attemptFetch, delay);
+        } else {
+          console.error('Failed to fetch plan info after multiple retries.');
+          setIsLoading(false); 
+        }
       }
-    } catch (error) {
-      console.error("Failed to fetch plan info, retrying:", error);
-      setTimeout(fetchPlan, 3000); // Also retry on error
-    }
+    };
+    
+    attemptFetch();
   }, [currentUser]);
 
 
   useEffect(() => {
     if (currentUser) {
         fetchPlan();
+    } else {
+        setIsLoading(false);
     }
   }, [currentUser, fetchPlan]);
 
