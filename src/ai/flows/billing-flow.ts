@@ -155,13 +155,13 @@ const updateSubscriptionFlow = ai.defineFlow(
 
             await orgService.createUserProfile({
                 uid: firebaseUID,
-                name: userRecord.displayName || data.organizationName || 'Usuário',
+                name: userRecord.displayName || data.organizationName,
                 email: userRecord.email!,
-                organizationName: data.organizationName!,
-                cnpj: data.cnpj!,
+                organizationName: data.organizationName,
+                cnpj: data.cnpj,
                 contactEmail: data.contactEmail,
                 contactPhone: data.contactPhone,
-                planId: data.planId!,
+                planId: data.planId,
                 password: '', // A senha já foi criada no frontend
                 stripeCustomerId: subscription.customer as string,
                 stripeSubscriptionId: subscription.id,
@@ -211,3 +211,5 @@ export async function updateSubscription(input: z.infer<typeof UpdateSubscriptio
   return updateSubscriptionFlow(input);
 }
 
+
+    

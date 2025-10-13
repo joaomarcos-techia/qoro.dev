@@ -21,7 +21,8 @@ import {
     UpdateOrganizationDetailsSchema, 
     OrganizationProfileSchema, 
     UserProfileSchema,
-    UserAccessInfoSchema
+    UserAccessInfoSchema,
+    UserProfileCreationSchema
 } from '@/ai/schemas';
 import * as orgService from '@/services/organizationService';
 import { getAdminAndOrg } from '@/services/utils';
@@ -48,7 +49,13 @@ const signUpFlow = ai.defineFlow(
         if (input.planId !== 'free') {
             throw new Error("Este endpoint destina-se apenas ao plano gratuito. Planos pagos são ativados via webhook de pagamento.");
         }
-        return orgService.createUserProfile(input);
+        
+        const creationData: z.infer<typeof UserProfileCreationSchema> = {
+            ...input,
+            planId: 'free',
+        };
+
+        return orgService.createUserProfile(creationData);
     }
 );
 
@@ -151,3 +158,5 @@ export async function getUserAccessInfo(input: z.infer<typeof ActorSchema>): Pro
 export async function getUserProfile(input: z.infer<typeof ActorSchema>): Promise<z.infer<typeof UserProfileOutputSchema>> {
     return getUserProfileFlow(input);
 }
+
+    

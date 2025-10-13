@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 
 // Schemas for User and Organization Management
@@ -51,7 +50,7 @@ export const UserProfileSchema = z.object({
     organizationId: z.string(),
     role: z.string().optional(),
     permissions: AppPermissionsSchema,
-    planId: z.enum(['free', 'growth', 'performance']).default('free').optional(),
+    planId: z.enum(['free', 'growth', 'performance']).default('free'),
 });
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 
@@ -90,10 +89,10 @@ export const UpdateSubscriptionSchema = z.object({
   subscriptionId: z.string(),
   isCreating: z.boolean(),
   customerId: z.string().optional(), // Opcional porque pode não vir no primeiro evento
-  firebaseUID: z.string().optional(), // Opcional, pois será extraído do metadata
-  planId: z.enum(['growth', 'performance']).optional(),
-  organizationName: z.string().min(1, 'Nome da organização é obrigatório.').optional(),
-  cnpj: z.string().min(1, 'CNPJ é obrigatório.').optional(),
+  firebaseUID: z.string(), // Obrigatório para a criação
+  planId: z.enum(['growth', 'performance']), // Obrigatório para a criação
+  organizationName: z.string().min(1, 'Nome da organização é obrigatório.'),
+  cnpj: z.string().min(1, 'CNPJ é obrigatório.'),
   contactEmail: z.string().optional(),
   contactPhone: z.string().optional(),
 });
@@ -426,3 +425,5 @@ export const QualificationLeadSchema = z.object({
   desiredOutcome: z.string().optional(),
 });
 export type QualificationLead = z.infer<typeof QualificationLeadSchema>;
+
+    
