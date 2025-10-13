@@ -141,6 +141,8 @@ const updateSubscriptionFlow = ai.defineFlow(
             // Valida os dados da assinatura para garantir que temos tudo para criar a organização
             const validatedMetadata = UpdateSubscriptionSchema.safeParse({
                 ...subscription.metadata, // Passa todos os metadados da assinatura
+                subscriptionId: subscription.id,
+                isCreating: isCreating,
             });
 
             if (!validatedMetadata.success) {
@@ -153,7 +155,7 @@ const updateSubscriptionFlow = ai.defineFlow(
 
             await orgService.createUserProfile({
                 uid: firebaseUID,
-                name: userRecord.displayName || 'Usuário', // Tenta pegar o nome do Auth, senão usa um padrão
+                name: userRecord.displayName || data.organizationName || 'Usuário',
                 email: userRecord.email!,
                 organizationName: data.organizationName!,
                 cnpj: data.cnpj!,
@@ -208,3 +210,4 @@ export async function createBillingPortalSession(input: z.infer<typeof CreateBil
 export async function updateSubscription(input: z.infer<typeof UpdateSubscriptionSchema>): Promise<{ success: boolean }> {
   return updateSubscriptionFlow(input);
 }
+
