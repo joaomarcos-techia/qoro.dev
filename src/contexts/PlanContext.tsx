@@ -25,7 +25,6 @@ export const PlanProvider = ({ children }: { children: React.ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setCurrentUser(user);
-        setIsLoading(true); 
       } else {
         setCurrentUser(null);
         setIsLoading(false);
@@ -38,44 +37,46 @@ export const PlanProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchPlan = useCallback(async () => {
     if (!currentUser) {
-      setIsLoading(false);
-      return;
+        setIsLoading(false);
+        return;
     }
-  
+
     setIsLoading(true);
     let attempts = 0;
     const maxAttempts = 10;
     const delay = 3000;
-  
+
     const attemptFetch = async () => {
-      try {
-        const accessInfo = await getUserAccessInfo({ actor: currentUser.uid });
-        if (accessInfo) {
-          setPlanId(accessInfo.planId);
-          setPermissions(accessInfo.permissions);
-          setIsLoading(false);
-        } else {
-          // Lança erro para acionar a lógica de retentativa
-          throw new Error('User data not ready');
+        try {
+            const accessInfo = await getUserAccessInfo({ actor: currentUser.uid });
+            if (accessInfo) {
+                setPlanId(accessInfo.planId);
+                setPermissions(accessInfo.permissions);
+                setIsLoading(false);
+            } else {
+                // Lança erro para acionar a lógica de retentativa
+                throw new Error("User data not ready");
+            }
+        } catch (error) {
+            attempts++;
+            if (attempts < maxAttempts) {
+                console.log(`User data not ready, retrying... Attempt ${attempts}`);
+                setTimeout(attemptFetch, delay);
+            } else {
+                console.error("Failed to fetch plan info after multiple retries.");
+                setIsLoading(false); 
+            }
         }
-      } catch (error) {
-        attempts++;
-        if (attempts < maxAttempts) {
-          console.log(`User data not ready, retrying... Attempt ${attempts}`);
-          setTimeout(attemptFetch, delay);
-        } else {
-          console.error('Failed to fetch plan info after multiple retries.');
-          setIsLoading(false); 
-        }
-      }
     };
     
     attemptFetch();
   }, [currentUser]);
 
   useEffect(() => {
-    fetchPlan();
-  }, [fetchPlan]);
+    if (currentUser) {
+        fetchPlan();
+    }
+  }, [currentUser, fetchPlan]);
 
 
   return (

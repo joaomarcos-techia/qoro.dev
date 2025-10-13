@@ -39,7 +39,6 @@ const createCheckoutSessionFlow = ai.defineFlow(
     
     const user = await adminAuth.getUser(actor);
 
-    // Verifique se já existe um cliente Stripe para este usuário para evitar duplicatas
     const customers = await stripe.customers.list({ email: user.email!, limit: 1 });
     let customer;
     if (customers.data.length > 0) {
@@ -93,8 +92,11 @@ const createBillingPortalSessionFlow = ai.defineFlow(
       outputSchema: z.object({ url: z.string() }),
     },
     async ({ actor }) => {
-      const { organizationId } = await getAdminAndOrg(actor);
-      const orgDoc = await adminDb.collection('organizations').doc(organizationId).get();
+      const orgDetails = await getAdminAndOrg(actor);
+      if (!orgDetails) {
+        throw new Error("Organização do usuário não encontrada ou não sincronizada.");
+      }
+      const orgDoc = await adminDb.collection('organizations').doc(orgDetails.organizationId).get();
       const stripeCustomerId = orgDoc.data()?.stripeCustomerId;
   
       if (!stripeCustomerId) {
@@ -110,11 +112,10 @@ const createBillingPortalSessionFlow = ai.defineFlow(
     }
   );
   
-
 const updateSubscriptionFlow = ai.defineFlow(
     {
         name: 'updateSubscriptionFlow',
-        inputSchema: z.any(), // Entrada flexível para o webhook, validação será feita internamente
+        inputSchema: z.any(),
         outputSchema: z.object({ success: z.boolean() }),
     },
     async (rawInput) => {
@@ -123,51 +124,45 @@ const updateSubscriptionFlow = ai.defineFlow(
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         
         if (isCreating) {
-            // Valida os dados da assinatura para garantir que temos tudo para criar a organização
-            const validatedMetadata = UpdateSubscriptionSchema.safeParse({
-                ...subscription.metadata,
-                isCreating: isCreating,
-            });
-
-            if (!validatedMetadata.success) {
-                console.error("Validation error on subscription creation metadata:", validatedMetadata.error.flatten());
-                throw new Error(`Dados de metadados da assinatura inválidos: ${validatedMetadata.error.message}`);
-            }
-            
-            const { data } = validatedMetadata;
-            const firebaseUID = data.firebaseUID;
+            const firebaseUID = subscription.metadata.firebaseUID;
             
             if (!firebaseUID) {
-                console.error('CRITICAL: Firebase UID not found in subscription metadata for subscription ID:', subscriptionId);
-                throw new Error('Firebase UID not found in subscription metadata.');
+                console.error('CRITICAL: Firebase UID not found in subscription metadata for ID:', subscriptionId);
+                throw new Error('Firebase UID não encontrado nos metadados da assinatura.');
             }
-            
-            // Idempotency Check: Verifique se já existe uma organização para este usuário
+
             const userDoc = await adminDb.collection('users').doc(firebaseUID).get();
             if (userDoc.exists && userDoc.data()?.organizationId) {
                 console.log(`Idempotency check: Organization already exists for user ${firebaseUID}. Skipping creation.`);
                 return { success: true };
             }
             
-            const userRecord = await adminAuth.getUser(firebaseUID);
+            const validatedMetadata = UpdateSubscriptionSchema.safeParse(subscription.metadata);
 
+            if (!validatedMetadata.success) {
+                console.error("Validation error on subscription creation metadata:", validatedMetadata.error.flatten());
+                throw new Error(`Dados de metadados da assinatura inválidos: ${validatedMetadata.error.message}`);
+            }
+            
+            const userRecord = await adminAuth.getUser(firebaseUID);
+            
             await orgService.createUserProfile({
                 uid: firebaseUID,
-                name: userRecord.displayName || data.organizationName,
+                name: userRecord.displayName || validatedMetadata.data.organizationName,
                 email: userRecord.email!,
-                organizationName: data.organizationName,
-                cnpj: data.cnpj,
-                contactEmail: data.contactEmail,
-                contactPhone: data.contactPhone,
-                planId: data.planId,
-                password: '', // A senha já foi criada no frontend
+                organizationName: validatedMetadata.data.organizationName,
+                cnpj: validatedMetadata.data.cnpj,
+                contactEmail: validatedMetadata.data.contactEmail,
+                contactPhone: validatedMetadata.data.contactPhone,
+                planId: validatedMetadata.data.planId,
+                stripePriceId: validatedMetadata.data.stripePriceId,
+                password: '',
                 stripeCustomerId: subscription.customer as string,
                 stripeSubscriptionId: subscription.id,
                 stripeSubscriptionStatus: subscription.status,
-                stripePriceId: data.stripePriceId,
             });
 
-        } else { // Atualizando uma assinatura existente (cancelamento, etc.)
+        } else {
             const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
             const firebaseUID = customer.metadata.firebaseUID;
 
@@ -178,14 +173,11 @@ const updateSubscriptionFlow = ai.defineFlow(
 
             const userRef = adminDb.collection('users').doc(firebaseUID);
             const userDoc = await userRef.get();
-            if (!userDoc.exists) {
-                console.error(`CRITICAL: User document not found for UID: ${firebaseUID} during subscription update.`);
-                throw new Error(`Usuário não encontrado durante a atualização da assinatura.`);
+            if (!userDoc.exists || !userDoc.data()?.organizationId) {
+                console.error(`User or organization not found for UID: ${firebaseUID} during subscription update.`);
+                throw new Error(`Usuário ou organização não encontrado durante a atualização da assinatura.`);
             }
-            const organizationId = userDoc.data()?.organizationId;
-            if (!organizationId) {
-                throw new Error(`Organização não encontrada para o UID: ${firebaseUID}`);
-            }
+            const organizationId = userDoc.data()!.organizationId;
             const orgRef = adminDb.collection('organizations').doc(organizationId);
 
             const subscriptionData = {
