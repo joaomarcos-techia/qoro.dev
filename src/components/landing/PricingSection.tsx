@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Check, Loader2 } from 'lucide-react';
@@ -45,7 +46,7 @@ const plans: Plan[] = [
     priceDetails: 'Inclui até 5 usuários.',
     features: [
       'Tudo do plano Essencial, sem limites de registros',
-      'QoroCRM: Criação de orçamentos profissionais',
+      'QoroCRM: Registro de produtos e serviços',
       'QoroFinance: Gestão de contas a pagar e receber',
       'QoroTask: Visão de calendário para prazos',
       'Gestão de permissões de usuário por módulo',
@@ -65,7 +66,7 @@ const plans: Plan[] = [
       'Tudo do plano Growth, e mais:',
       'QoroPulse: IA com sugestões proativas de negócio',
       'QoroFinance: Gestão de fornecedores e conciliação bancária',
-      'Relatórios detalhados de CRM e finanças',
+      'QoroCRM: Criação de orçamentos profissionais',
       'Acesso antecipado a novas funcionalidades',
     ],
     buttonText: 'Escolher Performance',
