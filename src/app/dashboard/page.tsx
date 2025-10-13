@@ -1,4 +1,3 @@
-
 'use client';
 import Link from 'next/link';
 import {
@@ -15,13 +14,10 @@ import {
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import { getUserAccessInfo } from '@/ai/flows/user-management';
 import { getCrmDashboardMetrics } from '@/ai/flows/crm-management';
 import { getFinanceDashboardMetrics } from '@/ai/flows/finance-management';
 import { ErrorBoundary } from 'react-error-boundary';
-import { UserAccessInfo, CustomerProfile } from '@/ai/schemas';
 import { useRouter } from 'next/navigation';
 import { usePlan } from '@/contexts/PlanContext';
 import { cn } from '@/lib/utils';
@@ -143,20 +139,15 @@ const AppCard = ({
 
 
 function DashboardContent() {
-  const { planId, permissions, isLoading: isPlanLoading } = usePlan();
+  const { planId, permissions, isLoading: isPlanLoading, error: planError } = usePlan();
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingMetrics, setIsLoadingMetrics] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<DashboardMetrics>({ totalCustomers: 0, activeLeads: 0, pendingTasks: 0, totalBalance: 0 });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user: FirebaseUser | null) => {
-      if (user) {
-        setCurrentUser(user);
-      } else {
-        setCurrentUser(null);
-        setIsLoadingMetrics(false);
-      }
+      setCurrentUser(user);
     });
     return () => unsubscribe();
   }, []);
@@ -164,10 +155,13 @@ function DashboardContent() {
 
   useEffect(() => {
     async function fetchAllMetrics() {
-        if (!currentUser) return;
+        if (!currentUser || isPlanLoading || planError) {
+          setIsLoadingMetrics(false);
+          return;
+        };
 
         setIsLoadingMetrics(true);
-        setError(null);
+        setMetricsError(null);
 
         try {
             const [crm, finance] = await Promise.all([
@@ -182,16 +176,14 @@ function DashboardContent() {
             });
         } catch (err: any) {
             console.error("Dashboard Metrics Error:", err);
-            setError("Não foi possível carregar as métricas do dashboard.");
+            setMetricsError("Não foi possível carregar as métricas do dashboard.");
         } finally {
              setIsLoadingMetrics(false);
         }
     }
     
-    if (currentUser) {
-        fetchAllMetrics();
-    }
-  }, [currentUser]);
+    fetchAllMetrics();
+  }, [currentUser, isPlanLoading, planError]);
 
   if (isPlanLoading) {
     return (
@@ -201,12 +193,12 @@ function DashboardContent() {
     )
   }
   
-  if (!currentUser) {
+  if (!currentUser || planError) {
     return (
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <AlertTriangle className="mx-auto w-12 h-12 text-destructive" />
-            <h3 className="mt-4 text-lg font-medium text-foreground">Sessão expirada ou inválida.</h3>
+            <h3 className="mt-4 text-lg font-medium text-foreground">{planError || "Sessão expirada ou inválida."}</h3>
             <p className="mt-2 text-sm text-muted-foreground">Por favor, faça login novamente.</p>
           </div>
         </div>
@@ -233,14 +225,14 @@ function DashboardContent() {
        <div className="mb-12">
             <h3 className="text-xl font-bold text-foreground mb-6">Métricas e Insights Rápidos</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <MetricCard title="Total de Clientes" value={String(metrics.totalCustomers)} icon={Users} isLoading={isLoadingMetrics} error={!!error} colorClass='bg-crm-primary' />
-                <MetricCard title="Clientes no Funil" value={String(metrics.activeLeads)} icon={TrendingUp} isLoading={isLoadingMetrics} error={!!error} colorClass='bg-crm-primary' />
-                <MetricCard title="Tarefas Pendentes" value={String(metrics.pendingTasks)} icon={ListTodo} isLoading={isLoadingMetrics} error={!!error} colorClass='bg-task-primary' />
-                <MetricCard title="Saldo em Contas" value={formatCurrency(metrics.totalBalance)} icon={DollarSign} isLoading={isLoadingMetrics} error={!!error} colorClass='bg-finance-primary' />
+                <MetricCard title="Total de Clientes" value={String(metrics.totalCustomers)} icon={Users} isLoading={isLoadingMetrics} error={!!metricsError} colorClass='bg-crm-primary' />
+                <MetricCard title="Clientes no Funil" value={String(metrics.activeLeads)} icon={TrendingUp} isLoading={isLoadingMetrics} error={!!metricsError} colorClass='bg-crm-primary' />
+                <MetricCard title="Tarefas Pendentes" value={String(metrics.pendingTasks)} icon={ListTodo} isLoading={isLoadingMetrics} error={!!metricsError} colorClass='bg-task-primary' />
+                <MetricCard title="Saldo em Contas" value={formatCurrency(metrics.totalBalance)} icon={DollarSign} isLoading={isLoadingMetrics} error={!!metricsError} colorClass='bg-finance-primary' />
             </div>
-             {error && (
+             {metricsError && (
                 <div className="mt-4 p-4 bg-yellow-800/20 border-l-4 border-yellow-500 text-yellow-300 rounded-lg text-sm">
-                   <p><span className="font-bold">Aviso:</span> {error} A funcionalidade principal continua operacional.</p>
+                   <p><span className="font-bold">Aviso:</span> {metricsError} A funcionalidade principal continua operacional.</p>
                 </div>
             )}
         </div>

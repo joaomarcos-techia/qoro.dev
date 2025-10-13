@@ -121,26 +121,26 @@ const updateSubscriptionFlow = ai.defineFlow(
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         
         if (isCreating) {
+            console.log('✅ Handling subscription creation event...');
             const metadata = subscription.metadata;
-            const firebaseUID = metadata.firebaseUID;
-            
-            if (!firebaseUID) {
+            if (!metadata || !metadata.firebaseUID) {
                 console.error('CRITICAL: Firebase UID not found in subscription metadata for ID:', subscriptionId);
                 throw new Error('Firebase UID não encontrado nos metadados da assinatura.');
             }
             
+            const { firebaseUID, organizationName, cnpj, contactEmail, contactPhone, planId, stripePriceId } = metadata;
             const userRecord = await adminAuth.getUser(firebaseUID);
             
             const creationData = {
                 uid: firebaseUID,
-                name: userRecord.displayName || metadata.organizationName,
+                name: userRecord.displayName || organizationName,
                 email: userRecord.email!,
-                organizationName: metadata.organizationName,
-                cnpj: metadata.cnpj,
-                contactEmail: metadata.contactEmail,
-                contactPhone: metadata.contactPhone,
-                planId: metadata.planId,
-                stripePriceId: metadata.stripePriceId,
+                organizationName: organizationName,
+                cnpj: cnpj,
+                contactEmail: contactEmail,
+                contactPhone: contactPhone,
+                planId: planId,
+                stripePriceId: stripePriceId,
                 password: '', // Password is set on client
                 stripeCustomerId: subscription.customer as string,
                 stripeSubscriptionId: subscription.id,
@@ -148,26 +148,32 @@ const updateSubscriptionFlow = ai.defineFlow(
             };
 
             await orgService.createUserProfile(creationData);
+            console.log(`✅ User profile and organization created for UID: ${firebaseUID}`);
 
         } else {
-            // This part handles updates like cancellations or plan changes.
+            console.log(`🔄 Handling subscription update event for status: ${subscription.status}...`);
             const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
-            const firebaseUID = customer.metadata.firebaseUID;
+            
+            // Stripe Customer metadata is not a reliable source for firebaseUID after creation.
+            // A more robust way is to query our own DB.
+            const usersSnapshot = await adminDb.collection('users')
+                .where('stripeSubscriptionId', '==', subscriptionId)
+                .limit(1)
+                .get();
 
-            if (!firebaseUID) {
-                console.error('CRITICAL: Firebase UID not found in customer metadata for subscription update ID:', subscriptionId);
-                throw new Error('Firebase UID not found for subscription update.');
+            if (usersSnapshot.empty) {
+                 console.error('CRITICAL: No user found with subscription ID:', subscriptionId);
+                 throw new Error('Usuário não encontrado para esta assinatura durante a atualização.');
             }
-
-            const userRef = adminDb.collection('users').doc(firebaseUID);
-            const userDoc = await userRef.get();
-            if (!userDoc.exists || !userDoc.data()?.organizationId) {
-                console.error(`User or organization not found for UID: ${firebaseUID} during subscription update.`);
-                throw new Error(`Usuário ou organização não encontrado durante a atualização da assinatura.`);
-            }
+            const userDoc = usersSnapshot.docs[0];
             const organizationId = userDoc.data()!.organizationId;
-            const orgRef = adminDb.collection('organizations').doc(organizationId);
 
+            if (!organizationId) {
+                console.error(`CRITICAL: Organization ID missing for user UID: ${userDoc.id}`);
+                throw new Error('ID da organização não encontrado para este usuário.');
+            }
+
+            const orgRef = adminDb.collection('organizations').doc(organizationId);
             const subscriptionData = {
                 stripeSubscriptionId: subscription.id,
                 stripePriceId: subscription.items.data[0].price.id,
@@ -176,7 +182,8 @@ const updateSubscriptionFlow = ai.defineFlow(
             };
     
             await orgRef.update(subscriptionData);
-            await userRef.update({ stripeSubscriptionStatus: subscription.status });
+            await userDoc.ref.update({ stripeSubscriptionStatus: subscription.status });
+            console.log(`✅ Subscription status updated for org ${organizationId} to ${subscription.status}`);
         }
 
         return { success: true };
