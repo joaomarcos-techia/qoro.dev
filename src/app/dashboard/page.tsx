@@ -21,6 +21,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { useRouter } from 'next/navigation';
 import { usePlan } from '@/contexts/PlanContext';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 
 interface DashboardMetrics {
@@ -182,7 +183,9 @@ function DashboardContent() {
         }
     }
     
-    fetchAllMetrics();
+    if (currentUser) {
+        fetchAllMetrics();
+    }
   }, [currentUser, isPlanLoading, planError]);
 
   if (isPlanLoading) {
