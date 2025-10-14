@@ -6,9 +6,9 @@ import Link from 'next/link';
 import { Mail, Lock, LogIn, AlertCircle, CheckCircle, Loader2, RefreshCw } from 'lucide-react';
 import { signIn, sendPasswordResetEmail } from '@/lib/auth';
 import { Logo } from '@/components/ui/logo';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { getAdminAndOrg } from '@/services/utils'; // Importa a função de verificação direta
+import { getAdminAndOrg } from '@/services/utils';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -31,17 +31,18 @@ export default function LoginPage() {
                 // Inicia a sondagem para verificar se o perfil do usuário foi criado no banco de dados.
                 const interval = setInterval(async () => {
                     try {
-                        console.log("Polling for user profile...");
                         // Usa a função de backend que verifica diretamente a existência do documento do usuário
                         const profileData = await getAdminAndOrg(user.uid);
                         
                         // Se `profileData` não for nulo, significa que o documento do usuário foi criado.
                         if (profileData) {
-                            console.log("Profile found! Redirecting to dashboard.");
+                            console.log("✅ Profile found! Redirecting to dashboard.");
                             clearInterval(interval);
                             // Garante que o token do usuário seja atualizado com as permissões (claims)
                             await user.getIdToken(true);
                             router.push('/dashboard');
+                        } else {
+                            console.log("⏳ Profile not found yet, polling...");
                         }
                     } catch (e) {
                          console.error("Error polling for user profile:", e);

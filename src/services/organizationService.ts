@@ -38,7 +38,6 @@ export const createUserProfile = async (input: z.infer<typeof UserProfileCreatio
         stripeSubscriptionStatus: input.stripeSubscriptionStatus || (planId === 'free' ? 'active' : 'pending'),
     });
     
-    // QoroPulse is only enabled for the 'performance' plan.
     const hasPulseAccess = planId === 'performance';
 
     await adminDb.collection('users').doc(uid).set({
@@ -65,7 +64,6 @@ export const createUserProfile = async (input: z.infer<typeof UserProfileCreatio
 export const listUsers = async (actor: string): Promise<UserProfile[]> => {
     const adminOrgData = await getAdminAndOrg(actor);
     if (!adminOrgData) {
-        // Return empty array if user/org is not ready yet, preventing crashes.
         return [];
     }
     const { organizationId } = adminOrgData;
