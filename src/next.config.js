@@ -31,16 +31,6 @@ const nextConfig = {
       }
     ],
   },
-  // Redirecionamentos para SEO
-  async redirects() {
-    return [
-      {
-        source: '/dashboard',
-        destination: '/dashboard/page',
-        permanent: true,
-      },
-    ];
-  },
   async headers() {
     return [
       {
@@ -67,9 +57,6 @@ const nextConfig = {
       },
     ];
   },
-  // Force dynamic rendering to prevent stale data from being served from cache.
-  // This ensures all pages fetch the latest data on every request.
-  output: 'standalone',
   
 };
 
