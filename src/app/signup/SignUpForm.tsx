@@ -5,10 +5,11 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, AlertCircle, CheckCircle, User, Building, FileText, Phone, ArrowRight, Loader2, CreditCard } from 'lucide-react';
-import { signUp } from '@/ai/flows/user-management';
 import { createCheckoutSession } from '@/ai/flows/billing-flow';
 import { createUserAndSendVerification } from '@/lib/auth';
 import { Logo } from '@/components/ui/logo';
+import { createUserProfile } from '@/services/organizationService';
+
 
 export default function SignUpForm() {
   const router = useRouter();
@@ -100,16 +101,16 @@ export default function SignUpForm() {
             contactPhone: formData.contactPhone
         });
 
-        // Show success message with a button to go to checkout
-        setCheckoutUrl(sessionId);
-        setSuccessMessage('Credenciais criadas! O próximo passo é concluir o pagamento.');
+        // Redirect user to Stripe Checkout
+        router.push(sessionId);
 
       } else {
-        // For the free plan, create the organization directly
-        await signUp({
+        // For the free plan, create the organization and user profile directly
+        await createUserProfile({
           ...formData,
           uid: user.uid,
-          planId: plan
+          planId: 'free',
+          stripePriceId: 'free', // Mark as free plan
         });
         setSuccessMessage('Conta criada! Verifique seu e-mail para ativar sua conta e depois faça o login.');
       }
@@ -139,7 +140,7 @@ export default function SignUpForm() {
             <p className="text-sm font-semibold mb-6">{successMessage}</p>
             
             {checkoutUrl ? (
-                <a href={checkoutUrl} target="_blank" rel="noopener noreferrer" className="w-full bg-primary text-primary-foreground py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
+                <a href={checkoutUrl} rel="noopener noreferrer" className="w-full bg-primary text-primary-foreground py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
                     <CreditCard className="mr-2 h-5 w-5" />
                     Ir para o Pagamento
                 </a>
