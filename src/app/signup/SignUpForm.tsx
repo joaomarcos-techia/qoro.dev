@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -110,11 +111,8 @@ export default function SignUpForm() {
           planId: 'free',
           stripePriceId: 'free',
         });
-        // Show success message and redirect to login to wait for sync
-        setSuccessMessage('Conta criada! Verifique seu e-mail para ativar sua conta. Redirecionando para login...');
-        setTimeout(() => {
-            router.push('/login?payment_success=true');
-        }, 3000);
+        // Show success message and prompt to go to login
+        setSuccessMessage('Conta criada! Verifique seu e-mail para ativar sua conta e depois faça o login.');
       }
 
     } catch (err: any) {
@@ -140,7 +138,9 @@ export default function SignUpForm() {
             <CheckCircle className="w-10 h-10 mb-4 text-green-400" />
             <h3 className="text-xl font-bold text-white mb-2">Conta Criada com Sucesso!</h3>
             <p className="text-sm font-semibold mb-6">{successMessage}</p>
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <Link href="/login" className="w-full bg-primary text-primary-foreground py-3 rounded-xl hover:bg-primary/90 transition-all duration-300 border border-transparent hover:border-primary/50 flex items-center justify-center font-semibold">
+                Ir para Login
+            </Link>
           </div>
         ) : (
           <form onSubmit={handleSignUp} className="space-y-8">
