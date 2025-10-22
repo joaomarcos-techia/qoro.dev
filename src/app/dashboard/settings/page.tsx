@@ -7,7 +7,7 @@ import { Mail, Send, KeyRound, UserPlus, Building, AlertCircle, CheckCircle, Arr
 import { inviteUser, listUsers, updateUserPermissions, deleteUser } from '@/ai/flows/user-management';
 import { sendPasswordResetEmail } from '@/lib/auth';
 import { createBillingPortalSession } from '@/ai/flows/billing-flow';
-import { UserProfile } from '@/ai/schemas';
+import { UserProfile, InviteUserSchema } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { OrganizationForm } from '@/components/dashboard/settings/OrganizationForm';
@@ -68,6 +68,12 @@ export default function SettingsPage() {
         setIsLoading(prev => ({ ...prev, users: true }));
         try {
             const userList = await listUsers({ actor: currentUser.uid });
+            // Ordena a lista para colocar o admin no topo
+            userList.sort((a, b) => {
+                if (a.role === 'admin') return -1;
+                if (b.role === 'admin') return 1;
+                return (a.name || a.email).localeCompare(b.name || b.email);
+            });
             setUsers(userList);
         } catch (error) {
             console.error("Failed to fetch users:", error);
@@ -328,7 +334,10 @@ export default function SettingsPage() {
                         <div className="bg-card p-8 rounded-2xl border border-border">
                              <h3 className="text-xl font-bold text-foreground mb-6">Usuários da Organização</h3>
                              {isLoading.users ? (
-                                 <div className="flex justify-center items-center py-8"><Loader2 className="w-8 h-8 text-primary animate-spin" /><p className="ml-4 text-muted-foreground">Carregando usuários...</p></div>
+                                 <div className="flex justify-center items-center py-8 flex-col">
+                                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                    <p className="mt-4 text-muted-foreground">Carregando usuários...</p>
+                                </div>
                              ) : (
                                 <div className="space-y-4">
                                     {users.map(user => {
@@ -349,14 +358,17 @@ export default function SettingsPage() {
                                                     {Object.keys(appPermissionsMap).map(key => {
                                                         const perm = key as AppPermission;
                                                         const isPulsePermission = perm === 'qoroPulse';
-                                                        const isDisabled = (isPulsePermission && planId !== 'performance') || isLoading.permissions === user.uid;
+                                                        // A permissão é travada se for Pulse e o plano não for Performance,
+                                                        // ou se for qualquer outra permissão principal (essencial ao plano).
+                                                        const isDisabled = isLoading.permissions === user.uid || (isPulsePermission && planId !== 'performance') || !isPulsePermission;
+                                                        const isChecked = user.permissions?.[perm] ?? false;
 
                                                         return (
                                                             <label key={perm} className={`flex items-center space-x-2 text-sm ${isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                                                                 <input 
                                                                     type="checkbox" 
                                                                     className="form-checkbox h-5 w-5 rounded text-primary focus:ring-primary border-gray-600 bg-secondary" 
-                                                                    checked={!!user.permissions?.[perm]} 
+                                                                    checked={isChecked} 
                                                                     onChange={(e) => handlePermissionChange(user.uid, perm, e.target.checked)} 
                                                                     disabled={isDisabled}
                                                                 />
