@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -13,6 +12,7 @@ type PlanContextType = {
   role: 'admin' | 'member' | null;
   isLoading: boolean;
   error: string | null;
+  refetch: () => void;
 };
 
 const PlanContext = createContext<PlanContextType>({
@@ -21,6 +21,7 @@ const PlanContext = createContext<PlanContextType>({
   role: null,
   isLoading: true,
   error: null,
+  refetch: () => {},
 });
 
 export const PlanProvider = ({ children }: { children: React.ReactNode }) => {
@@ -30,13 +31,17 @@ export const PlanProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const refetch = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setCurrentUser(user);
-      } else {
-        setCurrentUser(null);
+      setCurrentUser(user);
+       if (!user) {
         setIsLoading(false);
         setPlanId(null);
         setPermissions(null);
@@ -96,18 +101,13 @@ export const PlanProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (currentUser) {
-      const cleanup = fetchPlan(currentUser);
-      return () => {
-        if (typeof cleanup === 'function') {
-          cleanup();
-        }
-      };
+      fetchPlan(currentUser);
     }
-  }, [currentUser, fetchPlan]);
+  }, [currentUser, refreshTrigger, fetchPlan]);
 
 
   return (
-    <PlanContext.Provider value={{ planId, permissions, role, isLoading, error }}>
+    <PlanContext.Provider value={{ planId, permissions, role, isLoading, error, refetch }}>
       {children}
     </PlanContext.Provider>
   );

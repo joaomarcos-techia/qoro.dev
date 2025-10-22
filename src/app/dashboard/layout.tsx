@@ -96,9 +96,9 @@ function ModuleSidebar() {
     const [bgColor, textColor] = colorClass.split(' ');
 
     const isAllowed = (item: NavItem) => {
-      if (isLoading || !planId) return false;
+      if (isLoading || !planId || !permissions) return false;
       const hasPlanPermission = item.plan.includes(planId);
-      const hasRolePermission = permissions?.[item.permissionKey] ?? false;
+      const hasRolePermission = permissions[item.permissionKey] === true;
       return hasPlanPermission && hasRolePermission;
     }
   
