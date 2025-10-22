@@ -174,53 +174,73 @@ export const updateOrganizationDetails = async (details: z.infer<typeof UpdateOr
 
 export const inviteUser = async (email: string, actorUid: string): Promise<{ success: boolean }> => {
     const adminOrgData = await getAdminAndOrg(actorUid);
-    if (!adminOrgData) throw new Error("A organização do usuário não está pronta.");
-
+    if (!adminOrgData) {
+        throw new Error("A organização do usuário não está pronta.");
+    }
     const { organizationId, organizationName, planId, userRole } = adminOrgData;
-    
+
     if (userRole !== 'admin') {
         throw new Error("Apenas administradores podem convidar novos usuários.");
     }
-    
+
     if (planId === 'free') {
         const usersSnapshot = await adminDb.collection('users').where('organizationId', '==', organizationId).get();
         if (usersSnapshot.size >= 2) {
             throw new Error("Seu plano gratuito permite no máximo 2 usuários. Faça upgrade para convidar mais.");
         }
     }
-    
+
     try {
         await adminAuth.getUserByEmail(email);
+        // If the above line doesn't throw, a user with this email already exists in the system.
         throw new Error("Este e-mail já está em uso por outro usuário na plataforma Qoro.");
     } catch (error: any) {
         if (error.code !== 'auth/user-not-found') {
-            throw error; // Re-throw if it's not the 'user-not-found' error we expect
+            // Re-throw if it's an error other than 'user-not-found'
+            throw error;
         }
+        // If user is not found, we can proceed with the invitation.
     }
 
-    const invitationRef = adminDb.collection('invitations').doc();
-    await invitationRef.set({
+    // Create the user in Firebase Auth without a password
+    const userRecord = await adminAuth.createUser({
         email,
-        organizationId,
-        organizationName,
-        role: 'member',
-        status: 'pending',
-        createdAt: FieldValue.serverTimestamp()
+        emailVerified: true, // We are sending an email, so we can consider it verified for this flow
     });
 
-    const link = await adminAuth.generateSignInWithEmailLink(email, {
-        url: `${process.env.NEXT_PUBLIC_SITE_URL}/signup?invitationId=${invitationRef.id}`,
+    // Create user profile in Firestore
+    await adminDb.collection('users').doc(userRecord.uid).set({
+        email: email,
+        organizationId: organizationId,
+        role: 'member', // All invited users are members by default
+        planId: planId,
+        createdAt: FieldValue.serverTimestamp(),
+        permissions: { // Default permissions for a new member
+            qoroCrm: true,
+            qoroPulse: planId === 'performance',
+            qoroTask: true,
+            qoroFinance: true,
+        },
     });
 
+    // Set custom claims
+    await adminAuth.setCustomUserClaims(userRecord.uid, { organizationId, role: 'member', planId });
+    
+    // Generate a password reset link, which will serve as the "set your password" link
+    const link = await adminAuth.generatePasswordResetLink(email, {
+        url: `${process.env.NEXT_PUBLIC_SITE_URL}/login`, // Redirect to login after password reset
+    });
+
+    // Trigger the custom email template
     await adminDb.collection('mail').add({
         to: email,
         template: {
-            name: 'invite',
+            name: 'invite', // You'll need an 'invite.hbs' template in your Mail collection setup
             data: {
-                organizationName,
-                actionUrl: link
-            }
-        }
+                organizationName: organizationName,
+                actionUrl: link, // This is the password reset link
+            },
+        },
     });
 
     return { success: true };
@@ -246,6 +266,8 @@ export const deleteUser = async (userId: string, actor: string): Promise<{ succe
         throw new Error("Usuário não encontrado nesta organização.");
     }
 
+    // Deleting from Firebase Auth will trigger functions to clean up Firestore data if set up,
+    // but it's safer to delete from Firestore explicitly as well.
     await adminAuth.deleteUser(userId);
     await userDocRef.delete();
 
