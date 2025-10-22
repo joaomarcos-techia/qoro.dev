@@ -28,7 +28,7 @@ type TransactionFormProps = {
 };
 
 const FormSchema = TransactionSchema.extend({
-    date: z.union([z.date(), z.null()]).optional(),
+    date: z.union([z.date(), z.string(), z.null()]).optional(),
 });
 type FormValues = z.infer<typeof FormSchema>;
 
@@ -137,7 +137,7 @@ export function TransactionForm({ onAction, transaction, transactionCount = 0 }:
     try {
         const submissionData = {
             ...data,
-            date: data.date ? data.date : new Date(),
+            date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
         };
 
         if (isEditMode) {
@@ -213,10 +213,10 @@ export function TransactionForm({ onAction, transaction, transactionCount = 0 }:
                 <PopoverTrigger asChild>
                 <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {field.value ? format(field.value, "PPP") : <span>Escolha uma data</span>}
+                    {field.value ? format(new Date(field.value), "PPP") : <span>Escolha uma data</span>}
                 </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus /></PopoverContent>
+                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} initialFocus /></PopoverContent>
             </Popover>
           )}/>
            {errors.date && <p className="text-destructive text-sm">{errors.date.message}</p>}

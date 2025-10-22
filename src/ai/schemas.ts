@@ -26,6 +26,7 @@ export const UserProfileCreationSchema = SignUpSchema.extend({
 
 export const InviteUserSchema = z.object({
     email: z.string().email('O e-mail fornecido não é válido.'),
+    actor: z.string(),
 });
 
 const BaseAppPermissionsSchema = z.object({
