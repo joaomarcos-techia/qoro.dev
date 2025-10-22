@@ -18,6 +18,7 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { getCrmDashboardMetrics } from '@/ai/flows/crm-management';
 import { getFinanceDashboardMetrics } from '@/ai/flows/finance-management';
+import { getOverviewMetrics } from '@/ai/flows/task-management';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useRouter } from 'next/navigation';
 import { usePlan } from '@/contexts/PlanContext';
@@ -39,15 +40,17 @@ const formatCurrency = (value: number) => {
     }).format(value);
 };
 
-const MetricCard = ({ title, value, icon: Icon, isLoading, error, colorClass = 'bg-primary' }: { title: string, value: string, icon: React.ElementType, isLoading: boolean, error?: boolean, colorClass?: string }) => (
-    <div className="bg-card p-6 rounded-2xl border border-border flex items-center transition-all duration-200 hover:border-primary/50 hover:-translate-y-1">
-        <div className={`p-3 rounded-xl ${error ? 'bg-yellow-500' : colorClass} text-black mr-4 shadow-lg`}>
-            {error ? <AlertTriangle className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
+const MetricCard = ({ title, value, icon: Icon, isLoading, error, colorClass = 'bg-primary', isLocked = false, lockedText }: { title: string, value: string, icon: React.ElementType, isLoading: boolean, error?: boolean, colorClass?: string, isLocked?: boolean, lockedText?: string }) => (
+    <div className={cn("bg-card p-6 rounded-2xl border border-border flex items-center transition-all duration-200", isLocked ? "opacity-60" : "hover:border-primary/50 hover:-translate-y-1")}>
+        <div className={cn("p-3 rounded-xl text-black mr-4 shadow-lg", isLocked ? "bg-secondary" : (error ? 'bg-yellow-500' : colorClass))}>
+            {isLocked ? <Lock className="w-6 h-6 text-muted-foreground" /> : (error ? <AlertTriangle className="w-6 h-6" /> : <Icon className="w-6 h-6" />)}
         </div>
         <div>
             <p className="text-muted-foreground text-sm font-medium">{title}</p>
             {isLoading ? (
                  <Loader2 className="w-6 h-6 text-muted-foreground animate-spin mt-1" />
+            ) : isLocked ? (
+                <p className="text-base font-bold text-muted-foreground">{lockedText || 'Indisponível'}</p>
             ) : (
                 <p className="text-2xl font-bold text-foreground">{error ? 'Erro' : value}</p>
             )}
@@ -171,14 +174,15 @@ function DashboardContent() {
         setMetricsError(null);
 
         try {
-            const [crm, finance] = await Promise.all([
+            const [crm, finance, task] = await Promise.all([
                 getCrmDashboardMetrics({ actor: currentUser.uid }),
                 getFinanceDashboardMetrics({ actor: currentUser.uid }),
+                getOverviewMetrics({ actor: currentUser.uid }),
             ]);
             setMetrics({
                 totalCustomers: crm.totalCustomers,
                 activeLeads: crm.activeLeads,
-                pendingTasks: 0, // Set to 0 as the source function was removed
+                pendingTasks: task.pendingTasks,
                 totalBalance: finance.totalBalance,
             });
         } catch (err: any) {
@@ -218,6 +222,7 @@ function DashboardContent() {
   }
 
   const isPulseLocked = !permissions?.qoroPulse;
+  const isFinanceLocked = planId === 'free';
 
   return (
     <div
@@ -240,7 +245,16 @@ function DashboardContent() {
                 <MetricCard title="Total de Clientes" value={String(metrics.totalCustomers)} icon={Users} isLoading={isLoadingMetrics} error={!!metricsError} colorClass='bg-crm-primary' />
                 <MetricCard title="Clientes no Funil" value={String(metrics.activeLeads)} icon={TrendingUp} isLoading={isLoadingMetrics} error={!!metricsError} colorClass='bg-crm-primary' />
                 <MetricCard title="Tarefas Pendentes" value={String(metrics.pendingTasks)} icon={ListTodo} isLoading={isLoadingMetrics} error={!!metricsError} colorClass='bg-task-primary' />
-                <MetricCard title="Saldo em Contas" value={formatCurrency(metrics.totalBalance)} icon={DollarSign} isLoading={isLoadingMetrics} error={!!metricsError} colorClass='bg-finance-primary' />
+                <MetricCard 
+                    title="Saldo em Contas" 
+                    value={formatCurrency(metrics.totalBalance)} 
+                    icon={DollarSign} 
+                    isLoading={isLoadingMetrics} 
+                    error={!!metricsError} 
+                    colorClass='bg-finance-primary'
+                    isLocked={isFinanceLocked}
+                    lockedText="Upgrade para ver"
+                />
             </div>
              {metricsError && (
                 <div className="mt-4 p-4 bg-yellow-800/20 border-l-4 border-yellow-500 text-yellow-300 rounded-lg text-sm">
@@ -300,3 +314,5 @@ export default function Dashboard() {
         </div>
     )
 }
+
+    
