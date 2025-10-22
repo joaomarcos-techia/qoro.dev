@@ -186,7 +186,7 @@ export const inviteUser = async (email: string, actorUid: string): Promise<{ suc
     if (planId === 'free') {
         const usersSnapshot = await adminDb.collection('users').where('organizationId', '==', organizationId).get();
         if (usersSnapshot.size >= 2) {
-            throw new Error(`Você atingiu o limite de ${FREE_PLAN_USER_LIMIT} usuários do plano gratuito. Faça upgrade para convidar mais.`);
+            throw new Error(`Você atingiu o limite de 2 usuários do plano gratuito. Faça upgrade para convidar mais.`);
         }
     }
 
@@ -226,13 +226,14 @@ export const inviteUser = async (email: string, actorUid: string): Promise<{ suc
         url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:9004'}/login`,
     });
 
+    // Correctly trigger the "Trigger Email" extension by adding a document to the 'mail' collection.
     await adminDb.collection('mail').add({
         to: email,
         template: {
-            name: 'invite',
+            name: 'invite', // This template should be configured in the extension
             data: {
                 organizationName: organizationName,
-                actionUrl: link,
+                actionUrl: link, // The password reset link that acts as an invite link
             },
         },
     });
