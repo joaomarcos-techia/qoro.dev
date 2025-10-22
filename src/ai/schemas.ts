@@ -26,7 +26,7 @@ export const UserProfileCreationSchema = SignUpSchema.extend({
 
 export const InviteUserSchema = z.object({
     email: z.string().email('O e-mail fornecido não é válido.'),
-    password: z.string().min(6, 'A senha temporária deve ter pelo menos 6 caracteres.'),
+    password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres.'),
 });
 
 const BaseAppPermissionsSchema = z.object({
