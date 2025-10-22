@@ -123,7 +123,7 @@ export default function SettingsPage() {
         clearFeedback('invite');
         try {
             await inviteUser({ email: inviteEmail, password: invitePassword, actor: currentUser.uid });
-            setFeedback({ type: 'success', message: `Usuário criado! Informe a senha ao membro e peça para que verifique seu e-mail ao logar.`, context: 'invite' });
+            setFeedback({ type: 'success', message: `Usuário criado! Forneça a senha ao membro e peça para que verifique seu e-mail ao logar.`, context: 'invite' });
             setInviteEmail('');
             setInvitePassword('');
             fetchUsers(); // Refresh user list
@@ -300,7 +300,7 @@ export default function SettingsPage() {
                                 <div className="p-3 rounded-xl bg-primary text-black mr-6"><UserPlus className="w-6 h-6" /></div>
                                 <div className="flex-grow">
                                     <h3 className="text-xl font-bold text-foreground mb-1">Convidar novo usuário</h3>
-                                    <p className="text-muted-foreground mb-6">O membro será criado e você deve fornecer a ele a senha para acesso. O usuário será solicitado a verificar seu e-mail no primeiro login.</p>
+                                    <p className="text-muted-foreground mb-6">Crie a conta e informe a senha ao membro. Ele será solicitado a verificar o e-mail no primeiro login.</p>
                                     <form onSubmit={handleInviteUser} className="flex flex-col md:flex-row items-start md:items-center gap-4">
                                         <div className="relative flex-grow w-full md:w-auto">
                                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
