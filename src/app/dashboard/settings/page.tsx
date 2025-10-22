@@ -112,7 +112,7 @@ export default function SettingsPage() {
         e.preventDefault();
         if (!currentUser || !isAdmin) return;
         if(isUserLimitReached) {
-            setFeedback({ type: 'error', message: `Limite de ${FREE_PLAN_USER_LIMIT} usuários atingido. Faça upgrade para convidar mais.`, context: 'invite' });
+            setFeedback({ type: 'error', message: `Você atingiu o limite de ${FREE_PLAN_USER_LIMIT} usuários do plano gratuito. Faça upgrade para convidar mais.`, context: 'invite' });
             return;
         }
         setIsLoading(prev => ({ ...prev, invite: true }));
@@ -324,54 +324,67 @@ export default function SettingsPage() {
                                  <div className="flex justify-center items-center py-8"><Loader2 className="w-8 h-8 text-primary animate-spin" /><p className="ml-4 text-muted-foreground">Carregando usuários...</p></div>
                              ) : (
                                 <div className="space-y-4">
-                                    {users.map(user => (
-                                        <div key={user.uid} className="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border border-border bg-secondary/50">
-                                            <div className="flex-grow">
-                                                <div className="flex items-center gap-4">
-                                                    <p className="font-bold text-foreground">{user.name || user.email}</p>
-                                                    {user.role === 'admin' && <span className="text-xs font-bold px-2 py-1 bg-primary/20 text-primary rounded-full flex items-center"><Shield className="w-3 h-3 mr-1.5"/>Admin</span>}
+                                    {users.map(user => {
+                                        const isSelf = user.uid === currentUser?.uid;
+                                        const isPulseDisabled = planId !== 'performance';
+                                        
+                                        return (
+                                            <div key={user.uid} className="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border border-border bg-secondary/50">
+                                                <div className="flex-grow">
+                                                    <div className="flex items-center gap-4">
+                                                        <p className="font-bold text-foreground">{user.name || user.email}</p>
+                                                        {user.role === 'admin' && <span className="text-xs font-bold px-2 py-1 bg-primary/20 text-primary rounded-full flex items-center"><Shield className="w-3 h-3 mr-1.5"/>Admin</span>}
+                                                    </div>
+                                                    <p className="text-sm text-muted-foreground">{user.email}</p>
                                                 </div>
-                                                <p className="text-sm text-muted-foreground">{user.email}</p>
+                                                <div className="flex items-center gap-4 mt-4 md:mt-0 relative">
+                                                    {Object.keys(appPermissionsMap).map(key => {
+                                                        const perm = key as AppPermission;
+                                                        const isPulsePermission = perm === 'qoroPulse';
+                                                        const isDisabled = isSelf || (isPulsePermission && isPulseDisabled) || isLoading.permissions === user.uid;
+
+                                                        return (
+                                                            <label key={perm} className={`flex items-center space-x-2 text-sm ${isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+                                                                <input 
+                                                                    type="checkbox" 
+                                                                    className="form-checkbox h-5 w-5 rounded text-primary focus:ring-primary border-gray-600 bg-secondary" 
+                                                                    checked={!!user.permissions?.[perm]} 
+                                                                    onChange={(e) => handlePermissionChange(user.uid, perm, e.target.checked)} 
+                                                                    disabled={isDisabled} 
+                                                                />
+                                                                <span>{appPermissionsMap[perm]}</span>
+                                                            </label>
+                                                        )
+                                                    })}
+                                                    {user.role !== 'admin' && (
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className='text-muted-foreground hover:text-destructive' disabled={isLoading.deleteUser === user.uid}>
+                                                                    {isLoading.deleteUser === user.uid ? <Loader2 className='w-4 h-4 animate-spin'/> : <Trash2 className="w-4 h-4" />}
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        Esta ação é irreversível. O usuário <span className='font-bold'>{user.name || user.email}</span> será permanentemente removido da organização.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => handleDeleteUser(user.uid)} className="bg-destructive hover:bg-destructive/90">
+                                                                        Sim, excluir
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    )}
+                                                    {isLoading.permissions === user.uid && <Loader2 className="absolute -right-7 w-5 h-5 text-primary animate-spin" />}
+                                                </div>
+                                                {feedback && feedback.context === `permissions-${user.uid}` && <p className='text-red-400 text-xs mt-2'>{feedback.message}</p>}
                                             </div>
-                                            <div className="flex items-center gap-4 mt-4 md:mt-0 relative">
-                                                {Object.keys(appPermissionsMap).map(key => {
-                                                    const perm = key as AppPermission;
-                                                    const isSelf = user.uid === currentUser?.uid;
-                                                    return (
-                                                        <label key={perm} className={`flex items-center space-x-2 text-sm ${isSelf ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
-                                                            <input type="checkbox" className="form-checkbox h-5 w-5 rounded text-primary focus:ring-primary border-gray-600 bg-secondary" checked={!!user.permissions?.[perm]} onChange={(e) => handlePermissionChange(user.uid, perm, e.target.checked)} disabled={isLoading.permissions === user.uid || isSelf} />
-                                                            <span>{appPermissionsMap[perm]}</span>
-                                                        </label>
-                                                    )
-                                                })}
-                                                 {user.role !== 'admin' && (
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className='text-muted-foreground hover:text-destructive' disabled={isLoading.deleteUser === user.uid}>
-                                                                {isLoading.deleteUser === user.uid ? <Loader2 className='w-4 h-4 animate-spin'/> : <Trash2 className="w-4 h-4" />}
-                                                            </Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    Esta ação é irreversível. O usuário <span className='font-bold'>{user.name || user.email}</span> será permanentemente removido da organização.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleDeleteUser(user.uid)} className="bg-destructive hover:bg-destructive/90">
-                                                                    Sim, excluir
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                 )}
-                                                {isLoading.permissions === user.uid && <Loader2 className="absolute -right-7 w-5 h-5 text-primary animate-spin" />}
-                                            </div>
-                                             {feedback && feedback.context === `permissions-${user.uid}` && <p className='text-red-400 text-xs mt-2'>{feedback.message}</p>}
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
                              )}
                         </div>
