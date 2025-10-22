@@ -14,8 +14,6 @@ import {
 } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
-import { sendInviteEmail } from './emailService';
-
 
 export const createUserProfile = async (input: z.infer<typeof UserProfileCreationSchema>): Promise<{uid: string}> => {
     const { uid, name, organizationName, cnpj, contactEmail, contactPhone, email, planId, stripePriceId } = input;
@@ -173,12 +171,14 @@ export const updateOrganizationDetails = async (details: z.infer<typeof UpdateOr
     return { success: true };
 };
 
-export const inviteUser = async (email: string, actorUid: string): Promise<{ success: boolean }> => {
-    const adminOrgData = await getAdminAndOrg(actorUid);
+export const inviteUser = async (input: z.infer<typeof InviteUserSchema> & { actor: string }): Promise<{ success: boolean }> => {
+    const { email, password, actor } = input;
+
+    const adminOrgData = await getAdminAndOrg(actor);
     if (!adminOrgData) {
         throw new Error("A organização do usuário não está pronta.");
     }
-    const { organizationId, organizationName, planId, userRole } = adminOrgData;
+    const { organizationId, planId, userRole } = adminOrgData;
 
     if (userRole !== 'admin') {
         throw new Error("Apenas administradores podem convidar novos usuários.");
@@ -202,7 +202,8 @@ export const inviteUser = async (email: string, actorUid: string): Promise<{ suc
 
     const userRecord = await adminAuth.createUser({
         email,
-        emailVerified: true, 
+        password,
+        emailVerified: false, 
     });
 
     const hasPulseAccess = planId === 'performance';
@@ -223,11 +224,8 @@ export const inviteUser = async (email: string, actorUid: string): Promise<{ suc
 
     await adminAuth.setCustomUserClaims(userRecord.uid, { organizationId, role: 'member', planId });
     
-    const link = await adminAuth.generatePasswordResetLink(email, {
-        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:9004'}/login`,
-    });
-
-    await sendInviteEmail(email, organizationName, link);
+    // O Firebase enviará automaticamente um e-mail de verificação porque emailVerified é false.
+    // O usuário usará a senha temporária fornecida pelo administrador para fazer login após a verificação.
 
     return { success: true };
 };

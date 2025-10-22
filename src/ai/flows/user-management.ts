@@ -112,8 +112,8 @@ const getUserProfileFlow = ai.defineFlow(
 );
 
 const inviteUserFlow = ai.defineFlow(
-    { name: 'inviteUserFlow', inputSchema: InviteUserSchema, outputSchema: z.object({ success: z.boolean() }) },
-    async (input) => orgService.inviteUser(input.email, input.actor)
+    { name: 'inviteUserFlow', inputSchema: InviteUserSchema.extend(ActorSchema.shape), outputSchema: z.object({ success: z.boolean() }) },
+    async (input) => orgService.inviteUser(input)
 );
 
 const deleteUserFlow = ai.defineFlow(
@@ -123,7 +123,7 @@ const deleteUserFlow = ai.defineFlow(
 
 
 // Exported functions (client-callable wrappers)
-export async function inviteUser(input: z.infer<typeof InviteUserSchema>): Promise<{ success: boolean }> {
+export async function inviteUser(input: z.infer<typeof InviteUserSchema> & z.infer<typeof ActorSchema>): Promise<{ success: boolean }> {
     return inviteUserFlow(input);
 }
 

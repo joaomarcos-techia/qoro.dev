@@ -3,7 +3,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Mail, Send, KeyRound, UserPlus, Building, AlertCircle, CheckCircle, ArrowLeft, User, Shield, Users, Loader2, ExternalLink, Trash2 } from 'lucide-react';
+import { Mail, Send, KeyRound, UserPlus, Building, AlertCircle, CheckCircle, ArrowLeft, User, Shield, Users, Loader2, ExternalLink, Trash2, Lock } from 'lucide-react';
 import { inviteUser, listUsers, updateUserPermissions, deleteUser } from '@/ai/flows/user-management';
 import { sendPasswordResetEmail } from '@/lib/auth';
 import { createBillingPortalSession } from '@/ai/flows/billing-flow';
@@ -46,6 +46,7 @@ const FREE_PLAN_USER_LIMIT = 2;
 export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('account');
     const [inviteEmail, setInviteEmail] = useState('');
+    const [invitePassword, setInvitePassword] = useState('');
     const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
     const [isLoading, setIsLoading] = useState({ invite: false, password: false, users: true, permissions: '', portal: false, deleteUser: '' });
     const [feedback, setFeedback] = useState<{ type: 'error' | 'success', message: string, context: string } | null>(null);
@@ -118,13 +119,14 @@ export default function SettingsPage() {
         setIsLoading(prev => ({ ...prev, invite: true }));
         clearFeedback('invite');
         try {
-            await inviteUser({ email: inviteEmail, actor: currentUser.uid });
-            setFeedback({ type: 'success', message: `Convite enviado com sucesso para ${inviteEmail}!`, context: 'invite' });
+            await inviteUser({ email: inviteEmail, password: invitePassword, actor: currentUser.uid });
+            setFeedback({ type: 'success', message: `Convite enviado com sucesso para ${inviteEmail}! O usuário precisa verificar o e-mail para ativar a conta.`, context: 'invite' });
             setInviteEmail('');
+            setInvitePassword('');
             fetchUsers(); // Refresh user list
         } catch (error: any) {
             console.error(error);
-            setFeedback({ type: 'error', message: error.message || 'Falha ao enviar convite. Verifique o e-mail ou se o usuário já existe.', context: 'invite' });
+            setFeedback({ type: 'error', message: error.message || 'Falha ao enviar convite. Verifique os dados ou se o usuário já existe.', context: 'invite' });
         } finally {
             setIsLoading(prev => ({ ...prev, invite: false }));
         }
@@ -292,14 +294,19 @@ export default function SettingsPage() {
                                 <div className="p-3 rounded-xl bg-primary text-black mr-6"><UserPlus className="w-6 h-6" /></div>
                                 <div className="flex-grow">
                                     <h3 className="text-xl font-bold text-foreground mb-1">Convidar novo usuário</h3>
-                                    <p className="text-muted-foreground mb-6">O membro convidado receberá um e-mail para definir sua senha e acessar a organização.</p>
-                                    <form onSubmit={handleInviteUser} className="flex items-center gap-4">
-                                        <div className="relative flex-grow">
+                                    <p className="text-muted-foreground mb-6">O membro convidado receberá um e-mail de verificação. Você deve fornecer a ele a senha temporária.</p>
+                                    <form onSubmit={handleInviteUser} className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                                        <div className="relative flex-grow w-full md:w-auto">
                                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                                             <Input type="email" placeholder="E-mail do convidado" value={inviteEmail} onChange={(e) => {setInviteEmail(e.target.value); clearFeedback('invite');}} required disabled={isUserLimitReached || isLoading.invite} className="w-full pl-12 pr-4 py-3 bg-input rounded-xl border-border"/>
                                         </div>
-                                        <button type="submit" disabled={isLoading.invite || isUserLimitReached} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 font-semibold disabled:opacity-75">
-                                            {isLoading.invite ? <Loader2 className="w-5 h-5 animate-spin"/> : <Send className="w-5 h-5" />}
+                                        <div className="relative flex-grow w-full md:w-auto">
+                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                            <Input type="password" placeholder="Senha temporária" value={invitePassword} onChange={(e) => {setInvitePassword(e.target.value); clearFeedback('invite');}} required disabled={isUserLimitReached || isLoading.invite} className="w-full pl-12 pr-4 py-3 bg-input rounded-xl border-border"/>
+                                        </div>
+                                        <button type="submit" disabled={isLoading.invite || isUserLimitReached} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 font-semibold disabled:opacity-75 w-full md:w-auto flex items-center justify-center">
+                                            {isLoading.invite ? <Loader2 className="w-5 h-5 animate-spin mr-2"/> : <Send className="w-5 h-5 mr-2" />}
+                                            Convidar
                                         </button>
                                     </form>
                                      {isUserLimitReached && (
@@ -342,16 +349,16 @@ export default function SettingsPage() {
                                                     {Object.keys(appPermissionsMap).map(key => {
                                                         const perm = key as AppPermission;
                                                         const isPulsePermission = perm === 'qoroPulse';
-                                                        const isDisabled = isPulsePermission && planId !== 'performance';
+                                                        const isDisabled = (isPulsePermission && planId !== 'performance') || isLoading.permissions === user.uid;
 
                                                         return (
-                                                            <label key={perm} className={`flex items-center space-x-2 text-sm ${isDisabled || isLoading.permissions === user.uid ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+                                                            <label key={perm} className={`flex items-center space-x-2 text-sm ${isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                                                                 <input 
                                                                     type="checkbox" 
                                                                     className="form-checkbox h-5 w-5 rounded text-primary focus:ring-primary border-gray-600 bg-secondary" 
                                                                     checked={!!user.permissions?.[perm]} 
                                                                     onChange={(e) => handlePermissionChange(user.uid, perm, e.target.checked)} 
-                                                                    disabled={isDisabled || isLoading.permissions === user.uid}
+                                                                    disabled={isDisabled}
                                                                 />
                                                                 <span>{appPermissionsMap[perm]}</span>
                                                             </label>
