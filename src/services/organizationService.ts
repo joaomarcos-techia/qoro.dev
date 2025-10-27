@@ -176,74 +176,53 @@ export const updateOrganizationDetails = async (details: z.infer<typeof UpdateOr
 };
 
 export const inviteUser = async (input: z.infer<typeof InviteUserSchema> & { actor: string }): Promise<{ success: boolean }> => {
-    const { email, password, actor } = input;
-
+    const { email, actor } = input;
+  
     const adminOrgData = await getAdminAndOrg(actor);
     if (!adminOrgData) {
-        throw new Error("A organização do usuário não está pronta.");
+      throw new Error("A organização do usuário não está pronta.");
     }
     const { organizationId, organizationName, planId, userRole, userData } = adminOrgData;
-
+  
     if (userRole !== 'admin') {
-        throw new Error("Apenas administradores podem convidar novos usuários.");
+      throw new Error("Apenas administradores podem convidar novos usuários.");
     }
-    
-    // Check if the user already exists in Firebase Auth
+  
     try {
-        await adminAuth.getUserByEmail(email);
-        throw new Error("Este e-mail já está em uso por outro usuário na plataforma Qoro.");
+      await adminAuth.getUserByEmail(email);
+      throw new Error("Este e-mail já está em uso por outro usuário na plataforma Qoro.");
     } catch (error: any) {
-        if (error.code !== 'auth/user-not-found') {
-            throw error;
-        }
+      if (error.code !== 'auth/user-not-found') {
+        throw error;
+      }
     }
-
-    // Create user in Firebase Authentication
-    const userRecord = await adminAuth.createUser({
-        email,
-        password,
-        emailVerified: false, 
-    });
-
-    const hasPulseAccess = planId === 'performance';
-
-    // Create user profile in Firestore
-    await adminDb.collection('users').doc(userRecord.uid).set({
-        email: email,
-        name: email, // Default name to email
-        organizationId: organizationId,
-        role: 'member',
-        planId: planId,
-        createdAt: FieldValue.serverTimestamp(),
-        permissions: { 
-            qoroCrm: true,
-            qoroPulse: hasPulseAccess,
-            qoroTask: true,
-            qoroFinance: true,
-        },
-    });
-
-    // Set custom claims for role-based access control
-    await adminAuth.setCustomUserClaims(userRecord.uid, { organizationId, role: 'member', planId });
     
-    // Generate verification link and send email
-    try {
-        const verificationLink = await adminAuth.generateEmailVerificationLink(email);
-        await sendWelcomeEmail({
-            email,
-            adminName: userData.name || userData.email,
-            organizationName,
-            password,
-            verificationLink
-        });
-    } catch (emailError) {
-        console.error("User created, but failed to send invitation email:", emailError);
-        // Don't throw an error to the user, as the user was created.
-        // Log it for monitoring. The user can still log in and will be prompted to verify.
-    }
-
+    // Geração de um token de convite seguro, mas aqui apenas um ID único para o documento.
+    const inviteRef = adminDb.collection('invites').doc();
+    
+    await inviteRef.set({
+      organizationId,
+      organizationName,
+      email,
+      inviterName: userData.name || userData.email,
+      status: 'pending',
+      createdAt: FieldValue.serverTimestamp(),
+      planId: planId,
+    });
+  
+    // O link agora aponta para uma página de finalização de cadastro com o ID do convite
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:9004';
+    const finalizationLink = `${siteUrl}/signup/complete?inviteId=${inviteRef.id}`;
+  
+    await sendWelcomeEmail({
+      email,
+      adminName: userData.name || userData.email,
+      organizationName,
+      verificationLink: finalizationLink
+    });
+  
     return { success: true };
-};
+  };
 
 
 export const deleteUser = async (userId: string, actor: string): Promise<{ success: boolean }> => {

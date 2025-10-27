@@ -1,5 +1,3 @@
-
-
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
@@ -46,7 +44,6 @@ const FREE_PLAN_USER_LIMIT = 2;
 export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('account');
     const [inviteEmail, setInviteEmail] = useState('');
-    const [invitePassword, setInvitePassword] = useState('');
     const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
     const [isLoading, setIsLoading] = useState({ invite: false, password: false, users: true, permissions: '', portal: false, deleteUser: '' });
     const [feedback, setFeedback] = useState<{ type: 'error' | 'success', message: string, context: string } | null>(null);
@@ -122,14 +119,13 @@ export default function SettingsPage() {
         setIsLoading(prev => ({ ...prev, invite: true }));
         clearFeedback('invite');
         try {
-            await inviteUser({ email: inviteEmail, password: invitePassword, actor: currentUser.uid });
-            setFeedback({ type: 'success', message: `Usuário criado! Um e-mail de verificação e boas-vindas foi enviado.`, context: 'invite' });
+            await inviteUser({ email: inviteEmail, actor: currentUser.uid });
+            setFeedback({ type: 'success', message: `Convite enviado para ${inviteEmail}! O usuário receberá um e-mail para finalizar o cadastro.`, context: 'invite' });
             setInviteEmail('');
-            setInvitePassword('');
             fetchUsers(); // Refresh user list
         } catch (error: any) {
             console.error(error);
-            setFeedback({ type: 'error', message: error.message || 'Falha ao criar usuário. Verifique os dados ou se o e-mail já existe.', context: 'invite' });
+            setFeedback({ type: 'error', message: error.message || 'Falha ao enviar convite. Verifique o e-mail ou se o usuário já existe.', context: 'invite' });
         } finally {
             setIsLoading(prev => ({ ...prev, invite: false }));
         }
@@ -299,15 +295,11 @@ export default function SettingsPage() {
                                 <div className="p-3 rounded-xl bg-primary text-black mr-6"><UserPlus className="w-6 h-6" /></div>
                                 <div className="flex-grow">
                                     <h3 className="text-xl font-bold text-foreground mb-1">Convidar novo usuário</h3>
-                                    <p className="text-muted-foreground mb-6">Crie a conta e informe a senha ao membro. Um e-mail de verificação será enviado.</p>
+                                    <p className="text-muted-foreground mb-6">O usuário receberá um link por e-mail para definir sua senha e acessar a plataforma.</p>
                                     <form onSubmit={handleInviteUser} className="flex flex-col md:flex-row items-start md:items-center gap-4">
                                         <div className="relative flex-grow w-full md:w-auto">
                                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                                             <Input type="email" placeholder="E-mail do convidado" value={inviteEmail} onChange={(e) => {setInviteEmail(e.target.value); clearFeedback('invite');}} required disabled={isUserLimitReached || isLoading.invite} className="w-full pl-12 pr-4 py-3 bg-input rounded-xl border-border"/>
-                                        </div>
-                                        <div className="relative flex-grow w-full md:w-auto">
-                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                                            <Input type="password" placeholder="Senha" value={invitePassword} onChange={(e) => {setInvitePassword(e.target.value); clearFeedback('invite');}} required disabled={isUserLimitReached || isLoading.invite} className="w-full pl-12 pr-4 py-3 bg-input rounded-xl border-border"/>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Button type="submit" disabled={isLoading.invite || isUserLimitReached} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 font-semibold disabled:opacity-50 w-full md:w-auto flex items-center justify-center">
@@ -347,41 +339,41 @@ export default function SettingsPage() {
                                         const isAdminRow = user.role === 'admin';
                                         
                                         return (
-                                            <div key={user.uid} className="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border border-border bg-secondary/50">
-                                                <div className="flex-grow mb-4 md:mb-0">
-                                                    <div className="flex items-center gap-4">
-                                                        <p className="font-bold text-foreground">{user.name || user.email}</p>
-                                                        {isAdminRow && <span className="text-xs font-bold px-2 py-1 bg-primary/20 text-primary rounded-full flex items-center"><Shield className="w-3 h-3 mr-1.5"/>Admin</span>}
-                                                    </div>
-                                                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                                                </div>
-                                                
-                                                {!isSelf && (
-                                                    <AlertDialog>
-                                                        <div className="flex items-center gap-2">
-                                                            <AlertDialogTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className='text-muted-foreground hover:text-destructive rounded-xl' disabled={isLoading.deleteUser === user.uid}>
-                                                                    {isLoading.deleteUser === user.uid ? <Loader2 className='w-4 h-4 animate-spin'/> : <Trash2 className="w-4 h-4" />}
-                                                                </Button>
-                                                            </AlertDialogTrigger>
+                                            <AlertDialog key={user.uid}>
+                                                <div className="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border border-border bg-secondary/50">
+                                                    <div className="flex-grow mb-4 md:mb-0">
+                                                        <div className="flex items-center gap-4">
+                                                            <p className="font-bold text-foreground">{user.name || user.email}</p>
+                                                            {isAdminRow && <span className="text-xs font-bold px-2 py-1 bg-primary/20 text-primary rounded-full flex items-center"><Shield className="w-3 h-3 mr-1.5"/>Admin</span>}
                                                         </div>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    Esta ação é irreversível. O usuário <span className='font-bold'>{user.name || user.email}</span> será permanentemente removido da organização.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleDeleteUser(user.uid)} className="bg-destructive hover:bg-destructive/90">
-                                                                    Sim, excluir
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                )}
-                                            </div>
+                                                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                                                    </div>
+                                                    
+                                                    {!isSelf && (
+                                                        <div className="flex items-center gap-2">
+                                                              <AlertDialogTrigger asChild>
+                                                                  <Button variant="ghost" size="icon" className='text-muted-foreground hover:text-destructive rounded-xl' disabled={isLoading.deleteUser === user.uid}>
+                                                                      {isLoading.deleteUser === user.uid ? <Loader2 className='w-4 h-4 animate-spin'/> : <Trash2 className="w-4 h-4" />}
+                                                                  </Button>
+                                                              </AlertDialogTrigger>
+                                                          </div>
+                                                    )}
+                                                </div>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Esta ação é irreversível. O usuário <span className='font-bold'>{user.name || user.email}</span> será permanentemente removido da organização.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDeleteUser(user.uid)} className="bg-destructive hover:bg-destructive/90">
+                                                            Sim, excluir
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         )
                                     })
                                 )}

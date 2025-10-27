@@ -98,17 +98,19 @@ export default function LoginPage() {
     setResendSuccess(null);
     setIsLoading(true);
     
-    const user = auth.currentUser;
-    if (user) {
-        try {
+    try {
+        const user = auth.currentUser;
+        if (user) {
             await sendVerificationEmail(user);
             setResendSuccess('Um novo e-mail de verificação foi enviado. Verifique sua caixa de entrada.');
             setShowResend(false);
-        } catch (err: any) {
-            setError(err.message || 'Falha ao reenviar o e-mail de verificação.');
+        } else {
+            // Este caso pode acontecer se a sessão do usuário expirou enquanto ele estava na página.
+            // Recarregar a página forçaria o usuário a fazer login novamente, revelando o usuário atual.
+            throw new Error("Sua sessão pode ter expirado. Por favor, faça login novamente para reenviar a verificação.");
         }
-    } else {
-        setError("Não foi possível encontrar um usuário. Tente fazer login novamente para acionar o erro.");
+    } catch (err: any) {
+        setError(err.message || 'Falha ao reenviar o e-mail de verificação.');
     }
     
     setIsLoading(false);
