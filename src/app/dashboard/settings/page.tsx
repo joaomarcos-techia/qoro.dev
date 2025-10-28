@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
@@ -120,12 +121,12 @@ export default function SettingsPage() {
         clearFeedback('invite');
         try {
             await inviteUser({ email: inviteEmail, actor: currentUser.uid });
-            setFeedback({ type: 'success', message: `Convite enviado para ${inviteEmail}! O usuário receberá um e-mail para finalizar o cadastro.`, context: 'invite' });
+            setFeedback({ type: 'success', message: `Usuário criado! Um e-mail de verificação e boas-vindas foi enviado para ${inviteEmail}.`, context: 'invite' });
             setInviteEmail('');
             fetchUsers(); // Refresh user list
         } catch (error: any) {
             console.error(error);
-            setFeedback({ type: 'error', message: error.message || 'Falha ao enviar convite. Verifique o e-mail ou se o usuário já existe.', context: 'invite' });
+            setFeedback({ type: 'error', message: error.message || 'Falha ao convidar usuário.', context: 'invite' });
         } finally {
             setIsLoading(prev => ({ ...prev, invite: false }));
         }
@@ -155,7 +156,7 @@ export default function SettingsPage() {
             window.location.assign(url);
         } catch (error: any) {
             console.error("Failed to create billing portal session:", error);
-            setFeedback({ type: 'error', message: "Não foi possível acessar o portal de assinaturas.", context: 'portal' });
+            setFeedback({ type: 'error', message: "Não foi possível acessar o portal de assinaturas. Verifique suas configurações no Stripe.", context: 'portal' });
         } finally {
              setIsLoading(prev => ({...prev, portal: false}));
         }
@@ -295,7 +296,7 @@ export default function SettingsPage() {
                                 <div className="p-3 rounded-xl bg-primary text-black mr-6"><UserPlus className="w-6 h-6" /></div>
                                 <div className="flex-grow">
                                     <h3 className="text-xl font-bold text-foreground mb-1">Convidar novo usuário</h3>
-                                    <p className="text-muted-foreground mb-6">O usuário receberá um link por e-mail para definir sua senha e acessar a plataforma.</p>
+                                    <p className="text-muted-foreground mb-6">O usuário receberá um link por e-mail para finalizar seu cadastro e definir sua senha.</p>
                                     <form onSubmit={handleInviteUser} className="flex flex-col md:flex-row items-start md:items-center gap-4">
                                         <div className="relative flex-grow w-full md:w-auto">
                                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -386,3 +387,5 @@ export default function SettingsPage() {
         </div>
     );
 }
+
+    

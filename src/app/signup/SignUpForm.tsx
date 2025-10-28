@@ -220,16 +220,15 @@ export default function SignUpForm() {
           </form>
         )}
          <div className="text-center mt-8">
-          <p className="text-sm text-muted-foreground">
-            Já tem uma conta?{' '}
             <Link href="/login">
               <span className="font-medium text-primary hover:underline">
                 Faça o login
               </span>
             </Link>
-          </p>
         </div>
       </div>
     </main>
   );
 }
+
+    

@@ -14,7 +14,6 @@ import {
 } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
-import { sendWelcomeEmail } from './emailService';
 
 export const createUserProfile = async (input: z.infer<typeof UserProfileCreationSchema>): Promise<{uid: string}> => {
     const { uid, name, organizationName, cnpj, contactEmail, contactPhone, email, planId, stripePriceId } = input;
@@ -182,7 +181,7 @@ export const inviteUser = async (input: z.infer<typeof InviteUserSchema> & { act
     if (!adminOrgData) {
       throw new Error("A organização do usuário não está pronta.");
     }
-    const { organizationId, organizationName, planId, userRole, userData } = adminOrgData;
+    const { organizationId, planId, userRole } = adminOrgData;
   
     if (userRole !== 'admin') {
       throw new Error("Apenas administradores podem convidar novos usuários.");
@@ -196,30 +195,31 @@ export const inviteUser = async (input: z.infer<typeof InviteUserSchema> & { act
         throw error;
       }
     }
-    
-    // Geração de um token de convite seguro, mas aqui apenas um ID único para o documento.
-    const inviteRef = adminDb.collection('invites').doc();
-    
-    await inviteRef.set({
-      organizationId,
-      organizationName,
-      email,
-      inviterName: userData.name || userData.email,
-      status: 'pending',
-      createdAt: FieldValue.serverTimestamp(),
-      planId: planId,
-    });
   
-    // O link agora aponta para uma página de finalização de cadastro com o ID do convite
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:9004';
-    const finalizationLink = `${siteUrl}/signup/complete?inviteId=${inviteRef.id}`;
-  
-    await sendWelcomeEmail({
-      email,
-      adminName: userData.name || userData.email,
-      organizationName,
-      verificationLink: finalizationLink
+    // O usuário será criado, mas sem uma senha definida aqui.
+    // O fluxo de verificação de e-mail do Firebase cuidará disso.
+    const userRecord = await adminAuth.createUser({
+        email: email,
+        emailVerified: false, // O usuário precisará verificar.
     });
+
+    const hasPulseAccess = planId === 'performance';
+    
+    await adminDb.collection('users').doc(userRecord.uid).set({
+        email: email,
+        organizationId: organizationId,
+        role: 'member',
+        planId: planId,
+        createdAt: FieldValue.serverTimestamp(),
+        permissions: {
+            qoroCrm: true,
+            qoroPulse: hasPulseAccess,
+            qoroTask: true,
+            qoroFinance: true,
+        },
+    });
+
+    await adminAuth.setCustomUserClaims(userRecord.uid, { organizationId, role: 'member', planId });
   
     return { success: true };
   };
@@ -259,3 +259,5 @@ export const deleteUser = async (userId: string, actor: string): Promise<{ succe
 
     return { success: true };
 };
+
+    

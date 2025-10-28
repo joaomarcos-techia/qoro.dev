@@ -10,7 +10,6 @@ interface WelcomeEmailPayload {
   email: string;
   adminName: string;
   organizationName: string;
-  password?: string;
   verificationLink: string;
 }
 
@@ -22,7 +21,6 @@ export const sendWelcomeEmail = async ({
   email,
   adminName,
   organizationName,
-  password,
   verificationLink
 }: WelcomeEmailPayload) => {
   if (!email || !adminName || !organizationName || !verificationLink) {
@@ -36,7 +34,6 @@ export const sendWelcomeEmail = async ({
       data: {
         admin_name: adminName,
         organization_name: organizationName,
-        password: password, // The template will conditionally show this
         action_url: verificationLink,
       },
     },
@@ -50,3 +47,5 @@ export const sendWelcomeEmail = async ({
     throw new Error("Failed to queue the invitation email.");
   }
 };
+
+    
