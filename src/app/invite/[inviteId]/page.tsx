@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -78,7 +77,7 @@ export default function AcceptInvitePage() {
       setSuccess(true);
       setTimeout(() => router.push('/login'), 5000); // Increased timeout for reading the message
 
-    } catch (err: any) => {
+    } catch (err: any) {
       console.error(err);
       setError(err.message || 'Ocorreu um erro ao finalizar o cadastro. Tente novamente.');
       setIsSubmitting(false);
