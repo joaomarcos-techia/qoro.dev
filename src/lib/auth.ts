@@ -10,8 +10,7 @@ import {
   signOut as firebaseSignOut,
   sendPasswordResetEmail as firebaseSendPasswordResetEmail,
 } from 'firebase/auth';
-import { app, db } from './firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { app } from './firebase';
 
 const auth = getAuth(app);
 
@@ -53,40 +52,14 @@ export const signIn = async (email: string, password: string): Promise<User> => 
         throw notVerifiedError;
       }
       
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const organizationId = userData.organizationId;
-
-        if (!organizationId) {
-             throw new Error('Dados da organização não encontrados. A sincronização da conta pode estar pendente.');
-        }
-
-        const orgDoc = await getDoc(doc(db, 'organizations', organizationId));
-        if (!orgDoc.exists()) {
-            await firebaseSignOut(auth);
-            throw new Error('A organização associada a esta conta não foi encontrada. Entre em contato com o suporte.');
-        }
-        
-        const orgData = orgDoc.data();
-        const planId = orgData.stripePriceId === process.env.NEXT_PUBLIC_STRIPE_PERFORMANCE_PLAN_PRICE_ID ? 'performance' :
-                       orgData.stripePriceId === process.env.NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID ? 'growth' : 'free';
-
-        // If it's a paid plan and the subscription isn't active, block login
-        if (planId !== 'free' && orgData.stripeSubscriptionStatus !== 'active') {
-             await firebaseSignOut(auth);
-             throw new Error('A assinatura da sua organização não está ativa. Por favor, peça ao administrador para verificar o pagamento.');
-        }
-      } else {
-        // If user document doesn't exist, it's a sync issue. Let the polling on login page handle it.
-        // Don't sign out here, as the polling needs the authenticated user.
-        throw new Error('Os dados da sua conta ainda não foram sincronizados. Por favor, aguarde alguns minutos e tente novamente.');
-      }
-
+      // A verificação da assinatura e dos dados da organização agora é tratada de forma resiliente
+      // pelo PlanContext após o login, para evitar problemas de sincronização.
+      
       return user;
+
     } catch (error: any) {
       console.error("Error signing in:", error);
-      if (error.code === 'auth/email-not-verified' || error.message.includes('A assinatura') || error.message.includes('não foram sincronizados') || error.message.includes('Dados da organização')) {
+      if (error.code === 'auth/email-not-verified') {
           throw error;
       }
        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
