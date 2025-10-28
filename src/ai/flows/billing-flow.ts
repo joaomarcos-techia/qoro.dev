@@ -81,9 +81,15 @@ const createBillingPortalSessionFlow = ai.defineFlow(
       if (!stripeCustomerId) {
         throw new Error("Customer ID do Stripe não encontrado para esta organização.");
       }
-  
+      
+      const portalConfigurationId = process.env.STRIPE_PORTAL_CONFIGURATION_ID;
+      if (!portalConfigurationId) {
+          throw new Error("O ID de configuração do portal do Stripe não está definido no ambiente.");
+      }
+
       const { url } = await stripe.billingPortal.sessions.create({
         customer: stripeCustomerId,
+        configuration: portalConfigurationId,
         return_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:9004'}/dashboard/settings`,
       });
   

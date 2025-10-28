@@ -37,6 +37,11 @@ env:
     value: "G-L3D1C3SYVV"
   # O NEXT_PUBLIC_SITE_URL será definido pelo App Hosting no momento do build.
 
+  # Adicionando o ID de configuração do portal do Stripe
+  # Substitua 'bpc_xxx' pelo seu ID real de configuração do portal
+  - variable: STRIPE_PORTAL_CONFIGURATION_ID
+    value: "bpc_1SN0kMKnoRE6MSOlefO9p42e"
+
   # Para produção, gerencie as chaves do Stripe como segredos no Firebase.
   # https://firebase.google.com/docs/app-hosting/configure-backend#secrets
   - variable: STRIPE_SECRET_KEY
