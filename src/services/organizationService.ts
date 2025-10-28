@@ -14,6 +14,7 @@ import {
 } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { sendWelcomeEmail } from './emailService';
 
 export const createUserProfile = async (input: z.infer<typeof UserProfileCreationSchema>): Promise<{uid: string}> => {
     const { uid, name, organizationName, cnpj, contactEmail, contactPhone, email, planId, stripePriceId } = input;
@@ -181,7 +182,8 @@ export const inviteUser = async (input: z.infer<typeof InviteUserSchema> & { act
     if (!adminOrgData) {
       throw new Error("A organização do usuário não está pronta.");
     }
-    const { organizationId, planId, userRole } = adminOrgData;
+    const { organizationId, organizationName, planId, userRole } = adminOrgData;
+    const adminUser = await adminAuth.getUser(actor);
   
     if (userRole !== 'admin') {
       throw new Error("Apenas administradores podem convidar novos usuários.");
@@ -196,11 +198,9 @@ export const inviteUser = async (input: z.infer<typeof InviteUserSchema> & { act
       }
     }
   
-    // O usuário será criado, mas sem uma senha definida aqui.
-    // O fluxo de verificação de e-mail do Firebase cuidará disso.
     const userRecord = await adminAuth.createUser({
         email: email,
-        emailVerified: false, // O usuário precisará verificar.
+        emailVerified: false,
     });
 
     const hasPulseAccess = planId === 'performance';
@@ -220,6 +220,18 @@ export const inviteUser = async (input: z.infer<typeof InviteUserSchema> & { act
     });
 
     await adminAuth.setCustomUserClaims(userRecord.uid, { organizationId, role: 'member', planId });
+    
+    try {
+        const verificationLink = await adminAuth.generateEmailVerificationLink(email);
+        await sendWelcomeEmail({
+            email,
+            adminName: adminUser.displayName || adminUser.email!,
+            organizationName,
+            verificationLink,
+        });
+    } catch(emailError) {
+        console.warn("AVISO: O usuário foi criado, mas o e-mail de convite não pôde ser enviado. Isso pode ocorrer se a extensão 'Trigger Email' não estiver configurada. Erro:", emailError);
+    }
   
     return { success: true };
   };
@@ -259,5 +271,3 @@ export const deleteUser = async (userId: string, actor: string): Promise<{ succe
 
     return { success: true };
 };
-
-    

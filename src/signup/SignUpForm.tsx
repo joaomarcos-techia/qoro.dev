@@ -8,7 +8,6 @@ import { Mail, Lock, AlertCircle, CheckCircle, User, Building, FileText, Phone, 
 import { createCheckoutSession } from '@/ai/flows/billing-flow';
 import { createUserAndSendVerification } from '@/lib/auth';
 import { Logo } from '@/components/ui/logo';
-import { adminDb } from '@/lib/firebase-admin';
 import { createUserProfile } from '@/services/organizationService';
 
 export default function SignUpForm() {
@@ -219,14 +218,11 @@ export default function SignUpForm() {
           </form>
         )}
          <div className="text-center mt-8">
-          <p className="text-sm text-muted-foreground">
-            Já tem uma conta?{' '}
             <Link href="/login">
               <span className="font-medium text-primary hover:underline">
                 Faça o login
               </span>
             </Link>
-          </p>
         </div>
       </div>
     </main>

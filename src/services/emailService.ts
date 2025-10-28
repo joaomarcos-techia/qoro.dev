@@ -47,5 +47,3 @@ export const sendWelcomeEmail = async ({
     throw new Error("Failed to queue the invitation email.");
   }
 };
-
-    
