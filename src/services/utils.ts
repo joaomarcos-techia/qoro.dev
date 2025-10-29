@@ -22,6 +22,7 @@ export const getAdminAndOrg = async (actorUid: string): Promise<AdminOrgResult> 
     }
     
     const userDocRef = adminDb.collection('users').doc(actorUid);
+    // Força a releitura do documento diretamente do servidor, ignorando qualquer cache.
     const userDoc = await userDocRef.get();
     
     if (!userDoc.exists) {
@@ -39,6 +40,7 @@ export const getAdminAndOrg = async (actorUid: string): Promise<AdminOrgResult> 
     }
     
     const orgDocRef = adminDb.collection('organizations').doc(companyId);
+    // Força a releitura do documento da organização diretamente do servidor.
     const orgDoc = await orgDocRef.get();
     
     if (!orgDoc.exists) {
