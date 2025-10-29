@@ -1,12 +1,19 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import Link from 'next/link';
+import { useState } from 'react';
 
 export default function QualificationIntroPage() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleStart = () => {
+    setIsLoading(true);
+    router.push('/qualificacao/form');
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-black p-4 text-center">
@@ -30,12 +37,22 @@ export default function QualificationIntroPage() {
           Preencha este formulário de qualificação para que possamos entender melhor sua empresa, seus desafios e indicar a solução mais adequada às suas necessidades.
         </p>
         <Button 
-          onClick={() => router.push('/qualificacao/form')}
+          onClick={handleStart}
+          disabled={isLoading}
           size="lg" 
           className="h-14 px-10 text-lg font-semibold group"
         >
-          Começar
-          <ArrowRight className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1" />
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+              Carregando...
+            </>
+          ) : (
+            <>
+              Começar
+              <ArrowRight className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1" />
+            </>
+          )}
         </Button>
       </div>
     </div>
