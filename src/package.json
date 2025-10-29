@@ -10,7 +10,6 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "postinstall": "find node_modules -name 'vsda*' -type f -delete 2>/dev/null || true; rm -rf node_modules/genkit/genkit",
     "stripe:listen": "npx stripe-cli listen --forward-to localhost:9004/api/stripe/webhook"
   },
   "dependencies": {
