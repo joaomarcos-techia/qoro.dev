@@ -9,7 +9,8 @@ import {
     UserProfile,
     OrganizationProfileSchema,
     UserProfileCreationSchema,
-    InviteUserSchema
+    InviteUserSchema,
+    AppPermissions
 } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
@@ -281,4 +282,29 @@ export const acceptInvite = async (inviteId: string, userData: { name: string, u
     return { success: true, organizationId };
 };
 
+export const updateUserPermissions = async (input: z.infer<typeof UpdateUserPermissionsSchema> & { actor: string }) => {
+    const { userId, permissions, actor } = input;
     
+    const adminOrgData = await getAdminAndOrg(actor);
+    if (!adminOrgData) throw new Error("A organização do usuário não está pronta.");
+    
+    if (adminOrgData.userRole !== 'admin') {
+      throw new Error("Apenas administradores podem alterar permissões.");
+    }
+  
+    const userDocRef = adminDb.collection('users').doc(userId);
+    const userDoc = await userDocRef.get();
+  
+    if (!userDoc.exists || userDoc.data()?.organizationId !== adminOrgData.organizationId) {
+      throw new Error("Usuário não encontrado nesta organização.");
+    }
+
+    // Ensure Pulse is disabled if not on performance plan
+    if (adminOrgData.planId !== 'performance' && permissions.qoroPulse) {
+        permissions.qoroPulse = false;
+    }
+  
+    await userDocRef.update({ permissions });
+  
+    return { success: true };
+};

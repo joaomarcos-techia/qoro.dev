@@ -27,19 +27,18 @@ export const InviteUserSchema = z.object({
     email: z.string().email('O e-mail fornecido não é válido.'),
 });
 
-const BaseAppPermissionsSchema = z.object({
+export const AppPermissionsSchema = z.object({
     qoroCrm: z.boolean().default(true),
     qoroPulse: z.boolean().default(true),
     qoroTask: z.boolean().default(true),
     qoroFinance: z.boolean().default(true),
 });
-
-const AppPermissionsSchema = BaseAppPermissionsSchema.optional();
+export type AppPermissions = z.infer<typeof AppPermissionsSchema>;
 
 
 export const UserAccessInfoSchema = z.object({
     planId: z.enum(['free', 'growth', 'performance']),
-    permissions: BaseAppPermissionsSchema,
+    permissions: AppPermissionsSchema,
     role: z.enum(['admin', 'member']),
 });
 export type UserAccessInfo = z.infer<typeof UserAccessInfoSchema>;
@@ -51,7 +50,7 @@ export const UserProfileSchema = z.object({
     name: z.string().optional().nullable(),
     organizationId: z.string(),
     role: z.string().optional(),
-    permissions: AppPermissionsSchema,
+    permissions: AppPermissionsSchema.optional(),
     planId: z.enum(['free', 'growth', 'performance']).default('free'),
 });
 export type UserProfile = z.infer<typeof UserProfileSchema>;

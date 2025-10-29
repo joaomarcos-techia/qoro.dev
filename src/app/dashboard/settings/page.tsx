@@ -2,14 +2,15 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Mail, Send, KeyRound, UserPlus, Building, AlertCircle, CheckCircle, ArrowLeft, User, Shield, Users, Loader2, ExternalLink, Trash2, Copy, CreditCard } from 'lucide-react';
-import { inviteUser, listUsers, deleteUser } from '@/ai/flows/user-management';
+import { Mail, Send, KeyRound, UserPlus, Building, AlertCircle, CheckCircle, ArrowLeft, User, Shield, Users, Loader2, ExternalLink, Trash2, Copy, CreditCard, SlidersHorizontal } from 'lucide-react';
+import { inviteUser, listUsers, deleteUser, updateUserPermissions } from '@/ai/flows/user-management';
 import { sendPasswordResetEmail } from '@/lib/auth';
 import { createBillingPortalSession } from '@/ai/flows/billing-flow';
-import { UserProfile, InviteUserSchema } from '@/ai/schemas';
+import { UserProfile, InviteUserSchema, AppPermissions } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { OrganizationForm } from '@/components/dashboard/settings/OrganizationForm';
+import { PermissionsForm } from '@/components/dashboard/settings/PermissionsForm';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { usePlan } from '@/contexts/PlanContext';
@@ -24,6 +25,15 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+
 
 type AppPermission = 'qoroCrm' | 'qoroPulse' | 'qoroTask' | 'qoroFinance';
 
@@ -51,6 +61,9 @@ export default function SettingsPage() {
     const [feedback, setFeedback] = useState<{ type: 'error' | 'success', message: string, context: string, data?: any } | null>(null);
     const [users, setUsers] = useState<UserProfile[]>([]);
     const { planId, isLoading: isPlanLoading, role: userRole } = usePlan();
+    
+    const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false);
+    const [selectedUserForPermissions, setSelectedUserForPermissions] = useState<UserProfile | null>(null);
 
     const isAdmin = userRole === 'admin';
     
@@ -152,6 +165,17 @@ export default function SettingsPage() {
         }
     };
     
+    const handleOpenPermissions = (user: UserProfile) => {
+        setSelectedUserForPermissions(user);
+        setIsPermissionsModalOpen(true);
+    };
+
+    const handlePermissionsUpdated = () => {
+        setIsPermissionsModalOpen(false);
+        fetchUsers(); // Refresh user list to show updated permissions
+        setFeedback({ type: 'success', message: 'Permissões atualizadas com sucesso!', context: 'users' });
+    };
+
     const handleDeleteUser = async (userId: string) => {
         if (!currentUser || !isAdmin) return;
         setIsLoading(prev => ({ ...prev, deleteUser: userId }));
@@ -184,6 +208,25 @@ export default function SettingsPage() {
 
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <Dialog open={isPermissionsModalOpen} onOpenChange={setIsPermissionsModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Gerenciar Permissões de {selectedUserForPermissions?.name || 'Usuário'}</DialogTitle>
+                        <DialogDescription>
+                            Controle a quais módulos este usuário tem acesso.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {selectedUserForPermissions && currentUser && (
+                         <PermissionsForm 
+                            user={selectedUserForPermissions}
+                            actorUid={currentUser.uid}
+                            onPermissionsUpdated={handlePermissionsUpdated}
+                            planId={planId}
+                         />
+                    )}
+                </DialogContent>
+            </Dialog>
+
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h2 className="text-3xl font-bold text-foreground mb-2">Configurações</h2>
@@ -339,6 +382,12 @@ export default function SettingsPage() {
                                                     
                                                     {!isSelf && (
                                                         <div className="flex items-center gap-2">
+                                                            {planId !== 'free' && (
+                                                                <Button variant="outline" size="sm" onClick={() => handleOpenPermissions(user)}>
+                                                                    <SlidersHorizontal className="w-4 h-4 mr-2"/>
+                                                                    Permissões
+                                                                </Button>
+                                                            )}
                                                             <AlertDialogTrigger asChild>
                                                                 <Button variant="ghost" size="icon" className='text-muted-foreground hover:text-destructive rounded-xl' disabled={isLoading.deleteUser === user.uid}>
                                                                     {isLoading.deleteUser === user.uid ? <Loader2 className='w-4 h-4 animate-spin'/> : <Trash2 className="w-4 h-4" />}

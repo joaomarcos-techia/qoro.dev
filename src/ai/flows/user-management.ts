@@ -9,6 +9,7 @@
  * - getUserProfile - Fetches a user's name and organization name.
  * - inviteUser - Sends an invitation email to a new user.
  * - deleteUser - Deletes a user from the organization.
+ * - updateUserPermissions - Updates a user's module permissions.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
@@ -18,7 +19,8 @@ import {
     UpdateOrganizationDetailsSchema, 
     OrganizationProfileSchema, 
     UserProfileSchema,
-    UserAccessInfoSchema
+    UserAccessInfoSchema,
+    AppPermissionsSchema,
 } from '@/ai/schemas';
 import * as orgService from '@/services/organizationService';
 import { getAdminAndOrg } from '@/services/utils';
@@ -129,6 +131,11 @@ const acceptInviteFlow = ai.defineFlow(
     async ({ inviteId, name, uid }) => orgService.acceptInvite(inviteId, { name, uid })
 );
 
+const updateUserPermissionsFlow = ai.defineFlow(
+    { name: 'updateUserPermissionsFlow', inputSchema: UpdateUserPermissionsSchema.extend(ActorSchema.shape), outputSchema: z.object({ success: z.boolean() }) },
+    async (input) => orgService.updateUserPermissions(input)
+);
+
 
 // Exported functions (client-callable wrappers)
 export async function inviteUser(input: z.infer<typeof InviteUserSchema> & z.infer<typeof ActorSchema>): Promise<{ inviteId: string }> {
@@ -165,4 +172,8 @@ export async function validateInvite(input: z.infer<typeof ValidateInviteInput>)
 
 export async function acceptInvite(input: z.infer<typeof AcceptInviteInput>): Promise<z.infer<typeof AcceptInviteOutput>> {
     return acceptInviteFlow(input);
+}
+
+export async function updateUserPermissions(input: z.infer<typeof UpdateUserPermissionsSchema> & z.infer<typeof ActorSchema>): Promise<{ success: boolean }> {
+    return updateUserPermissionsFlow(input);
 }

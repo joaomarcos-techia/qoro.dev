@@ -1,14 +1,15 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getUserAccessInfo } from '@/ai/flows/user-management';
-import { UserAccessInfo } from '@/ai/schemas';
+import { AppPermissions } from '@/ai/schemas';
 
 type PlanContextType = {
   planId: 'free' | 'growth' | 'performance' | null;
-  permissions: UserAccessInfo['permissions'] | null;
+  permissions: AppPermissions | null;
   role: 'admin' | 'member' | null;
   isLoading: boolean;
   error: string | null;
@@ -26,7 +27,7 @@ const PlanContext = createContext<PlanContextType>({
 
 export const PlanProvider = ({ children }: { children: React.ReactNode }) => {
   const [planId, setPlanId] = useState<'free' | 'growth' | 'performance' | null>(null);
-  const [permissions, setPermissions] = useState<UserAccessInfo['permissions'] | null>(null);
+  const [permissions, setPermissions] = useState<AppPermissions | null>(null);
   const [role, setRole] = useState<'admin' | 'member' | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

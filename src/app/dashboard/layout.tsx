@@ -31,12 +31,14 @@ import { useState, useEffect } from 'react';
 import { PulseSidebar } from '@/components/dashboard/pulse/PulseSidebar';
 import { TasksProvider } from '@/contexts/TasksContext';
 import { PlanProvider, usePlan } from '@/contexts/PlanContext';
+import { AppPermissions } from '@/ai/schemas';
+
 
 interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
-  permissionKey: 'qoroCrm' | 'qoroTask' | 'qoroFinance' | 'qoroPulse';
+  permissionKey: keyof AppPermissions;
   plan: ('free' | 'growth' | 'performance')[];
 }
 
