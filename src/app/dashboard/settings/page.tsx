@@ -172,7 +172,7 @@ export default function SettingsPage() {
         setFeedback(null);
         try {
             const { url } = await createBillingPortalSession({ actor: currentUser.uid });
-            window.location.assign(url);
+            window.open(url, '_blank');
         } catch (error: any) {
             console.error("Failed to create billing portal session:", error);
             setFeedback({ type: 'error', message: "Não foi possível acessar o portal de assinaturas. Verifique suas configurações no Stripe.", context: 'portal' });
@@ -371,5 +371,3 @@ export default function SettingsPage() {
         </div>
     );
 }
-
-    
