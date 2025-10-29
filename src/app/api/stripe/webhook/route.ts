@@ -2,7 +2,7 @@
 // src/app/api/stripe/webhook/route.ts
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { createUserProfile } from '@/services/organizationService';
+import { createUserProfile, handleSubscriptionChange } from '@/services/organizationService';
 import type Stripe from 'stripe';
 import { adminDb } from '@/lib/firebase-admin';
 
@@ -74,28 +74,21 @@ export async function POST(req: Request) {
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
-        const orgQuery = await adminDb.collection('organizations').where('stripeSubscriptionId', '==', subscription.id).limit(1).get();
-        if (!orgQuery.empty) {
-            const orgDoc = orgQuery.docs[0];
-            await orgDoc.ref.update({
-                stripeSubscriptionStatus: subscription.status,
-                stripePriceId: subscription.items.data[0].price.id,
-            });
-            console.log(`✅ Status da assinatura atualizado para ${subscription.status} na organização ${orgDoc.id}`);
-        }
+        await handleSubscriptionChange(
+            subscription.id,
+            subscription.items.data[0].price.id,
+            subscription.status
+        );
         break;
       }
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
-        const orgQuery = await adminDb.collection('organizations').where('stripeSubscriptionId', '==', subscription.id).limit(1).get();
-        if (!orgQuery.empty) {
-            const orgDoc = orgQuery.docs[0];
-            await orgDoc.ref.update({
-                stripeSubscriptionStatus: 'canceled', // Or subscription.status
-            });
-            console.log(`✅ Assinatura cancelada para organização ${orgDoc.id}`);
-        }
+        await handleSubscriptionChange(
+            subscription.id,
+            'free', // When deleted, revert to free plan
+            subscription.status // e.g., 'canceled'
+        );
         break;
       }
 

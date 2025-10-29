@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { FieldValue } from 'firebase-admin/firestore';
@@ -307,4 +308,67 @@ export const updateUserPermissions = async (input: z.infer<typeof UpdateUserPerm
     await userDocRef.update({ permissions });
   
     return { success: true };
+};
+
+export const handleSubscriptionChange = async (subscriptionId: string, newPriceId: string, newStatus: string) => {
+    const orgQuery = await adminDb.collection('organizations').where('stripeSubscriptionId', '==', subscriptionId).limit(1).get();
+    
+    if (orgQuery.empty) {
+        console.warn(`Webhook received for unknown subscription ID: ${subscriptionId}. No organization found.`);
+        return;
+    }
+    
+    const orgDoc = orgQuery.docs[0];
+    const organizationId = orgDoc.id;
+
+    // Determine new planId from priceId
+    let newPlanId: 'free' | 'growth' | 'performance' = 'free';
+    if (newPriceId === process.env.NEXT_PUBLIC_STRIPE_PERFORMANCE_PLAN_PRICE_ID) {
+        newPlanId = 'performance';
+    } else if (newPriceId === process.env.NEXT_PUBLIC_STRIPE_GROWTH_PLAN_PRICE_ID) {
+        newPlanId = 'growth';
+    }
+
+    // Update organization document
+    await orgDoc.ref.update({
+        stripeSubscriptionStatus: newStatus,
+        stripePriceId: newPriceId,
+        planId: newPlanId, // Also storing planId on org for easier querying
+    });
+
+    // Update all users in the organization
+    const usersSnapshot = await adminDb.collection('users').where('organizationId', '==', organizationId).get();
+    if (usersSnapshot.empty) {
+        return;
+    }
+
+    const hasPulseAccess = newPlanId === 'performance';
+    const batch = adminDb.batch();
+
+    const userUpdatePromises = usersSnapshot.docs.map(async (userDoc) => {
+        const userRef = userDoc.ref;
+        const currentPermissions = userDoc.data().permissions || {};
+        
+        // Update user document in Firestore
+        batch.update(userRef, {
+            planId: newPlanId,
+            permissions: {
+                ...currentPermissions,
+                qoroPulse: hasPulseAccess,
+            },
+            stripeSubscriptionStatus: newStatus,
+        });
+
+        // Update custom claims for real-time access changes
+        return adminAuth.setCustomUserClaims(userDoc.id, {
+            organizationId,
+            role: userDoc.data().role,
+            planId: newPlanId,
+        });
+    });
+
+    // Commit batch and wait for all claims to be updated
+    await Promise.all([batch.commit(), ...userUpdatePromises]);
+
+    console.log(`✅ Subscription for organization ${organizationId} updated to plan '${newPlanId}'. ${usersSnapshot.size} users affected.`);
 };
