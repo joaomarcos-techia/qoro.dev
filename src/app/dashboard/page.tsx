@@ -81,6 +81,7 @@ const AppCard = ({
     color, 
     description,
     isLocked = false,
+    lockedText = 'Disponível no plano Performance'
 }: { 
     href: string;
     title: string; 
@@ -88,6 +89,7 @@ const AppCard = ({
     color: string; 
     description: string;
     isLocked?: boolean;
+    lockedText?: string;
 }) => {
     const router = useRouter();
     const [isNavigating, setIsNavigating] = useState(false);
@@ -123,7 +125,7 @@ const AppCard = ({
                   {isLocked ? (
                       <>
                           <Lock className="w-4 h-4 mr-2" />
-                          <span>Disponível no plano Performance</span>
+                          <span>{lockedText}</span>
                       </>
                   ) : isNavigating ? (
                       <>
@@ -221,8 +223,11 @@ function DashboardContent() {
     );
   }
 
+  const isCrmLocked = !permissions?.qoroCrm;
+  const isTaskLocked = !permissions?.qoroTask;
+  const isFinanceLocked = !permissions?.qoroFinance;
   const isPulseLocked = !permissions?.qoroPulse;
-  const isFinanceLocked = planId === 'free';
+  
 
   return (
     <div
@@ -242,9 +247,9 @@ function DashboardContent() {
        <div className="mb-12">
             <h3 className="text-xl font-bold text-foreground mb-6">Métricas e Insights Rápidos</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <MetricCard title="Total de Clientes" value={String(metrics.totalCustomers)} icon={Users} isLoading={isLoadingMetrics} error={!!metricsError} colorClass='bg-crm-primary' />
-                <MetricCard title="Clientes no Funil" value={String(metrics.activeLeads)} icon={TrendingUp} isLoading={isLoadingMetrics} error={!!metricsError} colorClass='bg-crm-primary' />
-                <MetricCard title="Tarefas Pendentes" value={String(metrics.pendingTasks)} icon={ListTodo} isLoading={isLoadingMetrics} error={!!metricsError} colorClass='bg-task-primary' />
+                <MetricCard title="Total de Clientes" value={String(metrics.totalCustomers)} icon={Users} isLoading={isLoadingMetrics} error={!!metricsError} colorClass='bg-crm-primary' isLocked={isCrmLocked} lockedText='Acesso bloqueado' />
+                <MetricCard title="Clientes no Funil" value={String(metrics.activeLeads)} icon={TrendingUp} isLoading={isLoadingMetrics} error={!!metricsError} colorClass='bg-crm-primary' isLocked={isCrmLocked} lockedText='Acesso bloqueado'/>
+                <MetricCard title="Tarefas Pendentes" value={String(metrics.pendingTasks)} icon={ListTodo} isLoading={isLoadingMetrics} error={!!metricsError} colorClass='bg-task-primary' isLocked={isTaskLocked} lockedText='Acesso bloqueado'/>
                 <MetricCard 
                     title="Saldo em Contas" 
                     value={formatCurrency(metrics.totalBalance)} 
@@ -253,7 +258,7 @@ function DashboardContent() {
                     error={!!metricsError} 
                     colorClass='bg-finance-primary'
                     isLocked={isFinanceLocked}
-                    lockedText="Upgrade para ver"
+                    lockedText="Acesso bloqueado"
                 />
             </div>
              {metricsError && (
@@ -276,6 +281,8 @@ function DashboardContent() {
                 icon={Users}
                 color="bg-crm-primary"
                 description="CRM com foco em gestão de funil de vendas e conversão para maximizar seus lucros."
+                isLocked={isCrmLocked}
+                lockedText="Acesso bloqueado pelo admin"
             />
              <AppCard 
                 href="/dashboard/pulse"
@@ -284,6 +291,7 @@ function DashboardContent() {
                 color="bg-pulse-primary"
                 description="O sistema nervoso central da sua operação, revelando insights para otimização automática e inteligente."
                 isLocked={isPulseLocked}
+                lockedText={planId !== 'performance' ? 'Disponível no plano Performance' : 'Acesso bloqueado pelo admin'}
             />
             <AppCard 
                 href="/dashboard/task/visao-geral"
@@ -291,6 +299,8 @@ function DashboardContent() {
                 icon={CheckSquare}
                 color="bg-task-primary"
                 description="Plataforma leve e poderosa de gestão de tarefas e produtividade para manter sua equipe alinhada e focada."
+                isLocked={isTaskLocked}
+                lockedText="Acesso bloqueado pelo admin"
             />
             <AppCard 
                 href="/dashboard/finance/transacoes"
@@ -298,6 +308,8 @@ function DashboardContent() {
                 icon={DollarSign}
                 color="bg-finance-primary"
                 description="Controle financeiro completo para seu negócio, com dashboards claros e relatórios simplificados."
+                isLocked={isFinanceLocked}
+                lockedText="Acesso bloqueado pelo admin"
             />
         </div>
       </div>
@@ -314,5 +326,3 @@ export default function Dashboard() {
         </div>
     )
 }
-
-    
