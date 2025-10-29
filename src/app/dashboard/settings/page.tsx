@@ -286,7 +286,7 @@ export default function SettingsPage() {
                                     <form onSubmit={handleInviteUser} className="flex flex-col md:flex-row items-start md:items-center gap-4">
                                         <div className="relative flex-grow w-full md:w-auto">
                                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                                            <Input type="email" placeholder="E-mail do convidado" value={inviteEmail} onChange={(e) => {setInviteEmail(e.target.value); clearFeedback('invite');}} required disabled={isUserLimitReached || isLoading.invite} className="w-full pl-12 pr-4 py-3 bg-input rounded-xl border-border"/>
+                                            <Input type="email" placeholder="E-mail do convidado" value={inviteEmail} onChange={(e) => {setInviteEmail(e.target.value); clearFeedback('invite');}} required disabled={isUserLimitReached || isLoading.invite} className="w-full pl-12 pr-4 py-3 bg-input rounded-xl border-border focus:ring-2 focus:ring-primary"/>
                                         </div>
                                         <Button type="submit" disabled={isLoading.invite || isUserLimitReached} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl hover:bg-primary/90 font-semibold disabled:opacity-50 w-full md:w-auto flex items-center justify-center">
                                             {isLoading.invite ? <Loader2 className="w-5 h-5 animate-spin mr-2"/> : <Send className="w-5 h-5 mr-2" />}
@@ -371,3 +371,5 @@ export default function SettingsPage() {
         </div>
     );
 }
+
+    

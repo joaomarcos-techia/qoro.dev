@@ -280,3 +280,5 @@ export const acceptInvite = async (inviteId: string, userData: { name: string, u
 
     return { success: true, organizationId };
 };
+
+    
