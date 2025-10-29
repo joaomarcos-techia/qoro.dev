@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, LogIn, AlertCircle, CheckCircle, Loader2, RefreshCw } from 'lucide-react';
-import { signIn, sendPasswordResetEmail, sendVerificationEmail, createUserAndSendVerification } from '@/lib/auth';
+import { signIn, sendVerificationEmail, createUserAndSendVerification } from '@/lib/auth';
 import { Logo } from '@/components/ui/logo';
 import { onAuthStateChanged, User, getAuth } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
