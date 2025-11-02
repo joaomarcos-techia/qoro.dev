@@ -6,7 +6,7 @@ import { googleAI } from '@genkit-ai/google-genai';
 import { PulseMessage } from '../schemas';
 
 /**
- * Gera um título curto (máx. 2-3 palavras) baseado no histórico da conversa.
+ * Gera um título curto e contextual (máx. 4 palavras) baseado no histórico da conversa.
  * @param messages Histórico da conversa (PulseMessage[]).
  */
 export async function generateConversationTitle(messages: PulseMessage[]): Promise<string> {
@@ -24,8 +24,8 @@ export async function generateConversationTitle(messages: PulseMessage[]): Promi
 
   try {
     const aiPrompt = `
-Analise o contexto do diálogo abaixo e crie um título conciso com 2 a 4 palavras
-que capture o tema central da conversa.
+Analise o contexto do diálogo abaixo e crie um título conciso com 2 a 3 palavras
+que capture o tema da conversa.
 Retorne apenas o título, sem aspas, pontuação ou qualquer texto adicional.
 
 Diálogo:

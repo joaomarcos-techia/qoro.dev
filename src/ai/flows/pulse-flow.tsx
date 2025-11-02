@@ -99,7 +99,6 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
 </EXEMPLOS>
   `.trim();
 
-    // Formata o histórico de mensagens para o formato que a API do Gemini espera.
     const conversationHistory = messages.map(m => ({
       role: roleMap[m.role] || 'user',
       content: [{ text: m.content ?? '' }],
@@ -115,19 +114,15 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
       });
     } catch (err: any) {
       console.error('AI Generation Error in pulse-flow:', err);
-      
       const isOverloaded = err.message?.includes('503') && err.message?.toLowerCase().includes('overloaded');
-
       if (isOverloaded) {
           throw new Error('A IA está com alta demanda no momento. Por favor, tente novamente em alguns instantes.');
       }
-
       throw new Error(`Falha na API de IA: ${err.message || 'Erro desconhecido'}`);
     }
 
     const responseText = result.text ?? 'Desculpe, não consegui processar sua pergunta. Tente novamente.';
     const responseMessage: PulseMessage = { role: 'assistant', content: responseText };
-    
     const finalMessages = [...messages, responseMessage];
 
     let conversationId = existingConvId;
@@ -136,22 +131,20 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
     try {
       if (conversationId && conversationId !== 'new') {
         const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
-        const doc = await conversationRef.get();
-        
-        if (!doc.exists) {
+        const docSnap = await conversationRef.get();
+        if (!docSnap.exists) {
             throw new Error(`Conversa com ID ${conversationId} não encontrada.`);
         }
         
-        const existingData = doc.data()!;
-        let titleToUpdate = existingData.title;
+        const existingData = docSnap.data()!;
+        finalTitle = existingData.title || 'Nova conversa';
 
-        const isNewConversationTitle = (titleToUpdate || '').toLowerCase() === 'nova conversa';
-        const hasEnoughContext = finalMessages.length >= 5;
-        
-        if (isNewConversationTitle && hasEnoughContext) {
-          titleToUpdate = await generateConversationTitle(finalMessages);
+        // CONDIÇÃO PARA GERAR TÍTULO
+        const shouldGenerateTitle = finalTitle.toLowerCase() === 'nova conversa' && finalMessages.length >= 5;
+
+        if (shouldGenerateTitle) {
+          finalTitle = await generateConversationTitle(finalMessages);
         }
-        finalTitle = titleToUpdate;
 
         await conversationRef.update({
           messages: finalMessages.map(m => ({ ...m })),
@@ -160,11 +153,11 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         });
 
       } else {
-        const titleForNewConvo = 'Nova conversa';
-        finalTitle = titleForNewConvo;
+        // É uma conversa nova, só pode ser criada com 2 mensagens (user, assistant)
+        finalTitle = 'Nova conversa';
         const newConversationData = {
           userId,
-          title: titleForNewConvo, 
+          title: finalTitle,
           messages: finalMessages.map(m => ({ ...m })),
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
