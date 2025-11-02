@@ -8,18 +8,17 @@ import { PulseMessage } from '../schemas';
 /**
  * Gera um título curto (máx. 4 palavras) para uma conversa
  * baseado no contexto das primeiras mensagens.
- * @param messages Histórico inicial da conversa (PulseMessage[]), idealmente as 3 primeiras.
+ * @param messages Histórico inicial da conversa (PulseMessage[]).
  */
 export async function generateConversationTitle(messages: PulseMessage[]): Promise<string> {
   const fallbackTitle = 'Nova conversa';
 
-  if (!Array.isArray(messages) || messages.length < 3) {
+  if (!Array.isArray(messages) || messages.length === 0) {
     return fallbackTitle;
   }
 
-  // Constrói um contexto com as 3 primeiras mensagens para a IA
+  // Constrói um contexto com as mensagens para a IA
   const context = messages
-    .slice(0, 3)
     .map(m => `${m.role === 'user' ? 'Usuário' : 'Assistente'}: ${m.content}`)
     .join('\n');
 

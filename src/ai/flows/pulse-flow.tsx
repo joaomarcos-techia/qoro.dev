@@ -145,9 +145,9 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         
         let titleToUpdate = existingData.title;
 
-        // Gera o título na segunda mensagem do usuário (terceira mensagem geral: user, assist, user)
-        if (titleToUpdate.toLowerCase() === 'nova conversa' && messages.filter(m => m.role === 'user').length === 2) {
-          titleToUpdate = await generateConversationTitle(finalMessages.slice(0, 3));
+        // Gera o título na terceira mensagem do usuário (quinta mensagem geral)
+        if (titleToUpdate.toLowerCase() === 'nova conversa' && finalMessages.length === 5) {
+          titleToUpdate = await generateConversationTitle(finalMessages);
         }
         finalTitle = titleToUpdate;
 
