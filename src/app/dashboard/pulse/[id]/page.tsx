@@ -13,179 +13,179 @@ import { getConversation } from '@/services/pulseService';
 import type { PulseMessage } from '@/ai/schemas';
 import { MarkdownRenderer } from '@/components/utils/MarkdownRenderer';
 
-const ArrowUpIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" {...props}>
-      <path d="M12 23V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M5 10l7-7 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            );
+export default function PulseConversationPage() {
+  const [messages, setMessages] = useState<PulseMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const params = useParams();
+  const [currentConversationId, setCurrentConversationId] = useState(params.id as string);
+  const [isPending, startTransition] = useTransition();
+  
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-            export default function PulseConversationPage() {
-              const [messages, setMessages] = useState<PulseMessage[]>([]);
-                const [input, setInput] = useState('');
-                  const [isSending, setIsSending] = useState(false);
-                    const [isLoadingHistory, setIsLoadingHistory] = useState(true);
-                      const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-                        const [error, setError] = useState<string | null>(null);
-                          const params = useParams();
-                            const [currentConversationId, setCurrentConversationId] = useState(params.id as string);
-                              const [isPending, startTransition] = useTransition();
-                                
-                                  const scrollAreaRef = useRef<HTMLDivElement>(null);
-                                    const router = useRouter();
-                                      const searchParams = useSearchParams();
+  // Ref para garantir que a mensagem inicial seja enviada apenas uma vez
+  const initialMessageSentRef = useRef(false);
 
-                                        // Ref para garantir que a mensagem inicial seja enviada apenas uma vez
-                                          const initialMessageSentRef = useRef(false);
+  const ArrowUpIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" {...props}>
+        <path d="M12 23V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M5 10l7-7 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              );
 
-                                            const handleSendMessage = useCallback(async (e?: FormEvent, initialMessage?: string) => {
-                                              e?.preventDefault();
-                                              const messageContent = initialMessage || input.trim();
-                                              if (isSending || !currentUser?.uid || !messageContent) return;
-                                          
-                                              setIsSending(true);
-                                              setError(null);
-                                              if (!initialMessage) {
-                                                setInput('');
-                                              }
-                                          
-                                              const optimisticUserMessage: PulseMessage = { role: 'user', content: messageContent };
-                                          
-                                              const messagesToSend = [...messages, optimisticUserMessage];
-                                              setMessages(messagesToSend);
-                                          
-                                              const conversationIdToSend = currentConversationId === 'new' ? undefined : currentConversationId;
-                                          
-                                              try {
-                                                const result = await askPulse({
-                                                  messages: messagesToSend,
-                                                  actor: currentUser.uid,
-                                                  conversationId: conversationIdToSend,
-                                                });
-                                          
-                                                if (result?.response) {
-                                                  // Substitui a mensagem otimista e a resposta real para ter uma fonte única da verdade
-                                                  setMessages([...messages, optimisticUserMessage, result.response]);
-                                                } else {
-                                                  throw new Error('A IA não retornou uma resposta válida.');
-                                                }
-                                          
-                                                if (currentConversationId === 'new' && result.conversationId) {
-                                                  setCurrentConversationId(result.conversationId);
-                                                  startTransition(() => {
-                                                    router.replace(`/dashboard/pulse/${result.conversationId}`, { scroll: false });
-                                                  });
-                                                }
-                                          
-                                              } catch (err: any) {
-                                                console.error("Error in handleSendMessage:", err);
-                                                const errorMessage = err.message || 'Falha ao gerar resposta da IA. Verifique sua conexão ou tente novamente mais tarde.';
-                                                setError(errorMessage);
-                                                // Reverte a UI para o estado anterior em caso de erro
-                                                setMessages(prev => prev.slice(0, -1));
-                                              } finally {
-                                                setIsSending(false);
-                                              }
-                                            }, [currentUser, currentConversationId, isSending, messages, input, router]);
-                                                                                                                                                                                                                                                                                                    
-                                              useEffect(() => {
-                                                  if (currentConversationId === 'new' && currentUser && !initialMessageSentRef.current) {
-                                                        const initialQuery = searchParams.get('q');
-                                                              if (initialQuery) {
-                                                                      initialMessageSentRef.current = true; 
-                                                                              handleSendMessage(undefined, initialQuery);
-                                                                                    } else {
-                                                                                            setIsLoadingHistory(false);
-                                                                                                  }
-                                                                                                      }
-                                                                                                        }, [currentConversationId, currentUser, searchParams, handleSendMessage]);
+  const handleSendMessage = useCallback(async (e?: FormEvent, initialMessage?: string) => {
+    e?.preventDefault();
+    const messageContent = initialMessage || input.trim();
+    if (isSending || !currentUser?.uid || !messageContent) return;
+
+    setIsSending(true);
+    setError(null);
+    if (!initialMessage) {
+      setInput('');
+    }
+
+    const optimisticUserMessage: PulseMessage = { role: 'user', content: messageContent };
+
+    const messagesToSend = [...messages, optimisticUserMessage];
+    setMessages(messagesToSend);
+
+    const conversationIdToSend = currentConversationId === 'new' ? undefined : currentConversationId;
+
+    try {
+      const result = await askPulse({
+        messages: messagesToSend,
+        actor: currentUser.uid,
+        conversationId: conversationIdToSend,
+      });
+
+      if (result?.response) {
+        // Substitui a mensagem otimista e a resposta real para ter uma fonte única da verdade
+        setMessages([...messages, optimisticUserMessage, result.response]);
+      } else {
+        throw new Error('A IA não retornou uma resposta válida.');
+      }
+
+      if (currentConversationId === 'new' && result.conversationId) {
+        setCurrentConversationId(result.conversationId);
+        startTransition(() => {
+          router.replace(`/dashboard/pulse/${result.conversationId}`, { scroll: false });
+        });
+      }
+
+    } catch (err: any) {
+      console.error("Error in handleSendMessage:", err);
+      const errorMessage = err.message || 'Falha ao gerar resposta da IA. Verifique sua conexão ou tente novamente mais tarde.';
+      setError(errorMessage);
+      // Reverte a UI para o estado anterior em caso de erro
+      setMessages(prev => prev.slice(0, -1));
+    } finally {
+      setIsSending(false);
+    }
+  }, [currentUser, currentConversationId, isSending, messages, input, router]);
+                                                                                                                                                                                                                                                                                            
+    useEffect(() => {
+        if (currentConversationId === 'new' && currentUser && !initialMessageSentRef.current) {
+              const initialQuery = searchParams.get('q');
+                    if (initialQuery) {
+                            initialMessageSentRef.current = true; 
+                                    handleSendMessage(undefined, initialQuery);
+                                          } else {
+                                                  setIsLoadingHistory(false);
+                                                        }
+                                                            }
+                                                              }, [currentConversationId, currentUser, searchParams, handleSendMessage]);
 
 
-                                                                                                              const fetchConversation = useCallback(async () => {
-                                                                                                                  if (!currentUser || !currentConversationId || currentConversationId === 'new') {
-                                                                                                                          setIsLoadingHistory(false);
-                                                                                                                                  return;
-                                                                                                                                      }
+                                                                    const fetchConversation = useCallback(async () => {
+                                                                        if (!currentUser || !currentConversationId || currentConversationId === 'new') {
+                                                                                setIsLoadingHistory(false);
+                                                                                        return;
+                                                                                            }
 
-                                                                                                                                          setIsLoadingHistory(true);
-                                                                                                                                              setError(null);
-                                                                                                                                                  try {
-                                                                                                                                                          const conversation = await getConversation({ conversationId: currentConversationId, actor: currentUser.uid });
-                                                                                                                                                                  if (conversation?.messages) {
-                                                                                                                                                                              setMessages(conversation.messages);
-                                                                                                                                                                                      } else {
-                                                                                                                                                                                                  router.push('/dashboard/pulse');
-                                                                                                                                                                                                          }
-                                                                                                                                                                                                              } catch (err: any) {
-                                                                                                                                                                                                                      setError(err.message || 'Não foi possível carregar a conversa.');
-                                                                                                                                                                                                                              setTimeout(() => router.push('/dashboard/pulse'), 3000);
-                                                                                                                                                                                                                                  } finally {
-                                                                                                                                                                                                                                          setIsLoadingHistory(false);
-                                                                                                                                                                                                                                              }
-                                                                                                                                                                                                                                                }, [currentUser, currentConversationId, router]);
+                                                                                                setIsLoadingHistory(true);
+                                                                                                    setError(null);
+                                                                                                        try {
+                                                                                                                const conversation = await getConversation({ conversationId: currentConversationId, actor: currentUser.uid });
+                                                                                                                        if (conversation?.messages) {
+                                                                                                                                    setMessages(conversation.messages);
+                                                                                                                                            } else {
+                                                                                                                                                    router.push('/dashboard/pulse');
+                                                                                                                                                            }
+                                                                                                                                                                } catch (err: any) {
+                                                                                                                                                                        setError(err.message || 'Não foi possível carregar a conversa.');
+                                                                                                                                                                                setTimeout(() => router.push('/dashboard/pulse'), 3000);
+                                                                                                                                                                                    } finally {
+                                                                                                                                                                                            setIsLoadingHistory(false);
+                                                                                                                                                                                                }
+                                                                                                                                                                                                  }, [currentUser, currentConversationId, router]);
 
-                                                                                                                                                                                                                                                  useEffect(() => {
-                                                                                                                                                                                                                                                      const unsubscribe = onAuthStateChanged(auth, (user) => {
-                                                                                                                                                                                                                                                            if (user) {
-                                                                                                                                                                                                                                                                    setCurrentUser(user);
-                                                                                                                                                                                                                                                                          } else {
-                                                                                                                                                                                                                                                                                  router.push('/login');
+                                                                                                                                                                                                    useEffect(() => {
+                                                                                                                                                                                                        const unsubscribe = onAuthStateChanged(auth, (user) => {
+                                                                                                                                                                                                              if (user) {
+                                                                                                                                                                                                                      setCurrentUser(user);
+                                                                                                                                                                                                                            } else {
+                                                                                                                                                                                                                                    router.push('/login');
+                                                                                                                                                                                                                                          }
+                                                                                                                                                                                                                                              });
+                                                                                                                                                                                                                                                  return () => unsubscribe();
+                                                                                                                                                                                                                                                    }, [router]);
+
+                                                                                                                                                                                                                                                      useEffect(() => {
+                                                                                                                                                                                                                                                          if (currentConversationId !== 'new') {
+                                                                                                                                                                                                                                                                  fetchConversation();
+                                                                                                                                                                                                                                                                      }
+                                                                                                                                                                                                                                                                        }, [currentConversationId, fetchConversation]);
+
+                                                                                                                                                                                                                                                                          useEffect(() => {
+                                                                                                                                                                                                                                                                              if (scrollAreaRef.current) {
+                                                                                                                                                                                                                                                                                    scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
                                                                                                                                                                                                                                                                                         }
-                                                                                                                                                                                                                                                                                            });
-                                                                                                                                                                                                                                                                                                return () => unsubscribe();
-                                                                                                                                                                                                                                                                                                  }, [router]);
+                                                                                                                                                                                                                                                                                          }, [messages, isSending]);
 
-                                                                                                                                                                                                                                                                                                    useEffect(() => {
-                                                                                                                                                                                                                                                                                                        if (currentConversationId !== 'new') {
-                                                                                                                                                                                                                                                                                                                fetchConversation();
-                                                                                                                                                                                                                                                                                                                    }
-                                                                                                                                                                                                                                                                                                                      }, [currentConversationId, fetchConversation]);
+                                                                                                                                                                                                                                                                                            const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+                                                                                                                                                                                                                                                                                                if (e.key === 'Enter' && !e.shiftKey && !isSending) {
+                                                                                                                                                                                                                                                                                                      e.preventDefault();
+                                                                                                                                                                                                                                                                                                            handleSendMessage();
+                                                                                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                                                                                  };
 
-                                                                                                                                                                                                                                                                                                                        useEffect(() => {
-                                                                                                                                                                                                                                                                                                                            if (scrollAreaRef.current) {
-                                                                                                                                                                                                                                                                                                                                  scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-                                                                                                                                                                                                                                                                                                                                      }
-                                                                                                                                                                                                                                                                                                                                        }, [messages, isSending]);
+                                                                                                                                                                                                                                                                                                                    const renderMessages = () => {
+                                                                                                                                                                                                                                                                                                                        if (isLoadingHistory && currentConversationId !== 'new') {
+                                                                                                                                                                                                                                                                                                                              return (
+                                                                                                                                                                                                                                                                                                                                      <div className="flex-grow flex flex-col items-center justify-center">
+                                                                                                                                                                                                                                                                                                                                                <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+                                                                                                                                                                                                                                                                                                                                                          <p className="text-muted-foreground">Carregando conversa...</p>
+                                                                                                                                                                                                                                                                                                                                                                  </div>
+                                                                                                                                                                                                                                                                                                                                                                        );
+                                                                                                                                                                                                                                                                                                                                                                            }
 
-                                                                                                                                                                                                                                                                                                                                          const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-                                                                                                                                                                                                                                                                                                                                              if (e.key === 'Enter' && !e.shiftKey && !isSending) {
-                                                                                                                                                                                                                                                                                                                                                    e.preventDefault();
-                                                                                                                                                                                                                                                                                                                                                          handleSendMessage();
-                                                                                                                                                                                                                                                                                                                                                              }
-                                                                                                                                                                                                                                                                                                                                                                };
-
-                                                                                                                                                                                                                                                                                                                                                                  const renderMessages = () => {
-                                                                                                                                                                                                                                                                                                                                                                      if (isLoadingHistory && currentConversationId !== 'new') {
-                                                                                                                                                                                                                                                                                                                                                                            return (
-                                                                                                                                                                                                                                                                                                                                                                                    <div className="flex-grow flex flex-col items-center justify-center">
-                                                                                                                                                                                                                                                                                                                                                                                              <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-                                                                                                                                                                                                                                                                                                                                                                                                        <p className="text-muted-foreground">Carregando conversa...</p>
-                                                                                                                                                                                                                                                                                                                                                                                                                </div>
-                                                                                                                                                                                                                                                                                                                                                                                                                      );
-                                                                                                                                                                                                                                                                                                                                                                                                                          }
-
-                                                                                                                                                                                                                                                                                                                                                                                                                              return messages.map((message, index) => (
-                                                                                                                                                                                                                                                                                                                                                                                                                                    <div key={index} className={`flex items-start gap-4 mx-auto w-full ${message.role === 'user' ? 'justify-end' : ''}`}>
-                                                                                                                                                                                                                                                                                                                                                                                                                                            {message.role !== 'user' && (
-                                                                                                                                                                                                                                                                                                                                                                                                                                                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-pulse-primary text-black flex items-center justify-center">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                  <BrainCircuit size={18} />
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    )}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <div className={`max-w-2xl px-5 py-3 rounded-2xl ${message.role === 'user' ? 'bg-secondary text-primary-foreground' : 'bg-card text-foreground border'}`}>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       {message.role === 'user' ? (
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       <p className="whitespace-pre-wrap text-base leading-relaxed">{message.content}</p>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ) : (
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   <MarkdownRenderer content={message.content} />
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               )}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                {message.role === 'user' && (
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary text-muted-foreground flex items-center justify-center">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      <User size={18} />
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         )}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ));
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      };
+                                                                                                                                                                                                                                                                                                                                                                                return messages.map((message, index) => (
+                                                                                                                                                                                                                                                                                                                                                                                      <div key={index} className={`flex items-start gap-4 mx-auto w-full ${message.role === 'user' ? 'justify-end' : ''}`}>
+                                                                                                                                                                                                                                                                                                                                                                                              {message.role !== 'user' && (
+                                                                                                                                                                                                                                                                                                                                                                                                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-pulse-primary text-black flex items-center justify-center">
+                                                                                                                                                                                                                                                                                                                                                                                                                    <BrainCircuit size={18} />
+                                                                                                                                                                                                                                                                                                                                                                                                                              </div>
+                                                                                                                                                                                                                                                                                                                                                                                                                                      )}
+                                                                                                                                                                                                                                                                                                                                                                                                                                              <div className={`max-w-2xl px-5 py-3 rounded-2xl ${message.role === 'user' ? 'bg-secondary text-primary-foreground' : 'bg-card text-foreground border'}`}>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                         {message.role === 'user' ? (
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                         <p className="whitespace-pre-wrap text-base leading-relaxed">{message.content}</p>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ) : (
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     <MarkdownRenderer content={message.content} />
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 )}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          </div>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  {message.role === 'user' && (
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary text-muted-foreground flex items-center justify-center">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <User size={18} />
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  </div>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           )}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </div>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ));
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              };
 
             return (
                 <div className="flex flex-col h-full bg-background">
