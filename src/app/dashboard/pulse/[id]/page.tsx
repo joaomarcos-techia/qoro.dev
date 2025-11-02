@@ -45,21 +45,21 @@ export default function PulseConversationPage() {
 
     setIsSending(true);
     setError(null);
+    const optimisticUserMessage: PulseMessage = { role: 'user', content: messageContent };
+    
+    // Optimistic UI update with the user's message
+    setMessages(prev => [...prev, optimisticUserMessage]);
+    
     if (!initialMessage) {
       setInput('');
     }
 
-    const optimisticUserMessage: PulseMessage = { role: 'user', content: messageContent };
-    
-    // Optimistic UI update with the user's message
-    const newMessages = [...messages, optimisticUserMessage];
-    setMessages(newMessages);
-
     const conversationIdToSend = currentConversationId === 'new' ? undefined : currentConversationId;
+    const messagesToSend = [...messages, optimisticUserMessage];
 
     try {
       const result = await askPulse({
-        messages: newMessages, // Send the already updated list
+        messages: messagesToSend,
         actor: currentUser.uid,
         conversationId: conversationIdToSend,
       });
@@ -236,7 +236,7 @@ export default function PulseConversationPage() {
                     placeholder="Continue a conversa..."
                     className="w-full pr-20 pl-4 py-4 bg-transparent rounded-2xl border-none focus:ring-0 text-base resize-none"
                     rows={1}
-                    disabled={isSending || isLoadingHistory}
+                    disabled={isLoadingHistory}
                     maxLength={4000}
                 />
                 <Button
