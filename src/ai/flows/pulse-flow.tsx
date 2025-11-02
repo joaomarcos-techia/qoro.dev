@@ -137,19 +137,16 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
       if (conversationId && conversationId !== 'new') {
         const conversationRef = adminDb.collection('pulse_conversations').doc(conversationId);
         const doc = await conversationRef.get();
-        const existingData = doc.data();
         
-        if (!doc.exists || !existingData) {
+        if (!doc.exists) {
             throw new Error(`Conversa com ID ${conversationId} não encontrada.`);
         }
         
+        const existingData = doc.data()!;
         let titleToUpdate = existingData.title;
 
-        // **CORREÇÃO DA LÓGICA DE GERAÇÃO DE TÍTULO**
-        // A geração do título agora é acionada na terceira mensagem do usuário
-        // (total de 5 mensagens: U -> A -> U -> A -> U) e é verificada a cada interação.
         const isNewConversationTitle = (titleToUpdate || '').toLowerCase() === 'nova conversa';
-        const hasEnoughContext = finalMessages.filter(m => m.role === 'user').length >= 2;
+        const hasEnoughContext = finalMessages.length >= 5;
         
         if (isNewConversationTitle && hasEnoughContext) {
           titleToUpdate = await generateConversationTitle(finalMessages);
@@ -163,7 +160,6 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         });
 
       } else {
-        // Lógica para criar uma nova conversa
         const titleForNewConvo = 'Nova conversa';
         finalTitle = titleForNewConvo;
         const newConversationData = {
@@ -194,5 +190,3 @@ export async function askPulse(
 ): Promise<z.infer<typeof AskPulseOutputSchema>> {
   return pulseFlow(input);
 }
-
-    

@@ -12,7 +12,7 @@ import { PulseMessage } from '../schemas';
 export async function generateConversationTitle(messages: PulseMessage[]): Promise<string> {
   const fallbackTitle = 'Nova conversa';
 
-  if (!Array.isArray(messages) || messages.length < 2) {
+  if (!Array.isArray(messages) || messages.length === 0) {
     return fallbackTitle;
   }
 
@@ -24,11 +24,11 @@ export async function generateConversationTitle(messages: PulseMessage[]): Promi
 
   try {
     const aiPrompt = `
-Analise o contexto das mensagens abaixo e crie um título conciso com 2 a 4 palavras
+Analise o contexto do diálogo abaixo e crie um título conciso com 2 a 4 palavras
 que capture o tema central da conversa.
-Retorne apenas o título, sem aspas, pontuação ou formatação adicional.
+Retorne apenas o título, sem aspas, pontuação ou qualquer texto adicional.
 
-Mensagens:
+Diálogo:
 ---
 ${context}
 ---
@@ -58,5 +58,3 @@ Título:
 
   return fallbackWords.length > 0 ? fallbackWords.join(' ') : fallbackTitle;
 }
-
-    
