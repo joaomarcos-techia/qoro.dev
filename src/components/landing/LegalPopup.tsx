@@ -17,12 +17,12 @@ interface LegalPopupProps {
 
 const documents = {
   terms: {
-    title: 'Termos e condições de uso',
+    title: 'Termos e Condições de Uso',
     description: 'Leia nossos termos e condições de uso para entender seus direitos e obrigações.',
     filePath: '/terms.md',
   },
   policy: {
-    title: 'Política de privacidade',
+    title: 'Política de Privacidade',
     description: 'Entenda como coletamos, usamos e protegemos seus dados pessoais.',
     filePath: '/politica.md',
   },
