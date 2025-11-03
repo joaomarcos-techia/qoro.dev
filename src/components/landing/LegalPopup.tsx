@@ -44,34 +44,38 @@ const useMarkdownContent = (filePath: string) => {
         return response.text();
       })
       .then(text => {
-        // Safe and robust markdown-to-html conversion
-        const parsedHtml = text
-          .split('\n\n')
-          .map(paragraph => {
-            const trimmed = paragraph.trim();
-            if (trimmed.startsWith('### ')) {
-              return `<h3 class="text-lg font-semibold mt-4 mb-2 text-gray-300">${trimmed.substring(4)}</h3>`;
-            }
-            if (trimmed.startsWith('## ')) {
-              return `<h2 class="text-xl font-bold mt-5 mb-3 text-gray-200">${trimmed.substring(3)}</h2>`;
-            }
-            if (trimmed.startsWith('# ')) {
-              return `<h1 class="text-2xl font-bold mt-6 mb-4 text-white">${trimmed.substring(2)}</h1>`;
-            }
-            if (trimmed.startsWith('* ')) {
-              const listItems = trimmed.split('\n').map(item => 
-                `<li class="flex items-start"><span class="mr-2 mt-1.5 text-primary">&#8226;</span><span>${item.substring(2)}</span></li>`
-              ).join('');
-              return `<ul class="space-y-2 my-4">${listItems}</ul>`;
-            }
-            if (trimmed) {
-              return `<p class="text-gray-400 leading-relaxed">${trimmed.replace(/\n/g, '<br />')}</p>`;
-            }
-            return '';
-          })
-          .join('');
+        const lines = text.split('\n');
+        let htmlContent = '';
+        let inList = false;
 
-        setHtml(parsedHtml);
+        lines.forEach(line => {
+          line = line.trim();
+          
+          if (line.startsWith('### ')) {
+            if (inList) { htmlContent += '</ul>'; inList = false; }
+            htmlContent += `<h3 class="text-lg font-semibold mt-4 mb-2 text-gray-200">${line.substring(4)}</h3>`;
+          } else if (line.startsWith('## ')) {
+            if (inList) { htmlContent += '</ul>'; inList = false; }
+            htmlContent += `<h2 class="text-xl font-bold mt-5 mb-3 text-gray-100">${line.substring(3)}</h2>`;
+          } else if (line.startsWith('# ')) {
+            if (inList) { htmlContent += '</ul>'; inList = false; }
+            htmlContent += `<h1 class="text-2xl font-bold mt-6 mb-4 text-white">${line.substring(2)}</h1>`;
+          } else if (line.startsWith('* ')) {
+            if (!inList) { htmlContent += '<ul class="space-y-2 my-4 list-disc pl-5">'; inList = true; }
+            htmlContent += `<li>${line.substring(2)}</li>`;
+          } else if (line === '') {
+            if (inList) { htmlContent += '</ul>'; inList = false; }
+          } else {
+            if (inList) { htmlContent += '</ul>'; inList = false; }
+            htmlContent += `<p class="text-gray-400 leading-relaxed my-4">${line}</p>`;
+          }
+        });
+
+        if (inList) {
+          htmlContent += '</ul>';
+        }
+        
+        setHtml(htmlContent);
       })
       .catch(error => {
         console.error("Error fetching markdown file:", error);
@@ -82,6 +86,7 @@ const useMarkdownContent = (filePath: string) => {
 
   return { html, loading };
 };
+
 
 export function LegalPopup({ content, onOpenChange }: LegalPopupProps) {
   const docInfo = content ? documents[content] : null;
