@@ -16,7 +16,6 @@ export const ai = genkit({
       apiKey: apiKey,
     }),
   ],
-  enableTracingAndMetrics: false, // Desabilita telemetria para evitar warnings de build
 });
 
 export { googleAI };
