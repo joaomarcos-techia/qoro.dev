@@ -27,7 +27,7 @@ env:
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
     value: "qoro-iy1gs"
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: "qoro-iy1gs.firebasestorage.app"
+    value: "qoro-iy1gs.appspot.com"
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
     value: "62039220673"
   - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
@@ -45,4 +45,5 @@ env:
     secret: STRIPE_SECRET_KEY_PROD
   - variable: STRIPE_WEBHOOK_SECRET
     secret: STRIPE_WEBHOOK_SECRET_PROD
-    
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
