@@ -6,33 +6,25 @@ import { googleAI } from '@genkit-ai/google-genai';
 import { PulseMessage } from '../schemas';
 
 /**
- * Tenta gerar um título contextual de 2 a 4 palavras. 
+ * Tenta gerar um título contextual de 2 a 3 palavras. 
  * Se a geração de IA falhar ou retornar um valor inválido, 
  * a mensagem de erro exata é retornada para fins de depuração.
  */
 export async function generateConversationTitle(messages: PulseMessage[]): Promise<string> {
-  // Pega até as 3 primeiras mensagens do usuário para dar contexto
-  const userMessages = messages.filter(m => m.role === 'user').slice(0, 3);
-  
-  if (userMessages.length === 0) {
-      return "Sem contexto de usuário"; // Retorna uma mensagem clara se não houver entrada
-  }
-
-  const context = userMessages
+  const context = messages
     .map(m => `Usuário: ${m.content}`)
     .join('\n');
 
   try {
     const aiPrompt = `
-Analise o seguinte diálogo e crie um título de 2 a 4 palavras que resuma o tema central.
-
-NÃO use pontuação. NÃO use aspas. Retorne SOMENTE o título.
+Analise a conversa e extraia as 2 a 3 palavras-chave mais importantes (verbos ou substantivos) que definem o assunto principal. 
+Retorne apenas as palavras-chave, sem pontuação.
 
 Diálogo:
 ---
 ${context}
 ---
-Título:
+Palavras-chave do Título:
     `.trim();
 
     const result = await ai.generate({

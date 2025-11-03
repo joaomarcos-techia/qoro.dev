@@ -143,8 +143,8 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         const shouldGenerateTitle = finalTitle.toLowerCase() === 'nova conversa' && userMessages.length >= 3;
 
         if (shouldGenerateTitle) {
-          const contextMessages = finalMessages.slice(0, 5);
-          const newTitle = await generateConversationTitle(contextMessages);
+          const firstUserMessages = userMessages.slice(0, 3);
+          const newTitle = await generateConversationTitle(firstUserMessages);
           // Only update the title if the AI returned a valid, multi-word title.
           // Otherwise, it remains "Nova conversa" to try again on the next interaction.
           if (newTitle && newTitle.split(' ').length > 1) {
