@@ -34,7 +34,10 @@ const useMarkdownContent = (filePath: string) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!filePath) return;
+    if (!filePath) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     fetch(filePath)
       .then(response => {
@@ -49,25 +52,22 @@ const useMarkdownContent = (filePath: string) => {
         let inList = false;
 
         lines.forEach(line => {
-          line = line.trim();
+          const trimmedLine = line.trim();
           
-          if (line.startsWith('### ')) {
+          if (trimmedLine.startsWith('### ')) {
             if (inList) { htmlContent += '</ul>'; inList = false; }
-            htmlContent += `<h3 class="text-lg font-semibold mt-4 mb-2 text-gray-200">${line.substring(4)}</h3>`;
-          } else if (line.startsWith('## ')) {
+            htmlContent += `<h3 class="text-lg font-semibold mt-6 mb-2 text-gray-200">${trimmedLine.substring(4)}</h3>`;
+          } else if (trimmedLine.startsWith('## ')) {
             if (inList) { htmlContent += '</ul>'; inList = false; }
-            htmlContent += `<h2 class="text-xl font-bold mt-5 mb-3 text-gray-100">${line.substring(3)}</h2>`;
-          } else if (line.startsWith('# ')) {
-            if (inList) { htmlContent += '</ul>'; inList = false; }
-            htmlContent += `<h1 class="text-2xl font-bold mt-6 mb-4 text-white">${line.substring(2)}</h1>`;
-          } else if (line.startsWith('* ')) {
+            htmlContent += `<h2 class="text-xl font-bold mt-8 mb-4 text-gray-100 border-b border-border pb-2">${trimmedLine.substring(3)}</h2>`;
+          } else if (trimmedLine.startsWith('* ')) {
             if (!inList) { htmlContent += '<ul class="space-y-2 my-4 list-disc pl-5">'; inList = true; }
-            htmlContent += `<li>${line.substring(2)}</li>`;
-          } else if (line === '') {
+            htmlContent += `<li>${trimmedLine.substring(2)}</li>`;
+          } else if (trimmedLine === '') {
             if (inList) { htmlContent += '</ul>'; inList = false; }
           } else {
             if (inList) { htmlContent += '</ul>'; inList = false; }
-            htmlContent += `<p class="text-gray-400 leading-relaxed my-4">${line}</p>`;
+            htmlContent += `<p class="text-gray-400 leading-relaxed my-4">${trimmedLine}</p>`;
           }
         });
 
@@ -86,7 +86,6 @@ const useMarkdownContent = (filePath: string) => {
 
   return { html, loading };
 };
-
 
 export function LegalPopup({ content, onOpenChange }: LegalPopupProps) {
   const docInfo = content ? documents[content] : null;
