@@ -42,10 +42,10 @@ env:
     value: "bpc_1SN0kMKnoRE6MSOlefO9p42e"
     availability: [RUNTIME]
   - variable: STRIPE_SECRET_KEY
-    secret: STRIPE_SECRET_KEY_PROD
+    secret: STRIPE_SECRET_KEY
     availability: [BUILD, RUNTIME]
   - variable: STRIPE_WEBHOOK_SECRET
-    secret: STRIPE_WEBHOOK_SECRET_PROD
+    secret: STRIPE_WEBHOOK_SECRET
     availability: [BUILD, RUNTIME]
   
   # Chave da API do Gemini
