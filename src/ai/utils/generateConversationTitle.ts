@@ -6,7 +6,7 @@ import { PulseMessage } from '../schemas';
 
 /**
  * Gera um título curto e contextual (3 palavras) baseado no diálogo inicial.
- * Se a geração falhar, retorna a mensagem de erro como título para depuração.
+ * Utiliza um prompt "few-shot" para instruir a IA com exemplos.
  */
 export async function generateConversationTitle(messages: PulseMessage[]): Promise<string> {
   if (!Array.isArray(messages) || messages.length === 0) {
