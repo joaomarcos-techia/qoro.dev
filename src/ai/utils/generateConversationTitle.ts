@@ -6,39 +6,33 @@ import { googleAI } from '@genkit-ai/google-genai';
 import { PulseMessage } from '../schemas';
 
 /**
- * Gera um título curto e contextual (2-4 palavras) baseado nas primeiras mensagens do usuário.
- * Utiliza um prompt direto e um fallback inteligente para garantir um resultado útil.
+ * Tenta gerar um título contextual de 2 a 4 palavras. 
+ * Se a geração de IA falhar ou retornar um valor inválido, 
+ * a mensagem de erro exata é retornada para fins de depuração.
  */
 export async function generateConversationTitle(messages: PulseMessage[]): Promise<string> {
-  const fallbackTitle = 'Nova conversa';
-
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return fallbackTitle;
-  }
-
   // Pega até as 3 primeiras mensagens do usuário para dar contexto
   const userMessages = messages.filter(m => m.role === 'user').slice(0, 3);
   
-  // Se não houver mensagens de usuário, não podemos gerar um título.
   if (userMessages.length === 0) {
-      return fallbackTitle;
+      return "Sem contexto de usuário"; // Retorna uma mensagem clara se não houver entrada
   }
 
   const context = userMessages
-    .map(m => m.content)
+    .map(m => `Usuário: ${m.content}`)
     .join('\n');
 
   try {
     const aiPrompt = `
-Analise as mensagens abaixo e crie um título de 2 a 4 palavras que resuma o tema central.
+Analise o seguinte diálogo e crie um título de 2 a 4 palavras que resuma o tema central.
 
 NÃO use pontuação. NÃO use aspas. Retorne SOMENTE o título.
 
-MENSAGENS:
+Diálogo:
 ---
 ${context}
 ---
-TÍTULO:
+Título:
     `.trim();
 
     const result = await ai.generate({
@@ -47,27 +41,18 @@ TÍTULO:
       config: { temperature: 0.2, maxOutputTokens: 15 },
     });
 
-    let title = (result.text ?? '').trim();
-    // Limpeza rigorosa para remover qualquer caractere indesejado
-    title = title.replace(/[.,"':;!?]/g, '');
+    const title = result.text?.trim().replace(/^["'“‘]|["'”’.,!?]+$/g, '');
 
-    // Se o título gerado for válido (mais de uma palavra), retorne
-    if (title && title.split(' ').length > 1) {
-        // Capitaliza a primeira letra de cada palavra
-        return title.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    // Validação rigorosa: se o título não for uma string com mais de uma palavra, lança um erro.
+    if (!title || title.split(' ').length < 2) {
+      throw new Error("A IA retornou um título inválido.");
     }
-  } catch (error) {
+
+    return title.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
+  } catch (error: any) {
     console.error('Erro na API da IA ao gerar título:', error);
-    // Se a API falhar, o código prosseguirá para o fallback abaixo.
+    // Retorna a mensagem de erro exata como o título para depuração.
+    return error.message || "Erro desconhecido na geração do título";
   }
-
-  // Fallback definitivo: pega as 2 primeiras palavras da primeira mensagem do usuário.
-  // Isso é muito mais útil do que "Nova conversa" ou um erro.
-  const firstMessageWords = userMessages[0]?.content?.trim().split(/\s+/);
-  if (firstMessageWords && firstMessageWords.length > 0) {
-    return firstMessageWords.slice(0, 2).join(' ');
-  }
-
-  // Se tudo falhar, retorna o título provisório.
-  return fallbackTitle;
 }
