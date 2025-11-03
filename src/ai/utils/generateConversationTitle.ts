@@ -6,7 +6,7 @@ import { googleAI } from '@genkit-ai/google-genai';
 import { PulseMessage } from '../schemas';
 
 /**
- * Gera um título curto e contextual (máx. 4 palavras) baseado no histórico da conversa.
+ * Gera um título curto e contextual (2-4 palavras) baseado no diálogo inicial.
  * @param messages Histórico da conversa (PulseMessage[]).
  */
 export async function generateConversationTitle(messages: PulseMessage[]): Promise<string> {
@@ -16,7 +16,7 @@ export async function generateConversationTitle(messages: PulseMessage[]): Promi
     return fallbackTitle;
   }
 
-  // Pega as 5 primeiras mensagens para ter um bom contexto inicial
+  // Pega as 5 primeiras mensagens para ter um bom contexto inicial de diálogo
   const contextMessages = messages.slice(0, 5);
   const context = contextMessages
     .map(m => `${m.role === 'user' ? 'Usuário' : 'Assistente'}: ${m.content}`)
@@ -24,8 +24,8 @@ export async function generateConversationTitle(messages: PulseMessage[]): Promi
 
   try {
     const aiPrompt = `
-Analise o contexto do diálogo abaixo e crie um título conciso com 2 a 3 palavras
-que capture o tema da conversa.
+Analise o diálogo abaixo e crie um título conciso com 2 a 4 palavras
+que capture o tema central da conversa.
 Retorne apenas o título, sem aspas, pontuação ou qualquer texto adicional.
 
 Diálogo:
@@ -38,7 +38,7 @@ Título:
     const result = await ai.generate({
       model: googleAI.model('gemini-2.5-flash'),
       prompt: aiPrompt,
-      config: { temperature: 0.2, maxOutputTokens: 10 },
+      config: { temperature: 0.2, maxOutputTokens: 12 },
     });
 
     let title = (result.text ?? '').trim();
@@ -54,7 +54,7 @@ Título:
 
   // Fallback caso a IA falhe: primeiras palavras da primeira mensagem do usuário
   const userMessageContent = messages.find(m => m.role === 'user')?.content || '';
-  const fallbackWords = userMessageContent.trim().split(/\s+/).slice(0, 3);
+  const fallbackWords = userMessageContent.trim().split(/\s+/).slice(0, 4);
 
   return fallbackWords.length > 0 ? fallbackWords.join(' ') : fallbackTitle;
 }
