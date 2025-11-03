@@ -76,10 +76,10 @@ export default function TransacoesPage() {
 
     return (
       <div>
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <div>
-                 <h1 className="text-4xl font-bold text-foreground">Transações</h1>
-                <p className="text-muted-foreground">
+                 <h1 className="text-3xl md:text-4xl font-bold text-foreground">Transações</h1>
+                <p className="text-muted-foreground mt-1">
                   Gerencie suas contas a pagar e a receber e mantenha tudo organizado.
                 </p>
             </div>
@@ -88,7 +88,7 @@ export default function TransacoesPage() {
                     <Button 
                         onClick={() => setIsModalOpen(true)}
                         disabled={!currentUser}
-                        className="bg-finance-primary text-black px-4 py-2 rounded-xl hover:bg-finance-primary/90 transition-all duration-300 border border-transparent hover:border-finance-primary/50 flex items-center justify-center font-semibold"
+                        className="bg-finance-primary text-black px-4 py-2 rounded-xl hover:bg-finance-primary/90 transition-all duration-300 border border-transparent hover:border-finance-primary/50 flex items-center justify-center font-semibold w-full sm:w-auto"
                     >
                     <PlusCircle className="mr-2 w-5 h-5" />
                     Adicionar transação
@@ -106,7 +106,7 @@ export default function TransacoesPage() {
             </Dialog>
         </div>
 
-        <div className="bg-card p-6 rounded-2xl border-border">
+        <div className="bg-card p-4 sm:p-6 rounded-2xl border-border">
             {renderContent()}
         </div>
       </div>

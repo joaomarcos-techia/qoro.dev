@@ -126,14 +126,14 @@ export default function ConciliacaoDetailPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <Button variant="outline" onClick={() => router.push('/dashboard/finance/conciliacao')} className="mb-4 rounded-xl">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Voltar para o histórico
           </Button>
-          <h1 className="text-4xl font-bold text-foreground">Detalhes da conciliação</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground">Detalhes da conciliação</h1>
+          <p className="text-muted-foreground mt-1">
             {reconciliation ? `Comparando extrato '${reconciliation.fileName}' de ${format(new Date(reconciliation.createdAt), 'dd/MM/yyyy', { locale: ptBR })}` : 'Carregando...'}
           </p>
         </div>

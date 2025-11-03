@@ -228,9 +228,9 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
 
   return (
     <div>
-       <div className="flex items-center justify-between mb-4">
+       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
             <h2 className="text-xl font-bold text-foreground">Seu catálogo de produtos</h2>
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                 placeholder="Buscar por nome..."
@@ -238,11 +238,11 @@ export function ProductTable({ onEdit, onRefresh }: ProductTableProps) {
                 onChange={(event) =>
                     table.getColumn('name')?.setFilterValue(event.target.value)
                 }
-                className="w-full pl-10 pr-4 py-2 bg-secondary rounded-xl border-border focus:ring-2 focus:ring-primary transition-all duration-300"
+                className="w-full sm:w-[300px] pl-10 pr-4 py-2 bg-secondary rounded-xl border-border focus:ring-2 focus:ring-primary transition-all duration-300"
                 />
             </div>
       </div>
-      <div className="rounded-2xl border border-border">
+      <div className="rounded-2xl border border-border overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

@@ -227,27 +227,27 @@ export default function SettingsPage() {
                 </DialogContent>
             </Dialog>
 
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold text-foreground mb-2">Configurações</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Configurações</h2>
                     <p className="text-muted-foreground">Gerencie sua conta, organização e convide novos membros.</p>
                 </div>
-                <Link href="/dashboard">
-                    <div className="bg-secondary text-secondary-foreground px-4 py-2 rounded-xl hover:bg-secondary/80 transition-all duration-200 border border-border flex items-center justify-center font-semibold">
+                <Link href="/dashboard" className="w-full md:w-auto">
+                    <Button variant="outline" className="w-full md:w-auto">
                         <ArrowLeft className="mr-2 w-5 h-5" />
                         Voltar ao Dashboard
-                    </div>
+                    </Button>
                 </Link>
             </div>
 
-            <div className="flex border-b border-border mb-8">
+            <div className="flex flex-wrap border-b border-border mb-8">
                 <button onClick={() => handleTabChange('account')} className={`px-4 py-3 font-semibold flex items-center transition-all duration-300 ${activeTab === 'account' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                     <User className="mr-2 w-5 h-5"/> Minha Conta
                 </button>
                  {isAdmin && (
                     <>
                         <button onClick={() => handleTabChange('users')} className={`px-4 py-3 font-semibold flex items-center transition-all duration-300 ${activeTab === 'users' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
-                            <Users className="mr-2 w-5 h-5"/> Gerenciar Usuários
+                            <Users className="mr-2 w-5 h-5"/> Usuários
                         </button>
                         <button onClick={() => handleTabChange('organization')} className={`px-4 py-3 font-semibold flex items-center transition-all duration-300 ${activeTab === 'organization' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                             <Building className="mr-2 w-5 h-5"/> Organização
@@ -265,8 +265,8 @@ export default function SettingsPage() {
 
             <div>
                 {activeTab === 'account' && (
-                    <div className="bg-card p-8 rounded-2xl border border-border">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <div className="bg-card p-6 md:p-8 rounded-2xl border border-border">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
                             <div>
                                 <div className="flex items-center mb-6">
                                     <div className="p-3 rounded-xl bg-primary text-black mr-4"><User className="w-6 h-6" /></div>
@@ -323,7 +323,7 @@ export default function SettingsPage() {
                 )}
                 {activeTab === 'users' && isAdmin && (
                     <div>
-                        <div className="bg-card p-8 rounded-2xl border border-border mb-8">
+                        <div className="bg-card p-6 md:p-8 rounded-2xl border border-border mb-8">
                             <div className="flex items-start">
                                 <div className="p-3 rounded-xl bg-primary text-black mr-6"><UserPlus className="w-6 h-6" /></div>
                                 <div className="flex-grow">
@@ -357,7 +357,7 @@ export default function SettingsPage() {
                             </div>
                         </div>
 
-                        <div className="bg-card p-8 rounded-2xl border border-border">
+                        <div className="bg-card p-6 md:p-8 rounded-2xl border border-border">
                              <h3 className="text-xl font-bold text-foreground mb-6">Usuários da Organização</h3>
                              <div className="space-y-4">
                                 {isLoading.users ? (

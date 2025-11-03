@@ -138,8 +138,8 @@ export default function FunilPage() {
       <div className="flex-shrink-0">
         <div className="flex justify-between items-center mb-6">
             <div>
-            <h1 className="text-4xl font-bold text-foreground">Funil de clientes</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground">Funil de clientes</h1>
+            <p className="text-muted-foreground mt-1">
                 Visualize e gerencie a jornada dos seus clientes pelas fases de negociação.
             </p>
             </div>
@@ -152,7 +152,7 @@ export default function FunilPage() {
             </div>
         )}
       </div>
-      <div className="flex-grow overflow-hidden">
+      <div className="flex-grow overflow-x-auto">
         {renderContent()}
       </div>
     </div>

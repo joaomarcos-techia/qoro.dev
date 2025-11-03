@@ -38,7 +38,7 @@ export function TaskKanbanBoard({ columns, users, onMoveTask, onDeleteTask, onSe
   return (
     <div className="flex gap-4 overflow-x-auto p-1 pb-4 h-full">
       {columns.map((column) => (
-        <div key={column.id} className="w-80 flex-shrink-0 flex flex-col">
+        <div key={column.id} className="w-full sm:w-80 flex-shrink-0 flex flex-col">
           <div className="bg-secondary/30 rounded-xl p-3 flex flex-col flex-grow">
             <h2 className="text-base font-bold text-foreground mb-4 px-2 flex justify-between items-center capitalize">
               <span>{column.title}</span>

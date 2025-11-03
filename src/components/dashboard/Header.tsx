@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ChevronDown, LogOut, RefreshCw, Settings, User } from 'lucide-react';
+import { ChevronDown, LogOut, RefreshCw, Settings, User, Menu } from 'lucide-react';
 import { signOut } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
@@ -10,13 +10,19 @@ import { getUserProfile } from '@/ai/flows/user-management';
 import Link from 'next/link';
 import { Logo } from '@/components/ui/logo';
 import { usePlan } from '@/contexts/PlanContext';
+import { Button } from '../ui/button';
 
 interface UserProfile {
   name: string;
   organizationName: string;
 }
 
-export function Header() {
+interface HeaderProps {
+  onMenuClick?: () => void;
+  showMenuButton?: boolean;
+}
+
+export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -147,12 +153,22 @@ export function Header() {
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-             <Link href="/dashboard" className="cursor-pointer">
-                <Logo />
-             </Link>
+            {showMenuButton && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onMenuClick}
+                className="md:hidden mr-2"
+              >
+                <Menu className="w-6 h-6" />
+              </Button>
+            )}
+            <Link href="/dashboard" className="cursor-pointer">
+              <Logo />
+            </Link>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <button
               className="text-muted-foreground hover:text-foreground p-2 rounded-xl hover:bg-secondary transition-all duration-300"
               title="Recarregar página"
@@ -174,7 +190,7 @@ export function Header() {
                 <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
                   <User className="w-4 h-4 text-muted-foreground" />
                 </div>
-                <ChevronDown className="w-4 h-4 ml-1" />
+                <ChevronDown className="hidden sm:block w-4 h-4 ml-1" />
               </button>
 
               {menuOpen && (

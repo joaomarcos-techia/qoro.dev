@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -23,6 +24,8 @@ import {
   Package,
   Home,
   Lock,
+  Menu,
+  X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Header } from '@/components/dashboard/Header';
@@ -32,6 +35,7 @@ import { PulseSidebar } from '@/components/dashboard/pulse/PulseSidebar';
 import { TasksProvider } from '@/contexts/TasksContext';
 import { PlanProvider, usePlan } from '@/contexts/PlanContext';
 import { AppPermissions } from '@/ai/schemas';
+import { Button } from '@/components/ui/button';
 
 
 interface NavItem {
@@ -79,14 +83,14 @@ const navItems: Record<string, NavItem[]> = {
 }
 
 
-function ModuleSidebar() {
+function ModuleSidebar({ isMobile, onLinkClick }: { isMobile?: boolean, onLinkClick?: () => void }) {
     const pathname = usePathname();
     const { permissions, isLoading, planId } = usePlan();
     const segments = pathname.split('/');
     const currentModule = segments.length > 2 ? segments[2] : 'home';
   
     if (currentModule === 'pulse') {
-        return <PulseSidebar />;
+        return <PulseSidebar isMobile={isMobile} onLinkClick={onLinkClick}/>;
     }
   
     if (!navConfig.hasOwnProperty(currentModule) || !navConfig[currentModule]) {
@@ -97,6 +101,12 @@ function ModuleSidebar() {
     const moduleItems = navItems[currentModule] || [];
     const [bgColor, textColor] = colorClass.split(' ');
 
+    const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+      if (onLinkClick) {
+        onLinkClick();
+      }
+    };
+
     const isAllowed = (item: NavItem) => {
       if (isLoading || !planId || !permissions) return false;
       const hasPlanPermission = item.plan.includes(planId);
@@ -105,7 +115,10 @@ function ModuleSidebar() {
     }
   
     return (
-      <aside className="w-64 flex-shrink-0 bg-card border-r border-border flex flex-col">
+      <aside className={cn(
+          "bg-card border-r border-border flex flex-col transition-all duration-300",
+          isMobile ? "w-full" : "w-64 flex-shrink-0"
+      )}>
         <div className="p-4 border-b border-border space-y-4">
           <div className="flex items-center">
             <div className={cn('p-3 rounded-xl text-black mr-4 shadow-lg', bgColor, `shadow-${currentModule}-primary/30`)}>
@@ -113,7 +126,7 @@ function ModuleSidebar() {
             </div>
             <h2 className={cn('text-xl font-bold', textColor)}>{group}</h2>
           </div>
-          <Link href="/dashboard" className="flex items-center text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
+          <Link href="/dashboard" onClick={handleLinkClick} className="flex items-center text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
             <ChevronLeft className="w-4 h-4 mr-2" />
             <span>Voltar ao Dashboard</span>
           </Link>
@@ -153,6 +166,7 @@ function ModuleSidebar() {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  onClick={handleLinkClick}
                   className={cn(`flex items-center px-4 py-3 my-1 rounded-xl text-sm font-medium transition-all duration-200 group`,
                     isActive
                       ? `${bgColor} text-black shadow-lg shadow-${currentModule}-primary/30`
@@ -175,16 +189,34 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     const segments = pathname.split('/');
     const currentModule = segments.length > 2 ? segments[2] : 'home';
     const isPulseModule = currentModule === 'pulse';
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    const isHomePage = currentModule === 'home' || segments.length <= 2;
 
   return (
     <TasksProvider>
         <div className="min-h-screen bg-black text-foreground">
-            <Header />
+            <Header onMenuClick={() => setIsSidebarOpen(true)} showMenuButton={!isHomePage} />
             <div className="flex h-[calc(100vh-65px)]">
-                <ModuleSidebar />
+                {/* Mobile Sidebar */}
+                {isSidebarOpen && !isHomePage && (
+                    <div className="fixed inset-0 z-50 bg-black/60 md:hidden" onClick={() => setIsSidebarOpen(false)}>
+                        <div className="fixed left-0 top-0 h-full w-4/5 max-w-[280px] bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                            <ModuleSidebar isMobile onLinkClick={() => setIsSidebarOpen(false)} />
+                        </div>
+                    </div>
+                )}
+                
+                {/* Desktop Sidebar */}
+                {!isHomePage && (
+                    <div className="hidden md:block">
+                        <ModuleSidebar />
+                    </div>
+                )}
+                
                 <main className={cn(
                     "flex-1 overflow-y-auto",
-                    isPulseModule ? 'p-0' : 'p-8' // Remove padding for pulse to allow full-screen chat
+                    isPulseModule ? 'p-0' : 'p-4 md:p-8' 
                 )}>
                    {children}
                 </main>

@@ -22,7 +22,12 @@ import {
     AlertDialogTrigger,
   } from "@/components/ui/alert-dialog"
 
-export function PulseSidebar() {
+interface PulseSidebarProps {
+  isMobile?: boolean;
+  onLinkClick?: () => void;
+}
+
+export function PulseSidebar({ isMobile, onLinkClick }: PulseSidebarProps) {
   const [conversations, setConversations] = useState<ConversationProfile[]>([]);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,6 +74,7 @@ export function PulseSidebar() {
         // Navigate to a temporary 'new' route that the page component can handle.
         // This avoids issues with re-using an existing conversation ID.
         router.push('/dashboard/pulse/new');
+        if (onLinkClick) onLinkClick();
     });
   };
 
@@ -92,6 +98,12 @@ export function PulseSidebar() {
     }
   };
 
+  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (onLinkClick) {
+      onLinkClick();
+    }
+  };
+
   const renderHistory = () => {
     if (isLoading) {
       return (
@@ -112,7 +124,7 @@ export function PulseSidebar() {
         const displayTitle = convo.title || "Nova conversa";
         return (
             <div key={convo.id} className="group relative flex items-center justify-between p-3 my-1 rounded-xl transition-all duration-200 hover:bg-secondary">
-                <Link href={`/dashboard/pulse/${convo.id}`} passHref className="flex-grow flex items-center min-w-0">
+                <Link href={`/dashboard/pulse/${convo.id}`} onClick={handleLinkClick} passHref className="flex-grow flex items-center min-w-0">
                     <div
                     className={cn(
                         'flex items-center text-sm font-medium w-full text-left truncate',
@@ -152,7 +164,10 @@ export function PulseSidebar() {
   }
 
   return (
-    <aside className="w-80 flex-shrink-0 bg-card border-r border-border flex flex-col">
+    <aside className={cn(
+        "bg-card border-r border-border flex flex-col transition-all duration-300",
+        isMobile ? "w-full" : "w-80 flex-shrink-0"
+    )}>
        <div className="p-4 border-b border-border space-y-4">
             <div className="flex items-center">
                 <div className={'p-3 rounded-xl text-black mr-4 shadow-lg bg-pulse-primary shadow-primary/30'}>
@@ -160,7 +175,7 @@ export function PulseSidebar() {
                 </div>
                 <h2 className={'text-xl font-bold text-pulse-primary'}>QoroPulse</h2>
             </div>
-            <Link href="/dashboard" className="flex items-center text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
+            <Link href="/dashboard" onClick={handleLinkClick} className="flex items-center text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
                 <ChevronLeft className="w-4 h-4 mr-2" />
                 <span>Voltar ao dashboard</span>
             </Link>

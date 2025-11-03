@@ -132,7 +132,7 @@ export default function VisaoGeralPage() {
     
     return (
         <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <MetricCard title="Total de tarefas" value={metrics?.totalTasks ?? 0} icon={ListTodo} isLoading={isLoading} />
                 <MetricCard title="Concluídas" value={metrics?.completedTasks ?? 0} icon={Check} isLoading={isLoading} colorClass="bg-green-500 shadow-green-500/30"/>
                 <MetricCard title="Pendentes" value={metrics?.pendingTasks ?? 0} icon={Clock} isLoading={isLoading} colorClass="bg-yellow-500 shadow-yellow-500/30"/>
@@ -180,8 +180,8 @@ export default function VisaoGeralPage() {
         <div>
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-4xl font-bold text-foreground">Visão geral de tarefas</h1>
-                    <p className="text-muted-foreground">
+                    <h1 className="text-3xl md:text-4xl font-bold text-foreground">Visão geral de tarefas</h1>
+                    <p className="text-muted-foreground mt-1">
                         Seu painel rápido de produtividade e prioridades.
                     </p>
                 </div>

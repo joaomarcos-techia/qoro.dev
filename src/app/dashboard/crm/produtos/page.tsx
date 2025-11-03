@@ -49,10 +49,10 @@ export default function ProdutosPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-foreground">Produtos</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground">Produtos</h1>
+          <p className="text-muted-foreground mt-1">
             Cadastre e gerencie os produtos de preço fixo que sua empresa oferece.
           </p>
         </div>
@@ -60,7 +60,7 @@ export default function ProdutosPage() {
           <DialogTrigger asChild>
             <Button 
               onClick={handleAdd}
-              className="bg-crm-primary text-black px-4 py-2 rounded-xl hover:bg-crm-primary/90 transition-all duration-300 border border-transparent hover:border-crm-primary/50 flex items-center justify-center font-semibold">
+              className="bg-crm-primary text-black px-4 py-2 rounded-xl hover:bg-crm-primary/90 transition-all duration-300 border border-transparent hover:border-crm-primary/50 flex items-center justify-center font-semibold w-full sm:w-auto">
               <PlusCircle className="mr-2 w-5 h-5" />
               Adicionar produto
             </Button>
@@ -77,7 +77,7 @@ export default function ProdutosPage() {
         </Dialog>
       </div>
 
-      <div className="bg-card p-6 rounded-2xl border-border">
+      <div className="bg-card p-4 sm:p-6 rounded-2xl border-border">
         <ProductTable key={refreshCounter} onEdit={handleEdit} onRefresh={triggerRefresh} />
       </div>
     </div>

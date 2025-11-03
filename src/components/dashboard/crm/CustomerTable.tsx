@@ -362,15 +362,15 @@ export function CustomerTable({ onCountChange }: CustomerTableProps) {
     </Dialog>
 
     <div>
-       <div className="flex items-center justify-between mb-4">
+       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
             <div className='flex items-center gap-4'>
-                <h2 className="text-xl font-bold text-foreground">Sua lista de clientes</h2>
+                <h2 className="text-xl font-bold text-foreground whitespace-nowrap">Sua lista de clientes</h2>
                  <div className="flex items-center space-x-2">
                     <Checkbox id="show-archived" checked={showArchived} onCheckedChange={(checked) => setShowArchived(!!checked)} />
                     <Label htmlFor="show-archived" className="text-sm font-medium text-muted-foreground">Mostrar arquivados</Label>
                 </div>
             </div>
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                 placeholder="Buscar por nome, email ou CPF..."
@@ -378,11 +378,11 @@ export function CustomerTable({ onCountChange }: CustomerTableProps) {
                 onChange={(event) =>
                     setGlobalFilter(event.target.value)
                 }
-                className="w-full md:w-[300px] pl-10 pr-4 py-2 bg-secondary rounded-xl border-border focus:ring-2 focus:ring-primary transition-all duration-300"
+                className="w-full sm:w-[300px] pl-10 pr-4 py-2 bg-secondary rounded-xl border-border focus:ring-2 focus:ring-primary transition-all duration-300"
                 />
             </div>
       </div>
-      <div className="rounded-2xl border border-border">
+      <div className="rounded-2xl border border-border overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
