@@ -1,3 +1,4 @@
+
 'use server';
 
 import { ai } from '../genkit';
@@ -11,11 +12,11 @@ import { PulseMessage } from '../schemas';
 export async function generateConversationTitle(messages: PulseMessage[]): Promise<string> {
   const fallbackTitle = 'Nova conversa';
 
-  if (!Array.isArray(messages) || messages.length === 0) {
+  if (!Array.isArray(messages) || messages.length < 3) {
     return fallbackTitle;
   }
 
-  // Pega as 3 primeiras mensagens para ter um bom contexto inicial de diálogo
+  // Pega as 3 primeiras mensagens (user, assistant, user) para ter um bom contexto de diálogo
   const contextMessages = messages.slice(0, 3);
   const context = contextMessages
     .map(m => `${m.role === 'user' ? 'Usuário' : 'Assistente'}: ${m.content}`)
