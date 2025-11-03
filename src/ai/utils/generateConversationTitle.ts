@@ -12,24 +12,32 @@ import { PulseMessage } from '../schemas';
 export async function generateConversationTitle(messages: PulseMessage[]): Promise<string> {
   const fallbackTitle = 'Nova conversa';
 
+  // Garante que temos um diálogo mínimo (ex: user -> assistant -> user)
   if (!Array.isArray(messages) || messages.length < 3) {
     return fallbackTitle;
   }
 
-  // Pega as 3 primeiras mensagens (user, assistant, user) para ter um bom contexto de diálogo
+  // Pega as 3 primeiras mensagens para ter um bom contexto de diálogo
   const contextMessages = messages.slice(0, 3);
   const context = contextMessages
     .map(m => `${m.role === 'user' ? 'Usuário' : 'Assistente'}: ${m.content}`)
     .join('\n');
 
   try {
+    // Prompt mais direto, focado na tarefa de extrair um assunto.
     const aiPrompt = `
-Analise as 3 primeiras mensagens e crie um título conciso com 3 palavras que capture o tema central. Retorne apenas o título.
+O diálogo abaixo é o início de uma conversa. Extraia o assunto principal em 3 palavras para ser usado como título. Retorne APENAS o título.
+
+Diálogo:
+---
+${context}
+---
+Título:
     `.trim();
 
     const result = await ai.generate({
       model: googleAI.model('gemini-2.5-flash'),
-      prompt: `${aiPrompt}\n\nMensagens:\n---\n${context}\n---\nTítulo:`,
+      prompt: aiPrompt,
       config: { temperature: 0.2, maxOutputTokens: 12 },
     });
 
@@ -44,9 +52,9 @@ Analise as 3 primeiras mensagens e crie um título conciso com 3 palavras que ca
     console.error('Erro ao gerar título com IA:', error);
   }
 
-  // Fallback caso a IA falhe: primeiras palavras da primeira mensagem do usuário
+  // Fallback aprimorado: pega as 3 primeiras palavras da primeira pergunta do usuário.
   const userMessageContent = messages.find(m => m.role === 'user')?.content || '';
-  const fallbackWords = userMessageContent.trim().split(/\s+/).slice(0, 4);
+  const fallbackWords = userMessageContent.trim().split(/\s+/).slice(0, 3);
 
   return fallbackWords.length > 0 ? fallbackWords.join(' ') : fallbackTitle;
 }
