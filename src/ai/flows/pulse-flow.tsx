@@ -1,4 +1,3 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -11,12 +10,11 @@ import { generateConversationTitle } from '../utils/generateConversationTitle';
 
 export type { AskPulseInput, AskPulseOutput, PulseMessage } from '@/ai/schemas';
 
-// Mapeia as roles da nossa aplicação para as roles que o modelo da IA entende.
 const roleMap: Record<PulseMessage['role'], 'user' | 'model'> = {
   user: 'user',
   assistant: 'model',
   model: 'model',
-  tool: 'user', // A role 'tool' é tratada como entrada do usuário para o histórico do modelo.
+  tool: 'user',
 };
 
 const pulseFlow = ai.defineFlow(
@@ -139,11 +137,13 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         const existingData = docSnap.data()!;
         finalTitle = existingData.title || 'Nova conversa';
 
-        // CONDIÇÃO PARA GERAR TÍTULO
-        const shouldGenerateTitle = finalTitle.toLowerCase() === 'nova conversa' && finalMessages.length >= 5;
+        const userMessages = finalMessages.filter(m => m.role === 'user');
+        
+        const shouldGenerateTitle = finalTitle.toLowerCase() === 'nova conversa' && userMessages.length >= 3;
 
         if (shouldGenerateTitle) {
-          finalTitle = await generateConversationTitle(finalMessages);
+          const firstUserMessages = userMessages.slice(0, 3);
+          finalTitle = await generateConversationTitle(firstUserMessages);
         }
 
         await conversationRef.update({
@@ -153,7 +153,6 @@ Seu propósito é traduzir conceitos complexos em recomendações claras, aplic�
         });
 
       } else {
-        // É uma conversa nova, só pode ser criada com 2 mensagens (user, assistant)
         finalTitle = 'Nova conversa';
         const newConversationData = {
           userId,

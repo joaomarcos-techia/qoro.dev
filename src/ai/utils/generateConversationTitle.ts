@@ -1,4 +1,3 @@
-
 'use server';
 
 import { ai } from '../genkit';
@@ -6,27 +5,25 @@ import { googleAI } from '@genkit-ai/google-genai';
 import { PulseMessage } from '../schemas';
 
 /**
- * Gera um título curto e contextual (3 palavras) baseado no diálogo inicial.
- * @param messages Histórico da conversa (PulseMessage[]).
+ * Gera um título curto e contextual (2 palavras) baseado nas primeiras mensagens do usuário.
  */
 export async function generateConversationTitle(messages: PulseMessage[]): Promise<string> {
   const fallbackTitle = 'Nova conversa';
 
-  // Garante que temos um diálogo mínimo (ex: user -> assistant -> user)
-  if (!Array.isArray(messages) || messages.length < 3) {
+  if (!Array.isArray(messages) || messages.length === 0) {
     return fallbackTitle;
   }
 
-  // Pega as 3 primeiras mensagens para ter um bom contexto de diálogo
-  const contextMessages = messages.slice(0, 3);
-  const context = contextMessages
-    .map(m => `${m.role === 'user' ? 'Usuário' : 'Assistente'}: ${m.content}`)
+  // Pega até as 3 primeiras mensagens do usuário
+  const userMessages = messages.filter(m => m.role === 'user').slice(0, 3);
+  const context = userMessages
+    .map(m => `Usuário: ${m.content}`)
     .join('\n');
 
   try {
-    // Prompt mais direto, focado na tarefa de extrair um assunto.
     const aiPrompt = `
-O diálogo abaixo é o início de uma conversa. Extraia o assunto principal em 3 palavras para ser usado como título. Retorne APENAS o título.
+O diálogo abaixo é o início de uma conversa. Extraia o assunto principal em DUAS palavras para ser usado como título. 
+Retorne APENAS o título, sem pontuação, sem aspas, sem formatação.
 
 Diálogo:
 ---
@@ -38,23 +35,21 @@ Título:
     const result = await ai.generate({
       model: googleAI.model('gemini-2.5-flash'),
       prompt: aiPrompt,
-      config: { temperature: 0.2, maxOutputTokens: 12 },
+      config: { temperature: 0.2, maxOutputTokens: 10 },
     });
 
     let title = (result.text ?? '').trim();
-    // Limpa pontuações e aspas que a IA possa adicionar
-    title = title.replace(/^["'“‘]|["'”’.,!?]+$/g, ''); 
-    
-    if (title) {
-      return title;
-    }
+    title = title.replace(/^["'“‘]|["'”’.,!?]+$/g, '');
+
+    // Garante que são só duas palavras
+    title = title.split(/\s+/).slice(0, 2).join(' ');
+
+    if (title) return title;
   } catch (error) {
     console.error('Erro ao gerar título com IA:', error);
   }
 
-  // Fallback aprimorado: pega as 3 primeiras palavras da primeira pergunta do usuário.
-  const userMessageContent = messages.find(m => m.role === 'user')?.content || '';
-  const fallbackWords = userMessageContent.trim().split(/\s+/).slice(0, 3);
-
+  // Fallback: 2 primeiras palavras da 1ª mensagem do usuário
+  const fallbackWords = userMessages[0]?.content?.trim().split(/\s+/).slice(0, 2) || [];
   return fallbackWords.length > 0 ? fallbackWords.join(' ') : fallbackTitle;
 }
