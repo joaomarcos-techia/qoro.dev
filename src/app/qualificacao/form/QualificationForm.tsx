@@ -84,6 +84,7 @@ const questions = [
     section: 'Contato',
     title: 'Excelente! Estamos quase lá. Faltam apenas seus dados para contato.',
     type: 'contact',
+    key: 'contactInfo', // Added key to prevent build error
     keys: ['fullName', 'role', 'email'],
   },
 ];

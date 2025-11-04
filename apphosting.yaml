@@ -16,34 +16,39 @@ runConfig:
 # É mais seguro gerenciá-las através da interface do Firebase ou usando secrets.
 # https://firebase.google.com/docs/app-hosting/configure-backend#set-env
 env:
-  # Exemplo de configuração de variáveis de ambiente.
-  # Substitua 'seu-valor-aqui' pelos seus valores de produção reais.
-  # Para chaves sensíveis (como API keys), é altamente recomendado usar o Secret Manager
-  # integrado ao Firebase App Hosting para maior segurança.
+  # É recomendado definir variáveis NEXT_PUBLIC_* aqui para garantir que estejam disponíveis no build.
+  # O App Hosting pode sobrescrever algumas delas (como SITE_URL e APP_ID) com valores de produção.
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     value: "AIzaSyB-v1ynnLnRuIV4-VTJhBtXPPkHpg-ivtU"
+    availability: [BUILD, RUNTIME]
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
     value: "qoro-iy1gs.firebaseapp.com"
+    availability: [BUILD, RUNTIME]
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
     value: "qoro-iy1gs"
+    availability: [BUILD, RUNTIME]
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
     value: "qoro-iy1gs.appspot.com"
+    availability: [BUILD, RUNTIME]
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
     value: "62039220673"
+    availability: [BUILD, RUNTIME]
   - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
     value: "G-L3D1C3SYVV"
-  # O NEXT_PUBLIC_SITE_URL e NEXT_PUBLIC_FIREBASE_APP_ID serão definidos pelo App Hosting no momento do build.
-
-  # Adicionando o ID de configuração do portal do Stripe
-  # Substitua 'bpc_xxx' pelo seu ID real de configuração do portal
+    availability: [BUILD, RUNTIME]
+  
+  # Variáveis do Stripe
   - variable: STRIPE_PORTAL_CONFIGURATION_ID
     value: "bpc_1SN0kMKnoRE6MSOlefO9p42e"
-
-  # Para produção, gerencie as chaves do Stripe como segredos no Firebase.
-  # https://firebase.google.com/docs/app-hosting/configure-backend#secrets
+    availability: [RUNTIME]
   - variable: STRIPE_SECRET_KEY
-    secret: STRIPE_SECRET_KEY_PROD
+    secret: STRIPE_SECRET_KEY
+    availability: [BUILD, RUNTIME]
   - variable: STRIPE_WEBHOOK_SECRET
-    secret: STRIPE_WEBHOOK_SECRET_PROD
+    secret: STRIPE_WEBHOOK_SECRET
+    availability: [BUILD, RUNTIME]
+  
+  # Chave da API do Gemini
   - variable: GEMINI_API_KEY
     secret: GEMINI_API_KEY
+    availability: [BUILD, RUNTIME]

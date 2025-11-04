@@ -55,7 +55,7 @@ const TaskRow = ({ task, onSelect }: { task: TaskProfile, onSelect: (task: TaskP
       </div>
       <div className="flex items-center text-sm">
         <CalendarIcon className="w-4 h-4 mr-2 text-muted-foreground"/>
-        {task.dueDate ? format(parseISO(task.dueDate), 'dd MMM', { locale: ptBR }) : 'Sem data'}
+        {task.dueDate ? format(parseISO(task.dueDate.toString()), 'dd MMM', { locale: ptBR }) : 'Sem data'}
       </div>
     </div>
 );

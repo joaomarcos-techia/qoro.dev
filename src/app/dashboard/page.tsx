@@ -297,7 +297,7 @@ function DashboardContent() {
                     title="Saldo em Contas" 
                     value={formatCurrency(metrics.totalBalance)} 
                     icon={DollarSign} 
-                    isLoading={isLoadingMetrics} _
+                    isLoading={isLoadingMetrics}
                     error={!!metricsError} 
                     colorClass='bg-finance-primary'
                     isLocked={isFinanceLocked}

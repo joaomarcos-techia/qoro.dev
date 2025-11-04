@@ -1,8 +1,7 @@
 
 'use server';
 
-import { ai } from '@/ai/genkit';
-import { googleAI } from '@genkit-ai/google-genai';
+import { ai, googleAI } from '@/ai/genkit';
 import { z } from 'zod';
 import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -75,7 +74,7 @@ Sua resposta DEVE ser um objeto JSON contendo duas chaves: "suggestedTitle" and 
     let aiOutput;
     try {
       const result = await ai.generate({
-        model: googleAI.model('gemini-2.5-flash'),
+        model: 'googleai/gemini-2.5-flash',
         system: systemPrompt,
         messages: conversationHistory,
         config: { temperature: 0.5 },
