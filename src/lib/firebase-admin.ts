@@ -6,26 +6,26 @@ import { getFirestore } from "firebase-admin/firestore";
 let app: App;
 
 if (!getApps().length) {
-  if (!process.env.FIREBASE_PROJECT_ID) {
-    throw new Error("❌ FIREBASE_PROJECT_ID não está definido.");
+  // Em um ambiente de deploy do Firebase, as credenciais são injetadas automaticamente.
+  // Em um ambiente local, elas devem ser fornecidas via variáveis de ambiente.
+  if (process.env.NODE_ENV === 'production') {
+    app = initializeApp();
+  } else {
+    // Lógica para ambiente local (requer que as variáveis estejam no .env)
+    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+      console.warn("Variáveis de ambiente do Firebase Admin não encontradas. O backend pode não funcionar localmente.");
+      app = initializeApp(); // Tenta inicializar sem credenciais, pode funcionar em alguns emuladores.
+    } else {
+      const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n").replace(/"/g, "");
+      app = initializeApp({
+        credential: cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey,
+        }),
+      });
+    }
   }
-  if (!process.env.FIREBASE_CLIENT_EMAIL) {
-    throw new Error("❌ FIREBASE_CLIENT_EMAIL não está definido.");
-  }
-  if (!process.env.FIREBASE_PRIVATE_KEY) {
-    throw new Error("❌ FIREBASE_PRIVATE_KEY não está definido.");
-  }
-
-  // Corrige quebras de linha e remove aspas extras
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n").replace(/"/g, "");
-
-  app = initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey,
-    }),
-  });
 } else {
   app = getApps()[0]!;
 }
