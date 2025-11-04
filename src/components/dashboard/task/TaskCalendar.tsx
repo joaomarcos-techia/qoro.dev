@@ -39,7 +39,9 @@ export function TaskCalendar() {
         return {
             id: task.id,
             title: task.title,
-            start: task.dueDate!,
+            start: typeof task.dueDate === 'string' 
+              ? task.dueDate 
+              : task.dueDate?.toISOString().split('T')[0] || '',
             allDay: true,
             backgroundColor: colors.bg,
             borderColor: colors.border,
