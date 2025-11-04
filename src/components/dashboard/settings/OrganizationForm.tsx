@@ -57,10 +57,14 @@ export function OrganizationForm() {
             try {
                 const details = await getOrganizationDetails({ actor: currentUser.uid });
                 setOrganization(details);
-                reset({
-                    ...details,
-                    cnpj: details.cnpj ? formatCNPJ(details.cnpj) : '',
-                }); 
+                if (details) {
+                    reset({
+                        name: details.name,
+                        cnpj: details.cnpj ? formatCNPJ(details.cnpj) : '',
+                        contactEmail: details.contactEmail ?? undefined,
+                        contactPhone: details.contactPhone ?? undefined,
+                    });
+                }
             } catch (error) {
                 console.error("Failed to fetch organization details:", error);
                 setFeedback({ type: 'error', message: 'Não foi possível carregar os dados da organização.' });
@@ -180,5 +184,3 @@ export function OrganizationForm() {
         </div>
     );
 }
-
-    
