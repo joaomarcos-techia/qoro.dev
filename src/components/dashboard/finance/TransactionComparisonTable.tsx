@@ -10,6 +10,8 @@ import { bulkCreateTransactions, updateTransaction } from '@/ai/flows/finance-ma
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { updateReconciliationStatus } from '@/services/reconciliationService';
+import { z } from 'zod';
+
 
 
 export interface OfxTransaction {
@@ -98,12 +100,12 @@ export function TransactionComparisonTable({ reconciliation, ofxTransactions, sy
     setIsBulkCreating(true);
     setError(null);
     try {
-      const transactionsToCreate: (Omit<z.infer<typeof TransactionSchema>, 'date'> & { date: Date })[] = unmatchedOfx.map(ofx => ({
+        const transactionsToCreate: z.infer<typeof TransactionSchema>[] = unmatchedOfx.map(ofx => ({
           description: ofx.description,
           amount: Math.abs(ofx.amount),
           date: new Date(ofx.date),
-          type: ofx.type,
-          status: 'paid' as const, 
+          type: ofx.amount > 0 ? 'income' : 'expense',
+          status: 'paid' as const,
       }));
       
       await bulkCreateTransactions({
