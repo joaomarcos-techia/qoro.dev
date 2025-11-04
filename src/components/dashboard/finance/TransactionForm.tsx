@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -60,6 +59,7 @@ export function TransactionForm({ onAction, transaction, transactionCount = 0 }:
     handleSubmit,
     control,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
@@ -76,6 +76,12 @@ export function TransactionForm({ onAction, transaction, transactionCount = 0 }:
     }
   });
 
+  const handleNumericInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numericValue = value.replace(/[^0-9,]/g, '').replace(',', '.');
+    setValue('amount', parseFloat(numericValue) || 0, { shouldValidate: true });
+  };
+  
   useEffect(() => {
     if (currentUser) {
         const fetchData = async () => {
@@ -173,9 +179,7 @@ export function TransactionForm({ onAction, transaction, transactionCount = 0 }:
                 control={control}
                 render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value || ''}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Selecione a conta" />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Selecione a conta" /></SelectTrigger>
                     <SelectContent>
                         {accounts.map(account => (
                             <SelectItem key={account.id} value={account.id}>{account.name}</SelectItem>
@@ -201,9 +205,16 @@ export function TransactionForm({ onAction, transaction, transactionCount = 0 }:
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="amount">Valor (R$)*</Label>
-          <Input id="amount" type="text" inputMode="decimal" {...register('amount')} placeholder="0,00" />
-          {errors.amount && <p className="text-destructive text-sm">{errors.amount.message}</p>}
+            <Label htmlFor="amount">Valor (R$)*</Label>
+            <Input 
+                id="amount" 
+                type="text" 
+                inputMode="decimal" 
+                {...register('amount')}
+                onChange={handleNumericInput}
+                placeholder="0,00" 
+            />
+            {errors.amount && <p className="text-destructive text-sm">{errors.amount.message}</p>}
         </div>
         
         <div className="space-y-2">
@@ -315,5 +326,3 @@ export function TransactionForm({ onAction, transaction, transactionCount = 0 }:
     </form>
   );
 }
-
-    
