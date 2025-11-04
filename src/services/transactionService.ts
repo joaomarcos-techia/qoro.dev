@@ -100,11 +100,17 @@ export const updateTransaction = async (input: z.infer<typeof UpdateTransactionS
             if (oldData?.companyId !== organizationId) {
                 throw new Error("Acesso negado à transação.");
             }
+             if (!oldData?.accountId) {
+                throw new Error("A transação original não está associada a uma conta.");
+            }
+            if (!updateData.accountId) {
+                throw new Error("A conta financeira é obrigatória para a atualização.");
+            }
 
             const oldAmount = Number(oldData?.amount || 0);
             const newAmount = Number(updateData.amount || 0);
 
-            const oldAccountRef = adminDb.collection('accounts').doc(oldData?.accountId);
+            const oldAccountRef = adminDb.collection('accounts').doc(oldData.accountId);
             const newAccountRef = adminDb.collection('accounts').doc(updateData.accountId);
             
             const oldAccountDoc = await t.get(oldAccountRef);
