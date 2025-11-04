@@ -249,7 +249,9 @@ export const listTransactions = async (
 
         return {
             ...parsedData,
-            date: parsedData.date?.toISOString() ?? new Date().toISOString(),
+            date: typeof parsedData.date === 'string' 
+                ? parsedData.date 
+                : parsedData.date?.toISOString() ?? new Date().toISOString(),
         };
     });
     
@@ -257,7 +259,7 @@ export const listTransactions = async (
 };
 
 export const bulkCreateTransactions = async (
-    transactions: Pick<z.infer<typeof TransactionSchema>, 'description' | 'amount' | 'type' | 'date'>[],
+    transactions: Pick<z.infer<typeof TransactionSchema>, 'description' | 'amount' | 'type' | 'date' | 'status'>[],
     accountId: string,
     actorUid: string
 ) => {
