@@ -31,7 +31,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-  } from "@/components/ui/alert-dialog"
+  } from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -49,8 +49,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, ArrowUpDown, Search, Loader2, FileText, Download, Eye, Edit, Trash2 } from 'lucide-react';
-import { listQuotes, deleteQuote } from '@/ai/flows/crm-management';
+import { MoreHorizontal, ArrowUpDown, Search, Loader2, FileText, Download, Eye, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { listQuotes, deleteQuote, convertQuoteToTransaction } from '@/ai/flows/crm-management';
 import type { QuoteProfile } from '@/ai/schemas';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -65,13 +65,6 @@ const formatCurrency = (value: number | null | undefined) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 };
 
-const statusMap: Record<QuoteProfile['status'], { text: string; color: string }> = {
-    draft: { text: 'Rascunho', color: 'bg-gray-500/20 text-gray-300' },
-    sent: { text: 'Enviado', color: 'bg-blue-500/20 text-blue-300' },
-    accepted: { text: 'Aceito', color: 'bg-green-500/20 text-green-300' },
-    rejected: { text: 'Rejeitado', color: 'bg-red-500/20 text-red-300' },
-    expired: { text: 'Expirado', color: 'bg-orange-500/20 text-orange-300' },
-};
 
 export function QuoteTable() {
   const [data, setData] = React.useState<QuoteProfile[]>([]);
@@ -104,6 +97,17 @@ export function QuoteTable() {
           console.error("Failed to delete quote", err);
           setError("Não foi possível excluir o orçamento.");
       }
+  }
+
+  const handleMarkAsWon = async (quoteId: string) => {
+    if (!currentUser) return;
+    try {
+        await convertQuoteToTransaction({ quoteId, actor: currentUser.uid });
+        triggerRefresh();
+    } catch (err) {
+        console.error("Failed to mark quote as won", err);
+        setError("Não foi possível converter o orçamento em transação.");
+    }
   }
   
   const handleModalAction = () => {
@@ -166,15 +170,6 @@ export function QuoteTable() {
       cell: ({ row }) => row.getValue('customerName') || '-',
     },
     {
-      accessorKey: 'status',
-      header: 'Status',
-      cell: ({ row }) => {
-          const status = row.getValue('status') as keyof typeof statusMap;
-          const { text, color } = statusMap[status] || statusMap.draft;
-          return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${color} capitalize`}>{text}</span>;
-      },
-    },
-    {
       accessorKey: 'total',
       header: 'Total',
       cell: ({ row }) => formatCurrency(row.getValue('total')),
@@ -205,6 +200,10 @@ export function QuoteTable() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="rounded-2xl">
                 <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => handleMarkAsWon(quote.id)} className="rounded-xl cursor-pointer text-green-400 focus:text-green-300">
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Marcar como Ganho
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handlePdfAction(quote, 'view')} className="rounded-xl cursor-pointer">
                   <Eye className="mr-2 h-4 w-4" />
                   Visualizar
@@ -220,22 +219,22 @@ export function QuoteTable() {
                 <DropdownMenuSeparator />
                 <AlertDialogTrigger asChild>
                   <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400 rounded-xl cursor-pointer">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Excluir
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Marcar como Perdido
                   </DropdownMenuItem>
                 </AlertDialogTrigger>
               </DropdownMenuContent>
             </DropdownMenu>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                <AlertDialogTitle>Marcar orçamento como perdido?</AlertDialogTitle>
                 <AlertDialogDescription>
                   Esta ação não pode ser desfeita. Isso excluirá permanentemente o orçamento #{quote.number}.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => handleDelete(quote.id)} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">Excluir</AlertDialogAction>
+                <AlertDialogAction onClick={() => handleDelete(quote.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Sim, marcar como perdido</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

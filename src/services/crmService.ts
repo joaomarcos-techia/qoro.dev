@@ -3,11 +3,11 @@
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { CustomerSchema, CustomerProfileSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema, BillSchema, ServiceSchema, ServiceProfileSchema, UpdateServiceSchema } from '@/ai/schemas';
+import { CustomerSchema, CustomerProfileSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema, ServiceSchema, ServiceProfileSchema, UpdateServiceSchema, TransactionSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import type { QuoteProfile, CustomerProfile } from '@/ai/schemas';
 import { adminDb } from '@/lib/firebase-admin';
-import * as billService from './billService';
+import * as transactionService from './transactionService';
 
 const FREE_PLAN_LIMITS = {
     customers: 15,
@@ -345,7 +345,6 @@ export const createQuote = async (input: z.infer<typeof QuoteSchema>, actorUid: 
     const newQuoteData = {
         ...input,
         number: quoteNumber,
-        status: 'draft',
         companyId: organizationId,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
@@ -413,31 +412,12 @@ export const updateQuote = async (quoteId: string, input: z.infer<typeof UpdateQ
         throw new Error('Orçamento não encontrado ou acesso negado.');
     }
 
-    const oldStatus = quoteDoc.data()?.status;
     const { id, ...updateData } = input;
 
     await quoteRef.update({
         ...updateData,
         updatedAt: FieldValue.serverTimestamp(),
     });
-
-    if (updateData.status === 'accepted' && oldStatus !== 'accepted') {
-        const quoteData = quoteDoc.data();
-        if (!quoteData) throw new Error("Dados do orçamento não encontrados após a atualização.");
-
-        const billData: z.infer<typeof BillSchema> = {
-            description: `Orçamento #${quoteData.number}`,
-            amount: updateData.total,
-            type: 'receivable',
-            dueDate: new Date(updateData.validUntil || Date.now()),
-            status: 'pending',
-            entityType: 'customer',
-            entityId: updateData.customerId,
-            notes: `Gerado a partir do orçamento ${quoteData.number}.\n${updateData.notes || ''}`,
-            tags: [`quote-${quoteId}`]
-        };
-        await billService.createBill(billData, actorUid);
-    }
 
     return { id: quoteId, number: quoteDoc.data()?.number };
 };
@@ -456,3 +436,35 @@ export const deleteQuote = async (quoteId: string, actorUid: string) => {
     await quoteRef.delete();
     return { id: quoteId, success: true };
 };
+
+
+export const convertQuoteToTransaction = async (quoteId: string, actorUid: string) => {
+    const adminOrgData = await getAdminAndOrg(actorUid);
+    if (!adminOrgData) throw new Error("A organização do usuário não está pronta.");
+
+    const quoteRef = adminDb.collection('quotes').doc(quoteId);
+    const quoteDoc = await quoteRef.get();
+    if (!quoteDoc.exists || quoteDoc.data()?.companyId !== adminOrgData.organizationId) {
+        throw new Error("Orçamento não encontrado ou acesso negado.");
+    }
+    
+    const quoteData = quoteDoc.data()!;
+
+    const transactionData: z.infer<typeof TransactionSchema> = {
+        description: `Receita do orçamento #${quoteData.number}`,
+        amount: quoteData.total,
+        type: 'income',
+        date: new Date(),
+        status: 'pending', // Pending until an account is associated
+        customerId: quoteData.customerId,
+        tags: [`quote-${quoteId}`]
+    };
+
+    // Create the transaction but don't delete the quote yet.
+    const transactionResult = await transactionService.createTransaction(transactionData, actorUid);
+
+    // After successfully creating transaction, delete the quote.
+    await quoteRef.delete();
+
+    return { transactionId: transactionResult.id };
+}

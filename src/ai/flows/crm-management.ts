@@ -21,6 +21,7 @@
  * - deleteCustomer - Deletes a customer.
  * - updateCustomer - Updates a customer's profile.
  * - getOrganizationDetails - Fetches details for the user's organization.
+ * - convertQuoteToTransaction - Converts a quote into a transaction and deletes the quote.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
@@ -53,6 +54,10 @@ const DeleteServiceInputSchema = z.object({
 }).extend(ActorSchema.shape);
 
 const DeleteQuoteInputSchema = z.object({
+    quoteId: z.string(),
+}).extend(ActorSchema.shape);
+
+const ConvertQuoteInputSchema = z.object({
     quoteId: z.string(),
 }).extend(ActorSchema.shape);
 
@@ -208,6 +213,15 @@ const deleteQuoteFlow = ai.defineFlow(
     async (input) => crmService.deleteQuote(input.quoteId, input.actor)
 );
 
+const convertQuoteToTransactionFlow = ai.defineFlow(
+    {
+        name: 'convertQuoteToTransactionFlow',
+        inputSchema: ConvertQuoteInputSchema,
+        outputSchema: z.object({ transactionId: z.string() })
+    },
+    async (input) => crmService.convertQuoteToTransaction(input.quoteId, input.actor)
+);
+
 const updateCustomerStatusFlow = ai.defineFlow(
     {
         name: 'updateCustomerStatusFlow',
@@ -301,6 +315,10 @@ export async function deleteQuote(input: z.infer<typeof DeleteQuoteInputSchema>)
     return deleteQuoteFlow(input);
 }
 
+export async function convertQuoteToTransaction(input: z.infer<typeof ConvertQuoteInputSchema>): Promise<{ transactionId: string }> {
+    return convertQuoteToTransactionFlow(input);
+}
+
 export async function updateCustomerStatus(input: z.infer<typeof UpdateCustomerStatusInputSchema>): Promise<{ id: string; status: z.infer<typeof CustomerProfileSchema>['status'] }> {
     return updateCustomerStatusFlow(input);
 }
@@ -312,5 +330,3 @@ export async function deleteCustomer(input: z.infer<typeof DeleteCustomerInputSc
 export async function updateCustomer(input: z.infer<typeof UpdateCustomerSchema> & z.infer<typeof ActorSchema>): Promise<{ id: string; }> {
     return updateCustomerFlow(input);
 }
-
-    

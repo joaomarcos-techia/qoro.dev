@@ -181,7 +181,6 @@ export const QuoteSchema = z.object({
     total: z.number(),
     validUntil: z.union([z.string(), z.date()]),
     notes: z.string().optional(),
-    status: z.enum(['draft', 'sent', 'accepted', 'rejected', 'expired']).default('draft'),
 });
 
 export const UpdateQuoteSchema = QuoteSchema.extend({
