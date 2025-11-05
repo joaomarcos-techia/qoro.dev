@@ -26,6 +26,24 @@ export const createBill = async (input: z.infer<typeof BillSchema>, actorUid: st
     };
 
     const billRef = await adminDb.collection('bills').add(newBillData);
+    
+    // If the bill is created with 'paid' status, create a transaction immediately.
+    if (input.status === 'paid' && input.accountId) {
+        const transactionData: z.infer<typeof TransactionSchema> = {
+            accountId: input.accountId,
+            type: input.type === 'payable' ? 'expense' : 'income',
+            amount: input.amount,
+            description: `Pag/Rec: ${input.description}`,
+            date: new Date(),
+            category: input.category || (input.type === 'payable' ? 'Pagamento de contas' : 'Recebimento de contas'),
+            status: 'paid',
+            paymentMethod: input.paymentMethod || 'bank_transfer',
+            customerId: input.entityType === 'customer' ? input.entityId : undefined,
+            tags: [...(input.tags || []), `bill-${billRef.id}`],
+        };
+        await transactionService.createTransaction(transactionData, actorUid);
+    }
+
     return { id: billRef.id };
 };
 
@@ -114,13 +132,18 @@ export const updateBill = async (input: z.infer<typeof UpdateBillSchema>, actorU
         updatedAt: FieldValue.serverTimestamp(),
     });
 
-    // Se o status está sendo alterado para "pago" e não estava pago antes
+    // If the status is changing to 'paid' and it wasn't paid before, create a transaction.
     if (updateData.status === 'paid' && !isAlreadyPaid) {
         const accountId = updateData.accountId || oldData.accountId;
+        if (!accountId) {
+             // If no account is associated, we just update the bill status.
+            // The user can later associate an account and manually create the transaction.
+            console.warn(`Bill ${id} marked as paid without an associated account. No transaction created.`);
+            return { id };
+        }
         
         const transactionData: z.infer<typeof TransactionSchema> = {
-            // O accountId é agora opcional na transação também
-            accountId: accountId || undefined,
+            accountId: accountId,
             type: updateData.type === 'payable' ? 'expense' : 'income',
             amount: updateData.amount,
             description: `Pag/Rec: ${updateData.description}`,
@@ -131,7 +154,6 @@ export const updateBill = async (input: z.infer<typeof UpdateBillSchema>, actorU
             customerId: updateData.entityType === 'customer' ? updateData.entityId : undefined,
             tags: [...(updateData.tags || []), `bill-${id}`],
         };
-        // A função createTransaction já lida com a atualização de saldo se accountId for fornecido
         await transactionService.createTransaction(transactionData, actorUid);
     }
 

@@ -456,7 +456,7 @@ export const markQuoteAsWon = async (quoteId: string, accountId: string | undefi
         amount: quoteData.total,
         type: 'receivable',
         dueDate: quoteData.validUntil || new Date(), // Use validUntil as due date
-        status: 'pending',
+        status: 'paid', // Mark as paid (won) directly in finance
         entityType: 'customer',
         entityId: quoteData.customerId,
         accountId: accountId,

@@ -50,7 +50,7 @@ export function BillForm({ onAction, bill }: BillFormProps) {
   } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      accountId: '', // Initialize to prevent uncontrolled -> controlled warning
+      accountId: '', 
       entityId: '',
       paymentMethod: 'pix',
       type: 'payable',

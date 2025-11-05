@@ -58,7 +58,7 @@ export function MarkAsWonDialog({ isOpen, onOpenChange, quote, actorUid, onSucce
       });
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Falha ao converter o orçamento em conta a receber.');
+      setError(err.message || 'Falha ao converter o orçamento em transação.');
     } finally {
       setIsLoading(false);
     }
@@ -68,9 +68,9 @@ export function MarkAsWonDialog({ isOpen, onOpenChange, quote, actorUid, onSucce
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Confirmar Orçamento Ganho</DialogTitle>
+          <DialogTitle>Confirmar orçamento ganho</DialogTitle>
           <DialogDescription>
-            Uma nova conta a receber será criada para o cliente <strong>{quote.customerName}</strong> no valor de <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(quote.total)}</strong>.
+            Uma nova transação a receber será criada para o cliente <strong>{quote.customerName}</strong> no valor de <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(quote.total)}</strong>.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
@@ -103,9 +103,9 @@ export function MarkAsWonDialog({ isOpen, onOpenChange, quote, actorUid, onSucce
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>Cancelar</Button>
-          <Button onClick={handleConfirm} disabled={isLoading || !selectedAccountId}>
+          <Button onClick={handleConfirm} disabled={isLoading}>
             {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Confirmar e Criar Pendência
+            Confirmar e criar transação
           </Button>
         </DialogFooter>
       </DialogContent>
