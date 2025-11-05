@@ -354,7 +354,7 @@ export const createQuote = async (input: z.infer<typeof QuoteSchema>, actorUid: 
     const quoteRef = await adminDb.collection('quotes').add(newQuoteData);
 
     // --- Automation ---
-    await updateCustomerStatus(input.customerId, 'negotiation', actorUid);
+    await updateCustomerStatus(input.customerId, 'proposal', actorUid);
 
     const billData: z.infer<typeof BillSchema> = {
         description: `Orçamento #${quoteNumber}`,
