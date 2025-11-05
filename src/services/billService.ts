@@ -1,4 +1,5 @@
 
+
 'use server';
 /**
  * @fileOverview Service for managing bills (accounts payable/receivable) in Firestore.
@@ -113,14 +114,13 @@ export const updateBill = async (input: z.infer<typeof UpdateBillSchema>, actorU
         updatedAt: FieldValue.serverTimestamp(),
     });
 
+    // Se o status está sendo alterado para "pago" e não estava pago antes
     if (updateData.status === 'paid' && !isAlreadyPaid) {
         const accountId = updateData.accountId || oldData.accountId;
-        if (!accountId) {
-             throw new Error("Por favor, edite esta pendência e associe uma conta financeira antes de marcá-la como paga.");
-        }
         
         const transactionData: z.infer<typeof TransactionSchema> = {
-            accountId: accountId,
+            // O accountId é agora opcional na transação também
+            accountId: accountId || undefined,
             type: updateData.type === 'payable' ? 'expense' : 'income',
             amount: updateData.amount,
             description: `Pag/Rec: ${updateData.description}`,
@@ -131,6 +131,7 @@ export const updateBill = async (input: z.infer<typeof UpdateBillSchema>, actorU
             customerId: updateData.entityType === 'customer' ? updateData.entityId : undefined,
             tags: [...(updateData.tags || []), `bill-${id}`],
         };
+        // A função createTransaction já lida com a atualização de saldo se accountId for fornecido
         await transactionService.createTransaction(transactionData, actorUid);
     }
 
