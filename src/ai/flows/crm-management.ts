@@ -56,7 +56,8 @@ const DeleteServiceInputSchema = z.object({
 
 const DeleteQuoteInputSchema = z.object({
     quoteId: z.string(),
-}).extend(ActorSchema.shape);
+    actor: z.string(),
+});
 
 const MarkQuoteAsWonInputSchema = z.object({
     quoteId: z.string(),
@@ -216,7 +217,7 @@ const deleteQuoteFlow = ai.defineFlow(
         inputSchema: DeleteQuoteInputSchema,
         outputSchema: z.object({ id: z.string(), success: z.boolean() })
     },
-    async (input) => crmService.deleteQuote(input.quoteId, input.actor)
+    async ({ quoteId, actor }) => crmService.deleteQuote(quoteId, actor)
 );
 
 const markQuoteAsWonFlow = ai.defineFlow(
@@ -231,7 +232,7 @@ const markQuoteAsWonFlow = ai.defineFlow(
 const markQuoteAsLostFlow = ai.defineFlow(
     {
         name: 'markQuoteAsLostFlow',
-        inputSchema: MarkQuoteAsLostInputSchema,
+        inputSchema: MarkQuoteAsLostInputSchema.extend(ActorSchema.shape),
         outputSchema: z.object({ success: z.boolean() })
     },
     async (input) => crmService.markQuoteAsLost(input.quoteId, input.actor)

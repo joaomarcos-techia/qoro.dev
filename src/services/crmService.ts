@@ -442,8 +442,7 @@ export const updateQuote = async (quoteId: string, input: z.infer<typeof UpdateQ
     return { id: quoteId, number: quoteDoc.data()?.number };
 };
 
-export const deleteQuote = async (input: { quoteId: string, actor: string }) => {
-    const { quoteId, actor } = input;
+export const deleteQuote = async (quoteId: string, actor: string) => {
     const adminOrgData = await getAdminAndOrg(actor);
     if (!adminOrgData) throw new Error("A organização do usuário não está pronta.");
     const { organizationId } = adminOrgData;
@@ -511,8 +510,7 @@ export const markQuoteAsWon = async (quoteId: string, accountId: string | undefi
     return { billId: billDoc.id };
 };
 
-export const markQuoteAsLost = async (input: { quoteId: string, actor: string }) => {
-    const { quoteId, actor } = input;
+export const markQuoteAsLost = async (quoteId: string, actor: string) => {
     const adminOrgData = await getAdminAndOrg(actor);
     if (!adminOrgData) throw new Error("A organização do usuário não está pronta.");
     const { organizationId } = adminOrgData;
