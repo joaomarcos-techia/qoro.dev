@@ -32,7 +32,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MoreHorizontal, ArrowUpDown, Search, Loader2, FileText, Download, Eye, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
-import { listQuotes, deleteQuote, updateQuote } from '@/ai/flows/crm-management';
+import { listQuotes, deleteQuote, markQuoteAsLost } from '@/ai/flows/crm-management';
 import type { QuoteProfile } from '@/ai/schemas';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -82,20 +82,20 @@ export function QuoteTable() {
     setSelectedQuote(quote);
     setIsEditModalOpen(true);
   };
-
-  const handleMarkAsLost = async (quoteId: string) => {
+  
+  const handleMarkAsLostAction = async (quote: QuoteProfile) => {
     if (!currentUser) return;
     const originalData = [...data];
-    setData(prev => prev.filter(q => q.id !== quoteId));
+    setData(prev => prev.filter(q => q.id !== quote.id));
     try {
-        await deleteQuote({ quoteId, actor: currentUser.uid });
+        await markQuoteAsLost({ quoteId: quote.id, actor: currentUser.uid });
         triggerRefresh();
     } catch(err) {
-        console.error("Failed to delete quote", err);
-        setError("Não foi possível excluir o orçamento.");
+        console.error("Failed to mark quote as lost:", err);
+        setError("Não foi possível marcar o orçamento como perdido.");
         setData(originalData);
     }
-  }
+  };
 
   const handleOpenWonDialog = (quote: QuoteProfile) => {
     setQuoteToMarkAsWon(quote);
@@ -189,7 +189,7 @@ export function QuoteTable() {
       id: 'actions',
       cell: ({ row }) => {
         const quote = row.original;
-        const isActionable = quote.status !== 'won' && quote.status !== 'lost';
+        const isActionable = quote.status === 'sent' || quote.status === 'draft';
         return (
           <AlertDialog>
             <DropdownMenu>
@@ -228,24 +228,18 @@ export function QuoteTable() {
                     </DropdownMenuItem>
                   </AlertDialogTrigger>
                 )}
-                 <AlertDialogTrigger asChild>
-                    <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400 rounded-xl cursor-pointer">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Excluir
-                    </DropdownMenuItem>
-                </AlertDialogTrigger>
               </DropdownMenuContent>
             </DropdownMenu>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Excluir orçamento?</AlertDialogTitle>
+                <AlertDialogTitle>Marcar orçamento como perdido?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Esta ação não pode ser desfeita. Isso excluirá permanentemente o orçamento #{quote.number}.
+                  Isto irá atualizar o status do orçamento para "Perdido" e excluir a conta a receber pendente no financeiro. Esta ação não pode ser desfeita.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => handleMarkAsLost(quote.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Sim, excluir</AlertDialogAction>
+                <AlertDialogAction onClick={() => handleMarkAsLostAction(quote)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Sim, marcar como perdido</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

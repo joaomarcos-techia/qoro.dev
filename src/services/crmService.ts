@@ -1,10 +1,9 @@
 
-
 'use server';
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { CustomerSchema, CustomerProfileSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema, ServiceSchema, ServiceProfileSchema, UpdateServiceSchema, BillSchema, UpdateBillSchema } from '@/ai/schemas';
+import { CustomerSchema, CustomerProfileSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema, ServiceSchema, ServiceProfileSchema, UpdateServiceSchema, BillSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import type { QuoteProfile, CustomerProfile } from '@/ai/schemas';
 import { adminDb } from '@/lib/firebase-admin';
@@ -497,32 +496,24 @@ export const markQuoteAsWon = async (quoteId: string, accountId: string | undefi
     if (!billsQuery.empty) {
         const billDoc = billsQuery.docs[0];
         billId = billDoc.id;
-        const billData = billDoc.data();
-        
-        // CORRECTION: Ensure undefined fields are converted to null
-        const updatePayload: z.infer<typeof UpdateBillSchema> = {
+        // This triggers the transaction creation in billService
+        await billService.updateBill({
             id: billId,
-            description: billData.description,
-            amount: billData.amount,
-            type: billData.type,
-            dueDate: billData.dueDate.toDate(), 
-            status: 'paid', // Mark as paid to trigger transaction creation
+            status: 'paid',
             accountId: accountId,
-            entityId: billData.entityId ?? null,
-            entityType: billData.entityType ?? null,
-            notes: billData.notes ?? null,
-            category: billData.category ?? null,
-            paymentMethod: billData.paymentMethod ?? null,
-            tags: billData.tags ?? null,
-        };
-        await billService.updateBill(updatePayload, actorUid);
+            dueDate: billDoc.data().dueDate.toDate(), // Pass date correctly
+            // Pass other required fields from original bill
+            description: billDoc.data().description,
+            amount: billDoc.data().amount,
+            type: billDoc.data().type,
+        }, actorUid);
     } else {
         // Fallback: if no bill was created, create one directly as 'paid'
         const billData: z.infer<typeof BillSchema> = {
             description: `Recebimento referente ao orçamento #${quoteData.number}`,
             amount: quoteData.total,
             type: 'receivable',
-            dueDate: quoteData.validUntil.toDate(), // Convert Timestamp to Date
+            dueDate: quoteData.validUntil.toDate(), 
             status: 'paid', // Mark as paid to create the transaction
             entityType: 'customer',
             entityId: quoteData.customerId,
@@ -543,4 +534,40 @@ export const markQuoteAsWon = async (quoteId: string, accountId: string | undefi
     });
 
     return { billId };
+};
+
+export const markQuoteAsLost = async (quoteId: string, actorUid: string) => {
+    const adminOrgData = await getAdminAndOrg(actorUid);
+    if (!adminOrgData) throw new Error("A organização do usuário não está pronta.");
+
+    const quoteRef = adminDb.collection('quotes').doc(quoteId);
+    const quoteDoc = await quoteRef.get();
+    if (!quoteDoc.exists || quoteDoc.data()?.companyId !== adminOrgData.organizationId) {
+        throw new Error("Orçamento não encontrado ou acesso negado.");
+    }
+    
+    const quoteData = quoteDoc.data()!;
+
+    // Find and delete the associated Bill
+    const billsQuery = await adminDb.collection('bills')
+        .where('companyId', '==', adminOrgData.organizationId)
+        .where('tags', 'array-contains', `quote-${quoteId}`)
+        .limit(1)
+        .get();
+        
+    if (!billsQuery.empty) {
+        const billDoc = billsQuery.docs[0];
+        await billService.deleteBill(billDoc.id, actorUid);
+    }
+
+    // Update customer status to 'lost'
+    await updateCustomerStatus(quoteData.customerId, 'lost', actorUid);
+
+    // Update quote status to 'lost'
+    await quoteRef.update({
+        status: 'lost',
+        updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    return { success: true };
 };

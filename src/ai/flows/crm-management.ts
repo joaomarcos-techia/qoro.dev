@@ -22,6 +22,7 @@
  * - updateCustomer - Updates a customer's profile.
  * - getOrganizationDetails - Fetches details for the user's organization.
  * - markQuoteAsWon - Converts a quote into a bill and updates the quote status.
+ * - markQuoteAsLost - Marks a quote as lost and handles associated data.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
@@ -60,6 +61,10 @@ const DeleteQuoteInputSchema = z.object({
 const MarkQuoteAsWonInputSchema = z.object({
     quoteId: z.string(),
     accountId: z.string().optional(),
+}).extend(ActorSchema.shape);
+
+const MarkQuoteAsLostInputSchema = z.object({
+    quoteId: z.string(),
 }).extend(ActorSchema.shape);
 
 
@@ -223,6 +228,15 @@ const markQuoteAsWonFlow = ai.defineFlow(
     async (input) => crmService.markQuoteAsWon(input.quoteId, input.accountId, input.actor)
 );
 
+const markQuoteAsLostFlow = ai.defineFlow(
+    {
+        name: 'markQuoteAsLostFlow',
+        inputSchema: MarkQuoteAsLostInputSchema,
+        outputSchema: z.object({ success: z.boolean() })
+    },
+    async (input) => crmService.markQuoteAsLost(input.quoteId, input.actor)
+);
+
 const updateCustomerStatusFlow = ai.defineFlow(
     {
         name: 'updateCustomerStatusFlow',
@@ -320,6 +334,10 @@ export async function markQuoteAsWon(input: z.infer<typeof MarkQuoteAsWonInputSc
     return markQuoteAsWonFlow(input);
 }
 
+export async function markQuoteAsLost(input: z.infer<typeof MarkQuoteAsLostInputSchema> & { actor: string }): Promise<{ success: boolean }> {
+    return markQuoteAsLostFlow(input);
+}
+
 export async function updateCustomerStatus(input: z.infer<typeof UpdateCustomerStatusInputSchema>): Promise<{ id: string; status: z.infer<typeof CustomerProfileSchema>['status'] }> {
     return updateCustomerStatusFlow(input);
 }
@@ -331,5 +349,3 @@ export async function deleteCustomer(input: z.infer<typeof DeleteCustomerInputSc
 export async function updateCustomer(input: z.infer<typeof UpdateCustomerSchema> & z.infer<typeof ActorSchema>): Promise<{ id: string; }> {
     return updateCustomerFlow(input);
 }
-
-  

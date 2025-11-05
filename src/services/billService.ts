@@ -1,5 +1,4 @@
 
-
 'use server';
 /**
  * @fileOverview Service for managing bills (accounts payable/receivable) in Firestore.
@@ -124,7 +123,6 @@ export const updateBill = async (input: z.infer<typeof UpdateBillSchema>, actorU
     }
     const oldData = doc.data()!;
     const oldStatus = oldData.status;
-    const isAlreadyPaid = oldStatus === 'paid';
 
     await billRef.update({
         ...updateData,
@@ -133,37 +131,27 @@ export const updateBill = async (input: z.infer<typeof UpdateBillSchema>, actorU
     });
 
     // If the status is changing to 'paid' and it wasn't paid before, create a transaction.
-    if (updateData.status === 'paid' && !isAlreadyPaid) {
+    if (updateData.status === 'paid' && oldStatus !== 'paid') {
         const accountId = updateData.accountId || oldData.accountId;
         if (!accountId) {
-            const transactionDataNoAccount: Omit<z.infer<typeof TransactionSchema>, 'accountId'> & { accountId?: undefined } = {
-                type: updateData.type === 'payable' ? 'expense' : 'income',
-                amount: updateData.amount,
-                description: `Pag/Rec: ${updateData.description}`,
-                date: new Date(),
-                category: updateData.category || (updateData.type === 'payable' ? 'Pagamento de contas' : 'Recebimento de contas'),
-                status: 'paid',
-                paymentMethod: updateData.paymentMethod || 'bank_transfer',
-                customerId: updateData.entityType === 'customer' ? updateData.entityId : undefined,
-                tags: [...(updateData.tags || []), `bill-${id}`],
-            };
-            await transactionService.createTransaction(transactionDataNoAccount, actorUid);
-        } else {
-            const transactionData: z.infer<typeof TransactionSchema> = {
-                accountId: accountId,
-                type: updateData.type === 'payable' ? 'expense' : 'income',
-                amount: updateData.amount,
-                description: `Pag/Rec: ${updateData.description}`,
-                date: new Date(),
-                category: updateData.category || (updateData.type === 'payable' ? 'Pagamento de contas' : 'Recebimento de contas'),
-                status: 'paid',
-                paymentMethod: updateData.paymentMethod || 'bank_transfer',
-                customerId: updateData.entityType === 'customer' ? updateData.entityId : undefined,
-                tags: [...(updateData.tags || []), `bill-${id}`],
-            };
-            await transactionService.createTransaction(transactionData, actorUid);
+             throw new Error("Uma conta financeira deve ser associada para marcar a pendência como paga.");
         }
+        
+        const transactionData: z.infer<typeof TransactionSchema> = {
+            accountId: accountId,
+            type: updateData.type === 'payable' ? 'expense' : 'income',
+            amount: updateData.amount,
+            description: `Pag/Rec: ${updateData.description}`,
+            date: new Date(),
+            category: updateData.category || (updateData.type === 'payable' ? 'Pagamento de contas' : 'Recebimento de contas'),
+            status: 'paid',
+            paymentMethod: updateData.paymentMethod || 'bank_transfer',
+            customerId: updateData.entityType === 'customer' ? updateData.entityId : undefined,
+            tags: [...(updateData.tags || []), `bill-${id}`],
+        };
+        await transactionService.createTransaction(transactionData, actorUid);
     }
+
 
     return { id };
 };
