@@ -1,4 +1,5 @@
 
+
 'use server';
 /**
  * @fileOverview Service for managing bills (accounts payable/receivable) in Firestore.
@@ -34,9 +35,9 @@ export const createBill = async (input: z.infer<typeof BillSchema>, actorUid: st
             amount: input.amount,
             description: `Pag/Rec: ${input.description}`,
             date: new Date(),
-            category: input.category || (input.type === 'payable' ? 'Pagamento de contas' : 'Recebimento de contas'),
+            category: input.category ?? (input.type === 'payable' ? 'Pagamento de contas' : 'Recebimento de contas'),
             status: 'paid',
-            paymentMethod: input.paymentMethod || 'bank_transfer',
+            paymentMethod: input.paymentMethod ?? 'bank_transfer',
             customerId: input.entityType === 'customer' ? input.entityId : undefined,
             tags: [...(input.tags || []), `bill-${billRef.id}`],
         };
@@ -143,10 +144,10 @@ export const updateBill = async (input: z.infer<typeof UpdateBillSchema>, actorU
             amount: updateData.amount,
             description: `Pag/Rec: ${updateData.description}`,
             date: new Date(),
-            category: updateData.category || (updateData.type === 'payable' ? 'Pagamento de contas' : 'Recebimento de contas'),
+            category: updateData.category ?? (updateData.type === 'payable' ? 'Pagamento de contas' : 'Recebimento de contas'),
             status: 'paid',
-            paymentMethod: updateData.paymentMethod || 'bank_transfer',
-            customerId: updateData.entityType === 'customer' ? updateData.entityId : undefined,
+            paymentMethod: updateData.paymentMethod ?? 'bank_transfer',
+            customerId: updateData.entityType === 'customer' ? (updateData.entityId ?? undefined) : undefined,
             tags: [...(updateData.tags || []), `bill-${id}`],
         };
         await transactionService.createTransaction(transactionData, actorUid);

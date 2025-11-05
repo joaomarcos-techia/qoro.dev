@@ -340,9 +340,9 @@ export const createQuote = async (input: z.infer<typeof QuoteSchema>, actorUid: 
     if (planId !== 'performance') {
         throw new Error("A criação de orçamentos está disponível apenas no plano Performance.");
     }
-    
+
     const quoteNumber = `QT-${Date.now().toString().slice(-6)}`;
-    
+
     const newQuoteData = {
         ...input,
         number: quoteNumber,
@@ -351,6 +351,26 @@ export const createQuote = async (input: z.infer<typeof QuoteSchema>, actorUid: 
         updatedAt: FieldValue.serverTimestamp(),
     };
     const quoteRef = await adminDb.collection('quotes').add(newQuoteData);
+
+    // --- Automação ---
+    // 1. Atualizar o status do cliente para "negotiation"
+    await updateCustomerStatus(input.customerId, 'negotiation', actorUid);
+
+    // 2. Criar uma "Conta a Receber" pendente
+    const billData: z.infer<typeof BillSchema> = {
+        description: `Orçamento #${quoteNumber}`,
+        amount: input.total,
+        type: 'receivable',
+        dueDate: new Date(input.validUntil),
+        status: 'pending',
+        entityId: input.customerId,
+        entityType: 'customer',
+        notes: `Referente ao orçamento ${quoteNumber}.`,
+        tags: [`quote-${quoteRef.id}`],
+    };
+    await billService.createBill(billData, actorUid);
+    // --- Fim da Automação ---
+
 
     return { id: quoteRef.id, number: quoteNumber };
 };
@@ -424,8 +444,9 @@ export const updateQuote = async (quoteId: string, input: z.infer<typeof UpdateQ
     return { id: quoteId, number: quoteDoc.data()?.number };
 };
 
-export const deleteQuote = async (quoteId: string, actorUid: string) => {
-    const adminOrgData = await getAdminAndOrg(actorUid);
+export const deleteQuote = async (input: { quoteId: string, actor: string }) => {
+    const { quoteId, actor } = input;
+    const adminOrgData = await getAdminAndOrg(actor);
     if (!adminOrgData) throw new Error("A organização do usuário não está pronta.");
     const { organizationId } = adminOrgData;
 
@@ -451,45 +472,72 @@ export const markQuoteAsWon = async (quoteId: string, accountId: string | undefi
     
     const quoteData = quoteDoc.data()!;
 
-    // Create a bill receivable
-    const billData: z.infer<typeof BillSchema> = {
-        description: `Recebimento - Orçamento #${quoteData.number}`,
-        amount: quoteData.total,
-        type: 'receivable',
-        dueDate: new Date(), 
-        status: 'paid', // Mark as paid to trigger transaction creation
-        entityType: 'customer',
-        entityId: quoteData.customerId,
-        accountId: accountId,
-        tags: [`quote-${quoteId}`],
+    // Find the associated pending bill
+    const billsSnapshot = await adminDb.collection('bills')
+        .where('companyId', '==', adminOrgData.organizationId)
+        .where('tags', 'array-contains', `quote-${quoteId}`)
+        .where('status', '==', 'pending')
+        .limit(1)
+        .get();
+
+    if (billsSnapshot.empty) {
+        throw new Error("Nenhuma conta a receber pendente encontrada para este orçamento. Ela pode já ter sido processada.");
+    }
+    
+    const billDoc = billsSnapshot.docs[0];
+    const billData = billDoc.data();
+
+    // Update the bill to "paid", which will trigger transaction creation
+    const billUpdatePayload = {
+        ...billData,
+        id: billDoc.id,
+        status: 'paid' as const,
+        dueDate: billData.dueDate.toDate(), // Ensure it's a Date object
+        accountId: accountId ?? billData.accountId ?? undefined,
+        notes: billData.notes + `\n(Orçamento #${quoteData.number} ganho)`
     };
 
-    const newBill = await billService.createBill(billData, actorUid);
+    await billService.updateBill(billUpdatePayload, actorUid);
 
     // Update the customer status to 'won'
     await updateCustomerStatus(quoteData.customerId, 'won', actorUid);
 
     // We no longer manage quote status, so we just return.
-    return { billId: newBill.id };
+    return { billId: billDoc.id };
 };
 
-export const markQuoteAsLost = async (quoteId: string, actorUid: string) => {
-    const adminOrgData = await getAdminAndOrg(actorUid);
+export const markQuoteAsLost = async (input: { quoteId: string, actor: string }) => {
+    const { quoteId, actor } = input;
+    const adminOrgData = await getAdminAndOrg(actor);
     if (!adminOrgData) throw new Error("A organização do usuário não está pronta.");
+    const { organizationId } = adminOrgData;
 
     const quoteRef = adminDb.collection('quotes').doc(quoteId);
     const quoteDoc = await quoteRef.get();
-    if (!quoteDoc.exists || quoteDoc.data()?.companyId !== adminOrgData.organizationId) {
+    if (!quoteDoc.exists || quoteDoc.data()?.companyId !== organizationId) {
         throw new Error("Orçamento não encontrado ou acesso negado.");
     }
     
     const quoteData = quoteDoc.data()!;
 
+    // Find and delete the associated pending bill
+    const billsSnapshot = await adminDb.collection('bills')
+        .where('companyId', '==', organizationId)
+        .where('tags', 'array-contains', `quote-${quoteId}`)
+        .where('status', '==', 'pending')
+        .limit(1)
+        .get();
+    
+    if (!billsSnapshot.empty) {
+        await billsSnapshot.docs[0].ref.delete();
+    }
+
     // Update customer status to 'lost'
-    await updateCustomerStatus(quoteData.customerId, 'lost', actorUid);
+    await updateCustomerStatus(quoteData.customerId, 'lost', actor);
 
     // Delete the quote document itself
     await quoteRef.delete();
 
     return { success: true };
 };
+
