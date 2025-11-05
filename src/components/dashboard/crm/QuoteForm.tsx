@@ -336,8 +336,12 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
                             <SelectContent>
                                 <SelectItem value="draft">Rascunho</SelectItem>
                                 <SelectItem value="sent">Enviado</SelectItem>
-                                <SelectItem value="won">Ganho</SelectItem>
-                                <SelectItem value="lost">Perdido</SelectItem>
+                                {isEditMode && (
+                                  <>
+                                    <SelectItem value="won">Ganho</SelectItem>
+                                    <SelectItem value="lost">Perdido</SelectItem>
+                                  </>
+                                )}
                             </SelectContent>
                         </Select>
                     )}
