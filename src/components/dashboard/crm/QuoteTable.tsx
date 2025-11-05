@@ -14,24 +14,11 @@ import {
   getPaginationRowModel,
 } from '@tanstack/react-table';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-  } from "@/components/ui/alert-dialog";
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -40,17 +27,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MoreHorizontal, ArrowUpDown, Search, Loader2, FileText, Download, Eye, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
-import { listQuotes, deleteQuote, markQuoteAsWon } from '@/ai/flows/crm-management';
+import { listQuotes, deleteQuote, updateQuote } from '@/ai/flows/crm-management';
 import type { QuoteProfile } from '@/ai/schemas';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -59,6 +41,8 @@ import { DocumentPDF } from './QuotePDF';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { QuoteForm } from './QuoteForm';
+import { MarkAsWonDialog } from './MarkAsWonDialog';
+
 
 const formatCurrency = (value: number | null | undefined) => {
     if (value === null || value === undefined) return '-';
@@ -84,41 +68,42 @@ export function QuoteTable() {
   const pdfRef = React.useRef<HTMLDivElement>(null);
   const [documentForPdf, setDocumentForPdf] = React.useState<{document: QuoteProfile, action: 'download' | 'view'} | null>(null);
   
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [selectedQuote, setSelectedQuote] = React.useState<QuoteProfile | null>(null);
+  
+  const [isWonDialogOpen, setIsWonDialogOpen] = React.useState(false);
+  const [quoteToMarkAsWon, setQuoteToMarkAsWon] = React.useState<QuoteProfile | null>(null);
+
   const [refreshKey, setRefreshKey] = React.useState(0);
   
   const triggerRefresh = () => setRefreshKey(prev => prev + 1);
 
   const handleEdit = (quote: QuoteProfile) => {
     setSelectedQuote(quote);
-    setIsModalOpen(true);
+    setIsEditModalOpen(true);
   };
 
-  const handleDelete = async (quoteId: string) => {
-      if (!currentUser) return;
-      try {
-          await deleteQuote({ quoteId, actor: currentUser.uid });
-          triggerRefresh();
-      } catch (err) {
-          console.error("Failed to delete quote", err);
-          setError("Não foi possível excluir o orçamento.");
-      }
+  const handleMarkAsLost = async (quoteId: string) => {
+    if (!currentUser) return;
+    const originalData = [...data];
+    setData(prev => prev.filter(q => q.id !== quoteId));
+    try {
+        await deleteQuote({ quoteId, actor: currentUser.uid });
+        triggerRefresh();
+    } catch(err) {
+        console.error("Failed to delete quote", err);
+        setError("Não foi possível excluir o orçamento.");
+        setData(originalData);
+    }
   }
 
-  const handleMarkAsWon = async (quoteId: string) => {
-    if (!currentUser) return;
-    try {
-        await markQuoteAsWon({ quoteId, actor: currentUser.uid });
-        triggerRefresh();
-    } catch (err: any) {
-        console.error("Failed to mark quote as won", err);
-        setError(err.message || "Não foi possível converter o orçamento em conta a receber.");
-    }
+  const handleOpenWonDialog = (quote: QuoteProfile) => {
+    setQuoteToMarkAsWon(quote);
+    setIsWonDialogOpen(true);
   }
   
   const handleModalAction = () => {
-    setIsModalOpen(false);
+    setIsEditModalOpen(false);
     setSelectedQuote(null);
     triggerRefresh();
   }
@@ -156,7 +141,6 @@ export function QuoteTable() {
       setDocumentForPdf(null); 
     };
   
-    // Use a short timeout to ensure the component has rendered with the new state
     const timer = setTimeout(generateAndHandlePdf, 100); 
     return () => clearTimeout(timer);
   }, [documentForPdf]);
@@ -205,6 +189,7 @@ export function QuoteTable() {
       id: 'actions',
       cell: ({ row }) => {
         const quote = row.original;
+        const isActionable = quote.status !== 'won' && quote.status !== 'lost';
         return (
           <AlertDialog>
             <DropdownMenu>
@@ -216,10 +201,10 @@ export function QuoteTable() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="rounded-2xl">
                 <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                {quote.status !== 'won' && quote.status !== 'lost' && (
-                    <DropdownMenuItem onClick={() => handleMarkAsWon(quote.id)} className="rounded-xl cursor-pointer text-green-400 focus:text-green-300">
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Marcar como Ganho
+                {isActionable && (
+                    <DropdownMenuItem onClick={() => handleOpenWonDialog(quote)} className="rounded-xl cursor-pointer text-green-400 focus:text-green-300">
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Marcar como Ganho
                     </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={() => handlePdfAction(quote, 'view')} className="rounded-xl cursor-pointer">
@@ -235,24 +220,32 @@ export function QuoteTable() {
                   Editar
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <AlertDialogTrigger asChild>
-                  <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400 rounded-xl cursor-pointer">
-                    <XCircle className="mr-2 h-4 w-4" />
-                    Marcar como Perdido
-                  </DropdownMenuItem>
+                {isActionable && (
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400 rounded-xl cursor-pointer">
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Marcar como Perdido
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                )}
+                 <AlertDialogTrigger asChild>
+                    <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400 rounded-xl cursor-pointer">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Excluir
+                    </DropdownMenuItem>
                 </AlertDialogTrigger>
               </DropdownMenuContent>
             </DropdownMenu>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Marcar orçamento como perdido?</AlertDialogTitle>
+                <AlertDialogTitle>Excluir orçamento?</AlertDialogTitle>
                 <AlertDialogDescription>
                   Esta ação não pode ser desfeita. Isso excluirá permanentemente o orçamento #{quote.number}.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => handleDelete(quote.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Sim, marcar como perdido</AlertDialogAction>
+                <AlertDialogAction onClick={() => handleMarkAsLost(quote.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Sim, excluir</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -331,7 +324,7 @@ export function QuoteTable() {
          {documentForPdf && <DocumentPDF document={documentForPdf.document} ref={pdfRef}/>}
        </div>
        
-       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
           <DialogContent className="sm:max-w-[800px]">
             <DialogHeader>
               <DialogTitle className="text-2xl font-bold text-foreground">{selectedQuote ? 'Editar orçamento' : 'Criar novo orçamento'}</DialogTitle>
@@ -342,6 +335,19 @@ export function QuoteTable() {
             <QuoteForm quote={selectedQuote} onQuoteAction={handleModalAction} />
           </DialogContent>
         </Dialog>
+        
+        {quoteToMarkAsWon && currentUser && (
+            <MarkAsWonDialog
+                isOpen={isWonDialogOpen}
+                onOpenChange={setIsWonDialogOpen}
+                quote={quoteToMarkAsWon}
+                actorUid={currentUser.uid}
+                onSuccess={() => {
+                    setIsWonDialogOpen(false);
+                    triggerRefresh();
+                }}
+            />
+        )}
 
 
       <div>
