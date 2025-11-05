@@ -4,7 +4,7 @@
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { CustomerSchema, CustomerProfileSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema, ServiceSchema, ServiceProfileSchema, UpdateServiceSchema, BillSchema } from '@/ai/schemas';
+import { CustomerSchema, CustomerProfileSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema, ServiceSchema, ServiceProfileSchema, UpdateServiceSchema, BillSchema, UpdateBillSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import type { QuoteProfile, CustomerProfile } from '@/ai/schemas';
 import { adminDb } from '@/lib/firebase-admin';
@@ -497,19 +497,31 @@ export const markQuoteAsWon = async (quoteId: string, accountId: string | undefi
     if (!billsQuery.empty) {
         const billDoc = billsQuery.docs[0];
         billId = billDoc.id;
-        await billService.updateBill({
-            ...(billDoc.data() as z.infer<typeof BillSchema>),
+        // Correctly prepare data for billService.updateBill
+        const billData = billDoc.data();
+        const updatePayload: z.infer<typeof UpdateBillSchema> = {
             id: billId,
-            status: 'paid', // This will trigger transaction creation
+            description: billData.description,
+            amount: billData.amount,
+            type: billData.type,
+            dueDate: billData.dueDate.toDate(), // Convert Timestamp to Date
+            status: 'paid', // Mark as paid to trigger transaction creation
             accountId: accountId,
-        }, actorUid);
+            entityId: billData.entityId,
+            entityType: billData.entityType,
+            notes: billData.notes,
+            category: billData.category,
+            paymentMethod: billData.paymentMethod,
+            tags: billData.tags
+        };
+        await billService.updateBill(updatePayload, actorUid);
     } else {
         // Fallback: if no bill was created, create one directly as 'paid'
         const billData: z.infer<typeof BillSchema> = {
             description: `Recebimento referente ao orçamento #${quoteData.number}`,
             amount: quoteData.total,
             type: 'receivable',
-            dueDate: quoteData.validUntil || new Date(),
+            dueDate: quoteData.validUntil.toDate(), // Convert Timestamp to Date
             status: 'paid', // Mark as paid to create the transaction
             entityType: 'customer',
             entityId: quoteData.customerId,
@@ -531,6 +543,3 @@ export const markQuoteAsWon = async (quoteId: string, accountId: string | undefi
 
     return { billId };
 };
-
-
-  
