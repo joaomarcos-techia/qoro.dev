@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { FieldValue } from 'firebase-admin/firestore';
@@ -345,10 +346,10 @@ export const createQuote = async (input: z.infer<typeof QuoteSchema>, actorUid: 
     const newQuoteData = {
         ...input,
         number: quoteNumber,
+        status: 'pending',
         companyId: organizationId,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
-        status: 'pending',
     };
     const quoteRef = await adminDb.collection('quotes').add(newQuoteData);
 
@@ -359,20 +360,22 @@ export const createQuote = async (input: z.infer<typeof QuoteSchema>, actorUid: 
         description: `Orçamento #${quoteNumber}`,
         amount: input.total,
         type: 'receivable',
-        dueDate: new Date(input.validUntil),
+        dueDate: new Date(input.validUntil as string | Date),
         status: 'pending',
         entityId: input.customerId,
         entityType: 'customer',
         notes: `Referente ao orçamento ${quoteNumber}.`,
         tags: [`quote-${quoteRef.id}`],
-        paymentMethod: 'pix',
-        category: input.category,
+        paymentMethod: input.paymentMethod ?? 'pix',
+        category: input.category ?? null,
+        accountId: input.accountId ?? null,
     };
     await billService.createBill(billData, actorUid);
     // --- End Automation ---
 
     return { id: quoteRef.id, number: quoteNumber };
 };
+
 
 export const listQuotes = async (actorUid: string): Promise<QuoteProfile[]> => {
     const adminOrgData = await getAdminAndOrg(actorUid);
@@ -497,8 +500,8 @@ export const markQuoteAsWon = async (quoteId: string, accountId: string | undefi
         entityType: billData.entityType,
         notes: (billData.notes || '') + `\n(Orçamento #${quoteData.number} ganho)`,
         accountId: accountId ?? billData.accountId ?? undefined,
-        category: billData.category ?? undefined,
-        paymentMethod: billData.paymentMethod ?? undefined,
+        category: billData.category,
+        paymentMethod: billData.paymentMethod,
         tags: billData.tags
     };
 
@@ -513,9 +516,8 @@ export const markQuoteAsWon = async (quoteId: string, accountId: string | undefi
 
 export const markQuoteAsLost = async (quoteId: string, actorUid: string) => {
     const adminOrgData = await getAdminAndOrg(actorUid);
-    if (!adminOrgData) {
-        throw new Error("User must be authenticated to perform this action.");
-    }
+    if (!adminOrgData) throw new Error("A organização do usuário não está pronta.");
+
     const { organizationId } = adminOrgData;
 
     const quoteRef = adminDb.collection('quotes').doc(quoteId);
