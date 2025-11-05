@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { FieldValue } from 'firebase-admin/firestore';
@@ -506,6 +507,12 @@ export const markQuoteAsWon = async (quoteId: string, accountId: string | undefi
             description: billDoc.data().description,
             amount: billDoc.data().amount,
             type: billDoc.data().type,
+            notes: billDoc.data().notes, // Pass notes and other optional fields
+            category: billDoc.data().category,
+            paymentMethod: billDoc.data().paymentMethod,
+            tags: billDoc.data().tags,
+            entityId: billDoc.data().entityId,
+            entityType: billDoc.data().entityType,
         }, actorUid);
     } else {
         // Fallback: if no bill was created, create one directly as 'paid'
@@ -571,3 +578,4 @@ export const markQuoteAsLost = async (quoteId: string, actorUid: string) => {
 
     return { success: true };
 };
+

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -222,24 +223,35 @@ export function QuoteTable() {
                 <DropdownMenuSeparator />
                 {isActionable && (
                   <AlertDialogTrigger asChild>
-                    <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400 rounded-xl cursor-pointer">
+                    <DropdownMenuItem className="text-yellow-500 focus:text-yellow-400 focus:bg-yellow-500/10 rounded-xl cursor-pointer">
                       <XCircle className="mr-2 h-4 w-4" />
                       Marcar como Perdido
                     </DropdownMenuItem>
                   </AlertDialogTrigger>
                 )}
+                 <AlertDialogTrigger asChild>
+                    <DropdownMenuItem className="text-red-500 focus:bg-destructive/20 focus:text-red-400 rounded-xl cursor-pointer">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Excluir
+                    </DropdownMenuItem>
+                </AlertDialogTrigger>
               </DropdownMenuContent>
             </DropdownMenu>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Marcar orçamento como perdido?</AlertDialogTitle>
+                <AlertDialogTitle>Atenção!</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Isto irá atualizar o status do orçamento para "Perdido" e excluir a conta a receber pendente no financeiro. Esta ação não pode ser desfeita.
+                    Você pode marcar este orçamento como perdido, o que irá atualizar o status do cliente, ou excluí-lo permanentemente. O que deseja fazer?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => handleMarkAsLostAction(quote)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Sim, marcar como perdido</AlertDialogAction>
+                 <AlertDialogAction onClick={() => deleteQuote(quote.id)} className="bg-destructive hover:bg-destructive/90">
+                    Excluir Permanentemente
+                </AlertDialogAction>
+                <AlertDialogAction onClick={() => handleMarkAsLostAction(quote)} className="bg-yellow-600 hover:bg-yellow-700">
+                    Marcar como Perdido
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
