@@ -21,7 +21,7 @@
  * - deleteCustomer - Deletes a customer.
  * - updateCustomer - Updates a customer's profile.
  * - getOrganizationDetails - Fetches details for the user's organization.
- * - convertQuoteToTransaction - Converts a quote into a transaction and deletes the quote.
+ * - markQuoteAsWon - Converts a quote into a bill and updates the quote status.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
@@ -57,7 +57,7 @@ const DeleteQuoteInputSchema = z.object({
     quoteId: z.string(),
 }).extend(ActorSchema.shape);
 
-const ConvertQuoteInputSchema = z.object({
+const MarkQuoteAsWonInputSchema = z.object({
     quoteId: z.string(),
 }).extend(ActorSchema.shape);
 
@@ -213,13 +213,13 @@ const deleteQuoteFlow = ai.defineFlow(
     async (input) => crmService.deleteQuote(input.quoteId, input.actor)
 );
 
-const convertQuoteToTransactionFlow = ai.defineFlow(
+const markQuoteAsWonFlow = ai.defineFlow(
     {
-        name: 'convertQuoteToTransactionFlow',
-        inputSchema: ConvertQuoteInputSchema,
-        outputSchema: z.object({ transactionId: z.string() })
+        name: 'markQuoteAsWonFlow',
+        inputSchema: MarkQuoteAsWonInputSchema,
+        outputSchema: z.object({ billId: z.string() })
     },
-    async (input) => crmService.convertQuoteToTransaction(input.quoteId, input.actor)
+    async (input) => crmService.markQuoteAsWon(input.quoteId, input.actor)
 );
 
 const updateCustomerStatusFlow = ai.defineFlow(
@@ -315,8 +315,8 @@ export async function deleteQuote(input: z.infer<typeof DeleteQuoteInputSchema>)
     return deleteQuoteFlow(input);
 }
 
-export async function convertQuoteToTransaction(input: z.infer<typeof ConvertQuoteInputSchema>): Promise<{ transactionId: string }> {
-    return convertQuoteToTransactionFlow(input);
+export async function markQuoteAsWon(input: z.infer<typeof MarkQuoteAsWonInputSchema>): Promise<{ billId: string }> {
+    return markQuoteAsWonFlow(input);
 }
 
 export async function updateCustomerStatus(input: z.infer<typeof UpdateCustomerStatusInputSchema>): Promise<{ id: string; status: z.infer<typeof CustomerProfileSchema>['status'] }> {

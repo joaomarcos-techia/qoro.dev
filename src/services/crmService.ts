@@ -1,13 +1,14 @@
 
+
 'use server';
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { CustomerSchema, CustomerProfileSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema, ServiceSchema, ServiceProfileSchema, UpdateServiceSchema, TransactionSchema } from '@/ai/schemas';
+import { CustomerSchema, CustomerProfileSchema, ProductSchema, ProductProfileSchema, QuoteSchema, QuoteProfileSchema, UpdateCustomerSchema, UpdateProductSchema, UpdateQuoteSchema, ServiceSchema, ServiceProfileSchema, UpdateServiceSchema, BillSchema } from '@/ai/schemas';
 import { getAdminAndOrg } from './utils';
 import type { QuoteProfile, CustomerProfile } from '@/ai/schemas';
 import { adminDb } from '@/lib/firebase-admin';
-import * as transactionService from './transactionService';
+import * as billService from './billService';
 
 const FREE_PLAN_LIMITS = {
     customers: 15,
@@ -437,8 +438,7 @@ export const deleteQuote = async (quoteId: string, actorUid: string) => {
     return { id: quoteId, success: true };
 };
 
-
-export const convertQuoteToTransaction = async (quoteId: string, actorUid: string) => {
+export const markQuoteAsWon = async (quoteId: string, actorUid: string) => {
     const adminOrgData = await getAdminAndOrg(actorUid);
     if (!adminOrgData) throw new Error("A organização do usuário não está pronta.");
 
@@ -450,21 +450,25 @@ export const convertQuoteToTransaction = async (quoteId: string, actorUid: strin
     
     const quoteData = quoteDoc.data()!;
 
-    const transactionData: z.infer<typeof TransactionSchema> = {
-        description: `Receita do orçamento #${quoteData.number}`,
+    // Create a Bill (Account Receivable)
+    const billData: z.infer<typeof BillSchema> = {
+        description: `Recebimento referente ao orçamento #${quoteData.number}`,
         amount: quoteData.total,
-        type: 'income',
-        date: new Date(),
-        status: 'pending', // Pending until an account is associated
-        customerId: quoteData.customerId,
-        tags: [`quote-${quoteId}`]
+        type: 'receivable',
+        dueDate: quoteData.validUntil || new Date(), // Use validUntil as due date
+        status: 'pending',
+        entityType: 'customer',
+        entityId: quoteData.customerId,
+        tags: [`quote-won-${quoteId}`],
     };
+    
+    const billResult = await billService.createBill(billData, actorUid);
 
-    // Create the transaction but don't delete the quote yet.
-    const transactionResult = await transactionService.createTransaction(transactionData, actorUid);
+    // Update the quote status to 'won'
+    await quoteRef.update({
+        status: 'won',
+        updatedAt: FieldValue.serverTimestamp(),
+    });
 
-    // After successfully creating transaction, delete the quote.
-    await quoteRef.delete();
-
-    return { transactionId: transactionResult.id };
-}
+    return { billId: billResult.id };
+};

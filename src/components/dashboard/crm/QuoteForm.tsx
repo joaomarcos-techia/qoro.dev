@@ -22,6 +22,7 @@ import { ptBR } from 'date-fns/locale';
 import { DocumentPDF } from './QuotePDF';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type QuoteFormProps = {
   onQuoteAction: () => void;
@@ -74,6 +75,7 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
       subtotal: 0,
       total: 0,
       discount: 0,
+      status: 'draft',
     },
   });
 
@@ -125,6 +127,7 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
         discount: 0,
         validUntil: new Date(),
         notes: '',
+        status: 'draft',
       });
     }
   }, [quote, reset]);
@@ -188,7 +191,6 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
         customerName: customer?.name || 'Cliente não encontrado',
         validUntil: formValues.validUntil.toISOString(),
         organizationName: organization?.name,
-        status: quote?.status || 'draft',
     };
   };
 
@@ -267,7 +269,7 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
         {/* Customer and Dates */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
                 <Label>Cliente*</Label>
                 <Controller
@@ -318,6 +320,26 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus /></PopoverContent>
                         </Popover>
+                    )}
+                />
+            </div>
+             <div className="space-y-2">
+                <Label>Status</Label>
+                 <Controller
+                    name="status"
+                    control={control}
+                    render={({ field }) => (
+                         <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecione..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="draft">Rascunho</SelectItem>
+                                <SelectItem value="sent">Enviado</SelectItem>
+                                <SelectItem value="won">Ganho</SelectItem>
+                                <SelectItem value="lost">Perdido</SelectItem>
+                            </SelectContent>
+                        </Select>
                     )}
                 />
             </div>

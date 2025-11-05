@@ -50,7 +50,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MoreHorizontal, ArrowUpDown, Search, Loader2, FileText, Download, Eye, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
-import { listQuotes, deleteQuote, convertQuoteToTransaction } from '@/ai/flows/crm-management';
+import { listQuotes, deleteQuote, markQuoteAsWon } from '@/ai/flows/crm-management';
 import type { QuoteProfile } from '@/ai/schemas';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -63,6 +63,13 @@ import { QuoteForm } from './QuoteForm';
 const formatCurrency = (value: number | null | undefined) => {
     if (value === null || value === undefined) return '-';
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+};
+
+const statusMap: Record<QuoteProfile['status'], { text: string; color: string }> = {
+    draft: { text: 'Rascunho', color: 'bg-gray-500/20 text-gray-300' },
+    sent: { text: 'Enviado', color: 'bg-blue-500/20 text-blue-300' },
+    won: { text: 'Ganho', color: 'bg-green-500/20 text-green-300' },
+    lost: { text: 'Perdido', color: 'bg-red-500/20 text-red-300' },
 };
 
 
@@ -102,11 +109,11 @@ export function QuoteTable() {
   const handleMarkAsWon = async (quoteId: string) => {
     if (!currentUser) return;
     try {
-        await convertQuoteToTransaction({ quoteId, actor: currentUser.uid });
+        await markQuoteAsWon({ quoteId, actor: currentUser.uid });
         triggerRefresh();
     } catch (err: any) {
         console.error("Failed to mark quote as won", err);
-        setError(err.message || "Não foi possível converter o orçamento em transação.");
+        setError(err.message || "Não foi possível converter o orçamento em conta a receber.");
     }
   }
   
@@ -175,6 +182,15 @@ export function QuoteTable() {
       cell: ({ row }) => formatCurrency(row.getValue('total')),
     },
     {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => {
+          const status = row.original.status as keyof typeof statusMap;
+          const { text, color } = statusMap[status] || {text: 'Desconhecido', color: 'bg-gray-700'};
+          return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${color}`}>{text}</span>
+      }
+    },
+    {
       accessorKey: 'validUntil',
       header: 'Válido até',
       cell: ({ row }) => {
@@ -200,10 +216,12 @@ export function QuoteTable() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="rounded-2xl">
                 <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => handleMarkAsWon(quote.id)} className="rounded-xl cursor-pointer text-green-400 focus:text-green-300">
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Marcar como Ganho
-                </DropdownMenuItem>
+                {quote.status !== 'won' && quote.status !== 'lost' && (
+                    <DropdownMenuItem onClick={() => handleMarkAsWon(quote.id)} className="rounded-xl cursor-pointer text-green-400 focus:text-green-300">
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Marcar como Ganho
+                    </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => handlePdfAction(quote, 'view')} className="rounded-xl cursor-pointer">
                   <Eye className="mr-2 h-4 w-4" />
                   Visualizar
