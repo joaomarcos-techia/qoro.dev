@@ -353,10 +353,8 @@ export const createQuote = async (input: z.infer<typeof QuoteSchema>, actorUid: 
     const quoteRef = await adminDb.collection('quotes').add(newQuoteData);
 
     // --- Automação ---
-    // 1. Atualizar o status do cliente para "negotiation"
-    await updateCustomerStatus(input.customerId, 'negotiation', actorUid);
+    await updateCustomerStatus(input.customerId, 'proposal', actorUid);
 
-    // 2. Criar uma "Conta a Receber" pendente
     const billData: z.infer<typeof BillSchema> = {
         description: `Orçamento #${quoteNumber}`,
         amount: input.total,
@@ -488,21 +486,28 @@ export const markQuoteAsWon = async (quoteId: string, accountId: string | undefi
     const billData = billDoc.data();
 
     // Update the bill to "paid", which will trigger transaction creation
-    const billUpdatePayload = {
-        ...billData,
+    const billUpdatePayload: z.infer<typeof UpdateBillSchema> = {
         id: billDoc.id,
-        status: 'paid' as const,
+        description: billData.description,
+        amount: billData.amount,
+        type: billData.type,
         dueDate: billData.dueDate.toDate(), // Ensure it's a Date object
+        status: 'paid' as const,
+        entityId: billData.entityId,
+        entityType: billData.entityType,
+        notes: billData.notes + `\n(Orçamento #${quoteData.number} ganho)`,
         accountId: accountId ?? billData.accountId ?? undefined,
-        notes: billData.notes + `\n(Orçamento #${quoteData.number} ganho)`
+        category: billData.category,
+        paymentMethod: billData.paymentMethod,
+        tags: billData.tags
     };
 
     await billService.updateBill(billUpdatePayload, actorUid);
 
-    // Update the customer status to 'won'
     await updateCustomerStatus(quoteData.customerId, 'won', actorUid);
 
-    // We no longer manage quote status, so we just return.
+    await quoteRef.delete();
+
     return { billId: billDoc.id };
 };
 
@@ -540,4 +545,3 @@ export const markQuoteAsLost = async (input: { quoteId: string, actor: string })
 
     return { success: true };
 };
-

@@ -65,13 +65,13 @@ export function CustomerKanbanCard({ customer, stageIds, onMove }: KanbanCardPro
             {customer.cpf && (
                 <div className="flex items-center">
                     <FileText className="w-4 h-4 mr-2 text-muted-foreground/70 flex-shrink-0" />
-                    <span className="truncate">{formatCPF(customer.cpf)}</span>
+                    <span className="truncate">{customer.cpf ? formatCPF(customer.cpf) : ''}</span>
                 </div>
             )}
             {customer.phone && (
                 <div className="flex items-center">
                     <Phone className="w-4 h-4 mr-2 text-muted-foreground/70 flex-shrink-0" />
-                    <span className="truncate">{formatPhone(customer.phone)}</span>
+                    <span className="truncate">{customer.phone ? formatPhone(customer.phone) : ''}</span>
                 </div>
             )}
         </div>
@@ -81,7 +81,7 @@ export function CustomerKanbanCard({ customer, stageIds, onMove }: KanbanCardPro
                 <ChevronLeft className="w-4 h-4" />
             </Button>
             
-            {isWonStage && (
+            {(isWonStage || isLostStage) && (
                  <AlertDialogTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-muted-foreground hover:text-red-400" title="Arquivar Cliente">
                         <Archive className="w-4 h-4" />
@@ -89,17 +89,9 @@ export function CustomerKanbanCard({ customer, stageIds, onMove }: KanbanCardPro
                 </AlertDialogTrigger>
             )}
             
-            {isLostStage ? (
-                <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-muted-foreground hover:text-red-400" title="Arquivar Cliente">
-                        <Archive className="w-4 h-4" />
-                    </Button>
-                </AlertDialogTrigger>
-            ) : (
-                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => handleMove('next')} disabled={currentStageIndex >= stageIds.length - 1}>
-                    <ChevronRight className="w-4 h-4" />
-                </Button>
-            )}
+            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => handleMove('next')} disabled={currentStageIndex >= stageIds.length - 1 || isWonStage || isLostStage}>
+                <ChevronRight className="w-4 h-4" />
+            </Button>
         </div>
         </div>
         <AlertDialogContent>

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -122,7 +123,7 @@ export function TransactionForm({ onAction, transaction, transactionCount = 0 }:
             date: new Date(),
             description: '',
             amount: 0,
-            accountId: accounts[0].id, 
+            accountId: accounts[0]?.id || '', 
             customerId: '',
             category: ''
         });

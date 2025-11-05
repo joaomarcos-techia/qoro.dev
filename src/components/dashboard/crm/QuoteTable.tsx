@@ -92,11 +92,11 @@ export function QuoteTable() {
     const originalData = [...data];
     setData(prev => prev.filter(q => q.id !== quote.id));
     try {
-        await markQuoteAsLost({ quoteId: quote.id, actor: currentUser.uid });
-        triggerRefresh();
-    } catch(err) {
+      await markQuoteAsLost({ quoteId: quote.id, actor: currentUser.uid });
+      triggerRefresh();
+    } catch(err: any) {
         console.error("Failed to mark quote as lost:", err);
-        setError("Não foi possível marcar o orçamento como perdido.");
+        setError(err.message || "Não foi possível marcar como perdido.");
         setData(originalData);
     }
   };
