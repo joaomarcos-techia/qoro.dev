@@ -169,7 +169,7 @@ export function QuoteTable() {
       accessorKey: 'status',
       header: 'Status',
       cell: ({ row }) => {
-        const status = row.original.status;
+        const status = row.original.status as string; // Cast to string
         if (status === 'won') {
           return <span className="flex items-center text-green-400 font-semibold"><CheckCircle className="w-4 h-4 mr-2"/> Ganho</span>;
         }
@@ -194,7 +194,7 @@ export function QuoteTable() {
       id: 'actions',
       cell: ({ row }) => {
         const quote = row.original;
-        const isPending = quote.status === 'pending';
+        const isPending = quote.status !== 'won' && quote.status !== 'lost';
         
         return (
           <AlertDialog>

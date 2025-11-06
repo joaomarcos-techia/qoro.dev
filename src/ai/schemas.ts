@@ -192,6 +192,7 @@ export const UpdateQuoteSchema = QuoteSchema.extend({
 export const QuoteProfileSchema = QuoteSchema.extend({
     id: z.string(),
     number: z.string(), 
+    status: z.enum(['pending', 'won', 'lost']),
     createdAt: z.string(),
     updatedAt: z.string(),
     customerName: z.string().optional(),
