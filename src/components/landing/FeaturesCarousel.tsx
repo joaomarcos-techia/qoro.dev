@@ -1,44 +1,44 @@
 
 'use client';
 
-import { Eye, BrainCircuit, Rocket, ShieldCheck, Link, Scaling } from 'lucide-react';
+import { Eye, BrainCircuit, Rocket, ShieldCheck, DollarSign, ListChecks } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const features = [
   {
     icon: Eye,
-    title: 'Visão 360°',
-    description: 'Tenha todos os dados importantes do seu negócio — do cliente ao financeiro — em uma única tela.',
+    title: 'QoroCRM',
+    description: 'Gestão de funil de vendas, cadastro de clientes e criação de orçamentos para maximizar seus lucros.',
     colorClass: 'bg-crm-primary',
   },
   {
     icon: BrainCircuit,
-    title: 'Decisões inteligentes',
-    description: 'Use a IA do QoroPulse para identificar tendências, prever resultados e guiar suas estratégias.',
+    title: 'QoroPulse',
+    description: 'Sua IA especialista em gestão, que analisa seus dados para fornecer insights e sugestões estratégicas.',
     colorClass: 'bg-pulse-primary',
   },
   {
-    icon: Rocket,
-    title: 'Produtividade máxima',
-    description: 'Automatize tarefas, organize projetos e libere sua equipe para focar no que realmente importa.',
+    icon: ListChecks,
+    title: 'QoroTask',
+    description: 'Plataforma de gestão de tarefas com quadros Kanban e calendário para alinhar sua equipe e aumentar a produtividade.',
     colorClass: 'bg-task-primary',
   },
   {
-    icon: ShieldCheck,
-    title: 'Segurança de ponta',
-    description: 'Construído sobre a infraestrutura do Google, seus dados estão sempre seguros e disponíveis.',
+    icon: DollarSign,
+    title: 'QoroFinance',
+    description: 'Controle financeiro completo com gestão de contas, transações, e conciliação bancária.',
     colorClass: 'bg-finance-primary',
   },
   {
-    icon: Link,
-    title: 'Tudo conectado',
-    description: 'Sistemas que conversam entre si para que você não perca nenhuma informação importante.',
+    icon: Rocket,
+    title: 'Automação',
+    description: 'Processos que se conectam para que orçamentos gerem contas a receber e tarefas sejam criadas automaticamente.',
     colorClass: 'bg-teal-500',
   },
   {
-    icon: Scaling,
-    title: 'Cresça sem limites',
-    description: 'Nossa infraestrutura na nuvem escala com seu negócio, do primeiro ao milionésimo cliente.',
+    icon: ShieldCheck,
+    title: 'Segurança',
+    description: 'Construído sobre a infraestrutura do Google, seus dados estão sempre seguros e disponíveis para você.',
     colorClass: 'bg-pink-500',
   },
 ];

@@ -1,23 +1,24 @@
+
 import { User, Users, Briefcase, Check } from 'lucide-react';
 
 const targetAudiences = [
   {
     icon: User,
     title: 'Autônomos e MEIs',
-    description: 'Centralize seus clientes, projetos e finanças. Pareça profissional e organizado, mesmo trabalhando sozinho.',
+    description: 'Centralize seus clientes, projetos e finanças. Transmita profissionalismo e organização, mesmo trabalhando sozinho.',
     benefits: [
-      'Controle total de clientes e vendas',
-      'Organize tarefas e prazos',
+      'Controle total de clientes e funil de vendas',
+      'Organize tarefas e prazos em um só lugar',
       'Visão clara do seu fluxo de caixa',
     ],
     colorClass: 'text-crm-primary'
   },
   {
     icon: Users,
-    title: 'Pequenas e médias empresas',
-    description: 'Alinhe suas equipes, otimize processos e tome decisões baseadas em dados, não em achismos.',
+    title: 'Pequenas e Médias Empresas',
+    description: 'Alinhe suas equipes, otimize processos e tome decisões baseadas em dados concretos, não em achismos.',
     benefits: [
-      'Funil de vendas colaborativo',
+      'Funil de vendas colaborativo para a equipe',
       'Delegação e acompanhamento de tarefas',
       'Controle de contas a pagar e receber',
     ],
@@ -25,12 +26,12 @@ const targetAudiences = [
   },
   {
     icon: Briefcase,
-    title: 'Agências e consultorias',
-    description: 'Gerencie múltiplos clientes e projetos com eficiência, garantindo entregas no prazo e rentabilidade.',
+    title: 'Agências e Consultorias',
+    description: 'Gerencie múltiplos clientes e projetos com eficiência, garantindo entregas no prazo e máxima rentabilidade.',
     benefits: [
-      'Gestão de múltiplos projetos',
-      'Criação de orçamentos profissionais',
-      'Insights de IA para otimizar campanhas',
+      'Gestão centralizada de múltiplos projetos',
+      'Criação de orçamentos profissionais em minutos',
+      'Insights de IA para otimizar suas estratégias',
     ],
     colorClass: 'text-task-primary'
   }

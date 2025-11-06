@@ -1,22 +1,23 @@
+
 import { Zap, Bot, Code } from 'lucide-react';
 
 const services = [
   {
     icon: Zap,
-    title: 'Automação e eficiência',
-    description: 'Cansado de tarefas repetitivas e planilhas manuais? Nós criamos robôs e fluxos de trabalho que automatizam desde rotinas financeiras e administrativas até a integração entre os sistemas que você já usa, liberando sua equipe para focar em estratégia.',
+    title: 'Automação e Eficiência',
+    description: 'Cansado de tarefas repetitivas? Nós criamos robôs e fluxos de trabalho que automatizam desde rotinas financeiras até a integração entre os sistemas que você já usa, liberando sua equipe para focar em estratégia.',
     color: 'text-task-primary',
   },
   {
     icon: Bot,
-    title: 'Inteligência artificial',
-    description: 'Transforme dados em decisões. Desenvolvemos agentes de IA personalizados, chatbots de atendimento inteligentes e sistemas que geram análises e insights automáticos, dando à sua empresa uma vantagem competitiva real no mercado.',
+    title: 'Inteligência Artificial Personalizada',
+    description: 'Transforme dados em decisões. Desenvolvemos agentes de IA, chatbots de atendimento inteligentes e sistemas que geram análises e insights automáticos, dando à sua empresa uma vantagem competitiva real no mercado.',
     color: 'text-pulse-primary',
   },
   {
     icon: Code,
-    title: 'Desenvolvimento sob medida',
-    description: 'Sua operação tem uma necessidade que nenhuma ferramenta padrão atende? Nós transformamos seus processos complexos em um software (SaaS) simples, eficiente e totalmente seu, projetado para escalar junto com o seu sucesso.',
+    title: 'Desenvolvimento Sob Medida',
+    description: 'Sua operação tem uma necessidade que nenhuma ferramenta padrão atende? Transformamos seus processos complexos em um software (SaaS) simples, eficiente e totalmente seu, projetado para escalar com o seu sucesso.',
     color: 'text-crm-primary',
   }
 ]
@@ -26,12 +27,12 @@ export function ServicesSection() {
     <section id="servicos" className="py-20 bg-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-            <div className="text-sm font-medium text-primary mb-4 tracking-wider uppercase">Soluções sob medida</div>
+            <div className="text-sm font-medium text-primary mb-4 tracking-wider uppercase">Soluções Sob Medida</div>
             <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
               Sua empresa tem uma necessidade única?
             </h2>
             <p className="text-lg text-white/70 max-w-3xl mx-auto">
-              Nós temos a solução. Analisamos seus desafios e construímos a ferramenta exata que sua operação precisa.
+              Se a plataforma Qoro não atender 100% dos seus desafios, nós construímos a ferramenta exata que sua operação precisa para decolar.
             </p>
         </div>
         <div className="max-w-3xl mx-auto">

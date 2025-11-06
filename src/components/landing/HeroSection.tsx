@@ -1,3 +1,4 @@
+
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
@@ -13,7 +14,7 @@ export function HeroSection() {
           </h1>
           
           <p className="text-lg md:text-xl text-white/70 mb-10 max-w-3xl mx-auto leading-relaxed">
-            Chega de planilhas e sistemas desconectados. Tenha uma visão 360° do seu negócio e tome decisões mais inteligentes com nossa plataforma integrada.
+            Elimine planilhas e sistemas desconectados. Com a Qoro, você tem uma visão 360° do seu negócio para tomar decisões mais inteligentes e focar no crescimento estratégico.
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">

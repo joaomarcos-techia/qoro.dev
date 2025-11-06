@@ -1,3 +1,4 @@
+
 import { FeaturesCarousel } from './FeaturesCarousel';
 
 export function AboutSection() {
@@ -11,7 +12,7 @@ export function AboutSection() {
                 Menos tempo gerenciando, mais tempo crescendo.
             </h2>
             <p className="text-lg md:text-xl text-white/70 leading-relaxed">
-                A Qoro não é apenas uma ferramenta, é o seu copiloto estratégico. Nós centralizamos a complexidade para que você possa focar em expandir seu negócio com clareza e confiança.
+                A Qoro não é apenas uma ferramenta, é o seu copiloto estratégico. Nós centralizamos a complexidade do seu CRM, financeiro e tarefas para que você possa focar em expandir seu negócio com clareza e confiança.
             </p>
           </div>
           <div className="lg:w-1/2 w-full">

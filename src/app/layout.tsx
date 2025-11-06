@@ -3,9 +3,25 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Qoro - Transforme seu negócio com nossa plataforma integrada',
-  description: 'A Qoro é a plataforma de gestão que unifica CRM, finanças, tarefas e IA para transformar o caos em clareza e impulsionar o crescimento do seu negócio.',
-  metadataBase: new URL('https://qoro.com.br'), // URL canônica do seu site
+  title: 'Qoro - Plataforma de Gestão Empresarial Integrada com CRM, Finanças e IA',
+  description: 'Transforme o caos em clareza com a Qoro, a plataforma de gestão que unifica CRM, finanças, tarefas e IA. Ideal para PMEs, autônomos e agências que buscam crescimento estratégico e eficiência operacional.',
+  keywords: [
+    'plataforma de gestão',
+    'gestão empresarial',
+    'software de crm',
+    'controle financeiro',
+    'gestão de tarefas',
+    'inteligência artificial para negócios',
+    'automação de processos',
+    'software para pme',
+    'gestão para autônomos',
+    'Qoro',
+    'QoroCRM',
+    'QoroFinance',
+    'QoroTask',
+    'QoroPulse',
+  ],
+  metadataBase: new URL('https://qoro.com.br'),
   alternates: {
     canonical: '/',
   },
