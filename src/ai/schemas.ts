@@ -177,6 +177,7 @@ export const QuoteItemSchema = z.object({
 
 export const QuoteSchema = z.object({
     customerId: z.string().min(1, "É necessário selecionar um cliente."),
+    accountId: z.string().min(1, "É necessário selecionar uma conta financeira."),
     items: z.array(QuoteItemSchema).min(1, "O orçamento deve ter pelo menos um item."),
     subtotal: z.number(),
     discount: z.number().min(0).optional(),

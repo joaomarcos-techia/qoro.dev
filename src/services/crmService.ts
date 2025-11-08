@@ -367,9 +367,9 @@ export const createQuote = async (input: z.infer<typeof QuoteSchema>, actorUid: 
             entityType: 'customer',
             notes: `Gerado a partir do orçamento ${quoteNumber}.`,
             tags: [`quote-${quoteRef.id}`],
+            accountId: input.accountId ?? null, // Use the accountId from the form
             paymentMethod: 'pix',
             category: 'Vendas',
-            accountId: null,
         };
         await billService.createBill(billData, actorUid);
 
@@ -553,6 +553,7 @@ export const markQuoteAsLost = async (quoteId: string, actorUid: string) => {
 
     return { success: true };
 };
+
 
 
 

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,11 +11,8 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, AlertCircle } from 'lucide-react';
-import { QuoteProfile, AccountProfile } from '@/ai/schemas';
-import { listAccounts } from '@/ai/flows/finance-management';
+import { QuoteProfile } from '@/ai/schemas';
 import { markQuoteAsWon } from '@/ai/flows/crm-management';
 
 interface MarkAsWonDialogProps {
@@ -27,34 +24,18 @@ interface MarkAsWonDialogProps {
 }
 
 export function MarkAsWonDialog({ isOpen, onOpenChange, quote, actorUid, onSuccess }: MarkAsWonDialogProps) {
-  const [accounts, setAccounts] = useState<AccountProfile[]>([]);
-  const [selectedAccountId, setSelectedAccountId] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      setIsLoading(true);
-      listAccounts({ actor: actorUid })
-        .then(accs => {
-          setAccounts(accs);
-          if (accs.length > 0) {
-            setSelectedAccountId(accs[0].id);
-          }
-        })
-        .catch(() => setError("Não foi possível carregar as contas financeiras."))
-        .finally(() => setIsLoading(false));
-    }
-  }, [isOpen, actorUid]);
 
   const handleConfirm = async () => {
     setIsLoading(true);
     setError(null);
     try {
+      // The accountId is now part of the quote object, so we don't need to select it here.
       await markQuoteAsWon({
         quoteId: quote.id,
         actor: actorUid,
-        accountId: selectedAccountId,
+        accountId: quote.accountId,
       });
       onSuccess();
     } catch (err: any) {
@@ -68,31 +49,16 @@ export function MarkAsWonDialog({ isOpen, onOpenChange, quote, actorUid, onSucce
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Confirmar orçamento ganho</DialogTitle>
+          <DialogTitle>Confirmar orçamento ganho?</DialogTitle>
           <DialogDescription>
-            Uma nova transação a receber será criada para o cliente <strong>{quote.customerName}</strong> no valor de <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(quote.total)}</strong>.
+            Isto irá marcar o orçamento como 'Ganho' e criar a transação de recebimento na conta financeira associada. Esta ação não pode ser desfeita.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="account-select">Conta para recebimento</Label>
-            <Select
-              value={selectedAccountId}
-              onValueChange={setSelectedAccountId}
-              disabled={isLoading || accounts.length === 0}
-            >
-              <SelectTrigger id="account-select">
-                <SelectValue placeholder={accounts.length === 0 ? "Nenhuma conta cadastrada" : "Selecione uma conta"} />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map(acc => (
-                  <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Você pode alterar a conta depois, se necessário.
-            </p>
+          <div className='p-4 bg-secondary rounded-lg border border-border'>
+            <p className='text-sm text-muted-foreground'>Orçamento: <span className='font-bold text-foreground'>{quote.number}</span></p>
+            <p className='text-sm text-muted-foreground'>Cliente: <span className='font-bold text-foreground'>{quote.customerName}</span></p>
+            <p className='text-sm text-muted-foreground'>Valor: <span className='font-bold text-foreground'>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(quote.total)}</span></p>
           </div>
           {error && (
             <div className="bg-destructive/10 text-destructive p-3 rounded-lg flex items-center text-sm">

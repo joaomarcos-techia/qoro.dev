@@ -12,10 +12,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { createQuote, listCustomers, listProducts, listServices, updateQuote, getOrganizationDetails } from '@/ai/flows/crm-management';
-import { QuoteSchema, CustomerProfile, ProductProfile, QuoteProfile, UpdateQuoteSchema, OrganizationProfile, ServiceProfile } from '@/ai/schemas';
+import { listAccounts } from '@/ai/flows/finance-management';
+import { QuoteSchema, CustomerProfile, ProductProfile, QuoteProfile, UpdateQuoteSchema, OrganizationProfile, ServiceProfile, AccountProfile } from '@/ai/schemas';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { Loader2, AlertCircle, CalendarIcon, PlusCircle, Trash2, Package, Wrench, Download, Eye, Percent } from 'lucide-react';
+import { Loader2, AlertCircle, CalendarIcon, PlusCircle, Trash2, Package, Wrench, Download, Eye, Percent, Landmark } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -43,6 +44,7 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
   const [error, setError] = useState<string | null>(null);
   
   const [customers, setCustomers] = useState<CustomerProfile[]>([]);
+  const [accounts, setAccounts] = useState<AccountProfile[]>([]);
   const [products, setProducts] = useState<ProductProfile[]>([]);
   const [services, setServices] = useState<ServiceProfile[]>([]);
   const [organization, setOrganization] = useState<OrganizationProfile | null>(null);
@@ -72,6 +74,7 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
     resolver: zodResolver(FormSchema),
     defaultValues: {
       customerId: '',
+      accountId: '',
       items: [],
       subtotal: 0,
       total: 0,
@@ -87,21 +90,26 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
 
   const fetchDependencies = useCallback(async (user: FirebaseUser) => {
     try {
-        const [customersData, productsData, servicesData, orgData] = await Promise.all([
+        const [customersData, productsData, servicesData, orgData, accountsData] = await Promise.all([
             listCustomers({ actor: user.uid }),
             listProducts({ actor: user.uid }),
             listServices({ actor: user.uid }),
-            getOrganizationDetails({actor: user.uid})
+            getOrganizationDetails({actor: user.uid}),
+            listAccounts({ actor: user.uid }),
         ]);
         setCustomers(customersData);
         setProducts(productsData);
         setServices(servicesData);
         setOrganization(orgData);
+        setAccounts(accountsData);
+        if (accountsData.length > 0 && !getValues('accountId')) {
+            setValue('accountId', accountsData[0].id);
+        }
     } catch (err) {
          console.error("Failed to load dependencies", err);
          setError("Não foi possível carregar os dados necessários. Tente novamente.");
     }
-  }, []);
+  }, [getValues, setValue]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -122,6 +130,7 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
     } else {
       reset({
         customerId: '',
+        accountId: accounts.length > 0 ? accounts[0].id : '',
         items: [],
         subtotal: 0,
         total: 0,
@@ -130,7 +139,7 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
         notes: '',
       });
     }
-  }, [quote, reset]);
+  }, [quote, reset, accounts]);
 
   const watchItems = watch("items");
   const watchDiscount = watch("discount");
@@ -323,6 +332,33 @@ export function QuoteForm({ onQuoteAction, quote }: QuoteFormProps) {
                     )}
                 />
             </div>
+        </div>
+        
+        <div className="space-y-2">
+            <Label>Conta financeira para recebimento*</Label>
+            <Controller
+                name="accountId"
+                control={control}
+                render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione uma conta" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {accounts.map(account => (
+                                <SelectItem key={account.id} value={account.id}>
+                                    <div className='flex items-center gap-2'>
+                                        <Landmark className='w-4 h-4 text-muted-foreground'/>
+                                        <span>{account.name}</span>
+                                    </div>
+                                </SelectItem>
+                            ))}
+                            {accounts.length === 0 && <div className='p-4 text-sm text-muted-foreground'>Nenhuma conta cadastrada.</div>}
+                        </SelectContent>
+                    </Select>
+                )}
+            />
+            {errors.accountId && <p className="text-destructive text-sm">{errors.accountId.message}</p>}
         </div>
 
         {/* Items Section */}
