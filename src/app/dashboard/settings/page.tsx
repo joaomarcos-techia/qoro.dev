@@ -202,7 +202,7 @@ export default function SettingsPage() {
             console.error("Failed to create billing portal session:", error);
             setFeedback({ type: 'error', message: "Não foi possível acessar o portal de assinaturas. Verifique suas configurações no Stripe.", context: 'portal' });
         } finally {
-             setIsLoading(prev => ({...prev, portal: false}));
+             setIsLoading(prev => ({...prev, portal: false }));
         }
     };
 
@@ -254,9 +254,6 @@ export default function SettingsPage() {
                         </button>
                     </>
                  )}
-                 <button onClick={() => handleTabChange('support')} className={`px-4 py-3 font-semibold flex items-center transition-all duration-300 ${activeTab === 'support' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
-                    <MessageSquare className="mr-2 w-5 h-5"/> Suporte
-                </button>
             </div>
             
             {feedback?.context === 'portal' && (
@@ -306,7 +303,7 @@ export default function SettingsPage() {
                                     <div className="p-3 rounded-xl bg-secondary text-primary mr-4"><KeyRound className="w-6 h-6" /></div>
                                     <h3 className="text-xl font-bold text-foreground">Segurança</h3>
                                 </div>
-                                <div className='bg-secondary p-6 rounded-xl border border-border'>
+                                <div className='bg-secondary p-6 rounded-xl border border-border mb-6'>
                                     <h4 className="text-md font-semibold text-foreground mb-2">Alterar senha</h4>
                                     <p className="text-muted-foreground text-sm mb-4">Um link para redefinição de senha será enviado para o seu e-mail de login.</p>
                                     {feedback && feedback.context === 'password' && (
@@ -319,6 +316,18 @@ export default function SettingsPage() {
                                         {isLoading.password && <Loader2 className="w-4 h-4 mr-2 animate-spin"/>}
                                         {isLoading.password ? 'Enviando...' : 'Enviar e-mail para redefinir senha'}
                                     </Button>
+                                </div>
+                                <div className="flex items-center mb-6 mt-12">
+                                    <div className="p-3 rounded-xl bg-secondary text-primary mr-4"><MessageSquare className="w-6 h-6" /></div>
+                                    <h3 className="text-xl font-bold text-foreground">Suporte e Atendimento</h3>
+                                </div>
+                                <div className='bg-secondary p-6 rounded-xl border border-border'>
+                                    <p className="text-muted-foreground text-sm mb-4">
+                                        Para erros, dúvidas ou solicitações, entre em contato exclusivamente pelo WhatsApp.
+                                        <br/>
+                                        <span className="font-bold text-foreground">Não atendemos ligações neste número.</span>
+                                    </p>
+                                    <p className="text-xl font-bold text-primary mt-4 tracking-wider">(88) 99682-2198</p>
                                 </div>
                             </div>
                         </div>
@@ -422,27 +431,9 @@ export default function SettingsPage() {
                     </div>
                 )}
                  {activeTab === 'organization' && isAdmin && <OrganizationForm />}
-                 {activeTab === 'support' && (
-                    <div className="bg-card p-6 md:p-8 rounded-2xl border border-border">
-                        <div className="flex items-start">
-                            <div className="p-3 rounded-xl bg-primary text-black mr-6"><MessageSquare className="w-6 h-6" /></div>
-                            <div className="flex-grow">
-                                <h3 className="text-xl font-bold text-foreground mb-1">Suporte e Atendimento</h3>
-                                <p className="text-muted-foreground mb-6">Precisa de ajuda ou tem alguma dúvida? Entre em contato conosco.</p>
-                                
-                                <div className="bg-secondary p-6 rounded-xl border border-border text-center">
-                                    <p className="text-muted-foreground">
-                                        Para erros, dúvidas ou solicitações, entre em contato exclusivamente pelo WhatsApp.
-                                        <br/>
-                                        <span className="font-bold text-foreground">Não atendemos ligações neste número.</span>
-                                    </p>
-                                    <p className="text-2xl font-bold text-primary mt-4 tracking-wider">(88) 99682-2198</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                 )}
             </div>
         </div>
     );
 }
+
+    
