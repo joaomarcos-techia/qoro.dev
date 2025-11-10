@@ -96,6 +96,7 @@ export default function ConciliacaoPage() {
             fileName: file.name,
             ofxContent: content,
             accountId: selectedAccountId,
+            status: 'pending',
           });
           router.push(`/dashboard/finance/conciliacao/${result.id}`);
         } catch (err: any) {
