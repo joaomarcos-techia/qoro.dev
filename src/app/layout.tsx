@@ -1,9 +1,15 @@
 
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { Inter } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'Qoro - Plataforma de Gestão Empresarial Integrada com CRM, Finanças e IA',
+  title: {
+    template: '%s | Qoro',
+    default: 'Qoro - Plataforma de Gestão Empresarial Integrada com CRM, Finanças e IA',
+  },
   description: 'Transforme o caos em clareza com a Qoro, a plataforma de gestão que unifica CRM, finanças, tarefas e IA. Ideal para PMEs, autônomos e agências que buscam crescimento estratégico e eficiência operacional.',
   keywords: [
     'plataforma de gestão',
@@ -25,6 +31,22 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/',
   },
+  openGraph: {
+    title: 'Qoro - Plataforma de Gestão Empresarial Integrada com CRM, Finanças e IA',
+    description: 'Transforme o caos em clareza com a Qoro, a plataforma que unifica CRM, finanças, tarefas e IA.',
+    url: 'https://qoro.com.br',
+    siteName: 'Qoro',
+    images: [
+      {
+        url: 'https://firebasestorage.googleapis.com/v0/b/qoro-iy1gs.firebasestorage.app/o/logo_definitiva-removebg-preview.png?alt=media&token=a6de67b0-f90f-41a1-885f-a5ab5df437ac', // Deve ser um URL absoluto
+        width: 1200,
+        height: 630,
+        alt: 'Logo da Qoro',
+      },
+    ],
+    locale: 'pt_BR',
+    type: 'website',
+  },
   manifest: '/manifest.json',
 };
 
@@ -42,11 +64,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={`${inter.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        {/* A importação de fontes agora é gerenciada pelo next/font */}
       </head>
       <body className="font-sans antialiased">{children}</body>
     </html>
