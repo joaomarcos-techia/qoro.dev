@@ -343,38 +343,36 @@ export const createQuote = async (input: z.infer<typeof QuoteSchema>, actorUid: 
 
     // --- Step 1: Create the Quote ---
     const quoteNumber = `QT-${Date.now().toString().slice(-6)}`;
+    
+    // Convert validUntil to a Firestore Timestamp
+    let validUntilTimestamp: Date | FieldValue = FieldValue.serverTimestamp(); // Fallback
+    if (input.validUntil instanceof Date) {
+        validUntilTimestamp = input.validUntil;
+    } else if (typeof input.validUntil === 'string') {
+        validUntilTimestamp = new Date(input.validUntil);
+    }
+    
     const newQuoteData = {
         ...input,
+        validUntil: validUntilTimestamp, // Use the converted timestamp
         number: quoteNumber,
-        status: 'pending',
+        status: 'pending' as const,
         companyId: organizationId,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
+    
     const quoteRef = await adminDb.collection('quotes').add(newQuoteData);
 
     // --- Step 2: Automations after successful quote creation ---
     try {
         await updateCustomerStatus(input.customerId, 'proposal', actorUid);
 
-        // Ensure dueDate is a valid string or Date object
-        let dueDate: Date | string;
-        if (input.validUntil instanceof Date) {
-            dueDate = input.validUntil.toISOString();
-        } else if (typeof input.validUntil === 'string') {
-            dueDate = input.validUntil;
-        } else {
-            // Fallback if validUntil is somehow invalid, though Zod should prevent this.
-            const fallbackDate = new Date();
-            fallbackDate.setDate(fallbackDate.getDate() + 30); // e.g., 30 days from now
-            dueDate = fallbackDate.toISOString();
-        }
-
         const billData: z.infer<typeof BillSchema> = {
             description: `Referente ao Orçamento #${quoteNumber}`,
             amount: input.total,
             type: 'receivable',
-            dueDate: dueDate,
+            dueDate: validUntilTimestamp, // Use the same date object
             status: 'pending',
             entityId: input.customerId,
             entityType: 'customer',
@@ -384,6 +382,7 @@ export const createQuote = async (input: z.infer<typeof QuoteSchema>, actorUid: 
             paymentMethod: 'pix',
             category: 'Vendas',
         };
+        
         await billService.createBill(billData, actorUid);
 
     } catch (automationError: any) {
@@ -484,9 +483,33 @@ export const deleteQuote = async (quoteId: string, actor: string) => {
         throw new Error('Orçamento não encontrado ou acesso negado.');
     }
 
+    const quoteData = doc.data()!;
+
+    // Prevent deletion if the quote is 'won'
+    if (quoteData.status === 'won') {
+        throw new Error("Não é possível excluir um orçamento que já foi ganho, pois uma transação financeira foi gerada. Altere o status da transação se necessário.");
+    }
+
+    // Find and delete the associated pending bill
+    const billsSnapshot = await adminDb.collection('bills')
+        .where('companyId', '==', organizationId)
+        .where('tags', 'array-contains', `quote-${quoteId}`)
+        .where('status', '==', 'pending')
+        .limit(1)
+        .get();
+
+    if (!billsSnapshot.empty) {
+        const billDoc = billsSnapshot.docs[0];
+        // We use the billService to ensure any related logic is also handled
+        await billService.deleteBill(billDoc.id, actor);
+    }
+    
+    // Finally, delete the quote
     await quoteRef.delete();
+
     return { id: quoteId, success: true };
 };
+
 
 export const markQuoteAsWon = async (quoteId: string, accountId: string | undefined, actorUid: string) => {
     const adminOrgData = await getAdminAndOrg(actorUid);
@@ -574,6 +597,7 @@ export const markQuoteAsLost = async (quoteId: string, actorUid: string) => {
 
     return { success: true };
 };
+
 
 
 
