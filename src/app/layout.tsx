@@ -26,14 +26,14 @@ export const metadata: Metadata = {
     'QoroTask',
     'QoroPulse',
   ],
-  metadataBase: new URL('https://qoro.com.br'),
+  metadataBase: new URL('https://qoro.dev'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
-    title: 'Qoro - Plataforma de Gestão Empresarial Integrada com CRM, Finanças e IA',
+    title: 'Qoro | Plataforma de Gestão Empresarial Integrada com CRM, Finanças e IA',
     description: 'Transforme o caos em clareza com a Qoro, a plataforma que unifica CRM, finanças, tarefas e IA.',
-    url: 'https://qoro.com.br',
+    url: 'https://qoro.dev',
     siteName: 'Qoro',
     images: [
       {
