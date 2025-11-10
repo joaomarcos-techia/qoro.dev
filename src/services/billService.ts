@@ -11,13 +11,13 @@ import { BillSchema, BillProfileSchema, UpdateBillSchema, TransactionSchema } fr
 import { getAdminAndOrg } from './utils';
 import { adminDb } from '@/lib/firebase-admin';
 import * as transactionService from './transactionService';
+import * as crmService from './crmService';
 
 export const createBill = async (input: z.infer<typeof BillSchema>, actorUid: string) => {
     const adminOrgData = await getAdminAndOrg(actorUid);
     if (!adminOrgData) throw new Error("A organização do usuário não está pronta.");
     const { organizationId } = adminOrgData;
 
-    // Robust date handling
     let dueDate: Date;
     if (input.dueDate instanceof Date) {
         dueDate = input.dueDate;
@@ -50,7 +50,6 @@ export const createBill = async (input: z.infer<typeof BillSchema>, actorUid: st
 
     const billRef = await adminDb.collection('bills').add(newBillData);
     
-    // If the bill is created with 'paid' status, create a transaction immediately.
     if (input.status === 'paid' && input.accountId) {
         const transactionData: z.infer<typeof TransactionSchema> = {
             accountId: input.accountId,
@@ -168,13 +167,14 @@ export const updateBill = async (input: z.infer<typeof UpdateBillSchema>, actorU
 
     await billRef.update(sanitizedUpdateData);
 
-    // If the status is changing to 'paid' and it wasn't paid before, create a transaction.
+    // If the status is changing to 'paid' and it wasn't paid before
     if (updateData.status === 'paid' && oldStatus !== 'paid') {
         const accountId = updateData.accountId || oldData.accountId;
         if (!accountId) {
              throw new Error("Uma conta financeira deve ser associada para marcar a pendência como paga.");
         }
         
+        // 1. Create the corresponding transaction
         const transactionData: z.infer<typeof TransactionSchema> = {
             accountId: accountId,
             type: updateData.type === 'payable' ? 'expense' : 'income',
@@ -188,6 +188,18 @@ export const updateBill = async (input: z.infer<typeof UpdateBillSchema>, actorU
             tags: [...(updateData.tags || []), `bill-${id}`],
         };
         await transactionService.createTransaction(transactionData, actorUid);
+
+        // 2. Check if this bill is linked to a quote and update the quote/customer status
+        const quoteTag = (updateData.tags || []).find(tag => tag.startsWith('quote-'));
+        if (quoteTag) {
+            const quoteId = quoteTag.split('-')[1];
+            try {
+                await crmService.markQuoteAsWon(quoteId, accountId, actorUid);
+            } catch (error) {
+                console.warn(`[SYNC-WARN] Bill ${id} paid, but failed to automatically mark quote ${quoteId} as won.`, error);
+                // We don't re-throw the error, as the primary action (paying the bill) was successful.
+            }
+        }
     }
 
 
@@ -221,8 +233,3 @@ export const deleteBill = async (billId: string, actorUid: string) => {
     await billRef.delete();
     return { id: billId, success: true };
 };
-
-    
-
-    
-
