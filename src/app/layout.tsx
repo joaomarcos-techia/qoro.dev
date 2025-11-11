@@ -1,3 +1,4 @@
+
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Inter } from 'next/font/google';
@@ -48,11 +49,6 @@ export const metadata: Metadata = {
     locale: 'pt_BR',
     type: 'website',
   },
-  icons: {
-    icon: iconUrl,
-    shortcut: iconUrl,
-    apple: iconUrl,
-  }
 };
 
 export const viewport: Viewport = {
@@ -71,9 +67,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${inter.variable}`}>
       <head>
-        <link rel="icon" href={iconUrl} type="image/png" />
-        <link rel="shortcut icon" href={iconUrl} type="image/png" />
-        <link rel="apple-touch-icon" href={iconUrl} />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
       </head>
       <body className="font-sans antialiased">{children}</body>
     </html>
