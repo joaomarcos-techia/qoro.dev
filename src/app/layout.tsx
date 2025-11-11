@@ -4,6 +4,8 @@ import { Inter } from 'next/font/google';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
+const iconUrl = 'https://firebasestorage.googleapis.com/v0/b/qoro-iy1gs.firebasestorage.app/o/logofinal-removebg-preview.png?alt=media&token=a0fdbe4b-fe43-4694-ab94-de692b3a5367';
+
 export const metadata: Metadata = {
   title: {
     template: '%s | Qoro',
@@ -37,7 +39,7 @@ export const metadata: Metadata = {
     siteName: 'Qoro',
     images: [
       {
-        url: 'https://firebasestorage.googleapis.com/v0/b/qoro-iy1gs.firebasestorage.app/o/logofinal-removebg-preview.png?alt=media&token=a0fdbe4b-fe43-4694-ab94-de692b3a5367', // Deve ser um URL absoluto
+        url: iconUrl,
         width: 1200,
         height: 630,
         alt: 'Logo da Qoro',
@@ -47,9 +49,9 @@ export const metadata: Metadata = {
     type: 'website',
   },
   icons: {
-    icon: 'https://firebasestorage.googleapis.com/v0/b/qoro-iy1gs.firebasestorage.app/o/logofinal-removebg-preview.png?alt=media&token=a0fdbe4b-fe43-4694-ab94-de692b3a5367',
-    shortcut: 'https://firebasestorage.googleapis.com/v0/b/qoro-iy1gs.firebasestorage.app/o/logofinal-removebg-preview.png?alt=media&token=a0fdbe4b-fe43-4694-ab94-de692b3a5367',
-    apple: 'https://firebasestorage.googleapis.com/v0/b/qoro-iy1gs.firebasestorage.app/o/logofinal-removebg-preview.png?alt=media&token=a0fdbe4b-fe43-4694-ab94-de692b3a5367',
+    icon: iconUrl,
+    shortcut: iconUrl,
+    apple: iconUrl,
   }
 };
 
@@ -69,9 +71,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${inter.variable}`}>
       <head>
-        <link rel="icon" href="https://firebasestorage.googleapis.com/v0/b/qoro-iy1gs.firebasestorage.app/o/logofinal-removebg-preview.png?alt=media&token=a0fdbe4b-fe43-4694-ab94-de692b3a5367" type="image/png" />
-        <link rel="shortcut icon" href="https://firebasestorage.googleapis.com/v0/b/qoro-iy1gs.firebasestorage.app/o/logofinal-removebg-preview.png?alt=media&token=a0fdbe4b-fe43-4694-ab94-de692b3a5367" type="image/png" />
-        <link rel="apple-touch-icon" href="https://firebasestorage.googleapis.com/v0/b/qoro-iy1gs.firebasestorage.app/o/logofinal-removebg-preview.png?alt=media&token=a0fdbe4b-fe43-4694-ab94-de692b3a5367" />
+        <link rel="icon" href={iconUrl} type="image/png" />
+        <link rel="shortcut icon" href={iconUrl} type="image/png" />
+        <link rel="apple-touch-icon" href={iconUrl} />
       </head>
       <body className="font-sans antialiased">{children}</body>
     </html>
