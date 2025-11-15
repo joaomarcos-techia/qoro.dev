@@ -262,7 +262,7 @@ export const listTransactions = async (
 };
 
 export const bulkCreateTransactions = async (
-    transactions: Pick<z.infer<typeof TransactionSchema>, 'description' | 'amount' | 'type' | 'date' | 'status'>[],
+    transactions: z.infer<typeof TransactionSchema>[],
     accountId: string,
     actorUid: string
 ) => {
@@ -294,7 +294,7 @@ export const bulkCreateTransactions = async (
 
                 const newTransactionData = {
                     ...transaction,
-                    date: new Date(transaction.date as string),
+                    date: new Date(transaction.date as string | Date),
                     status: 'paid',
                     accountId,
                     companyId: organizationId,
