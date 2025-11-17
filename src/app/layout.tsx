@@ -5,12 +5,12 @@ import { Inter } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 // URL da imagem do Firebase
-const iconUrl = 'https://firebasestorage.googleapis.com/v0/b/qoro-iy1gs.firebasestorage.app/o/logofinal-removebg-preview.png?alt=media&token=a0fdbe4b-fe43-4694-ab94-de692b3a5367';
+const iconUrl = 'https://firebasestorage.googleapis.com/v0/b/qoro-iy1gs.firebasestorage.app/o/logofinal-removebg-preview.png?alt=media&token=1f0aea30-e316-4cc5-99f3-f124234faf08';
 
 export const metadata: Metadata = {
   title: {
     template: '%s | Qoro',
-    default: 'Qoro - Plataforma de Gestão Empresarial Integrada com CRM, Finanças e IA',
+    default: 'Qoro - Plataforma de Gestão Empresarial',
   },
   description: 'Transforme o caos em clareza com a Qoro, a plataforma de gestão que unifica CRM, finanças, tarefas e IA. Ideal para PMEs, autônomos e agências que buscam crescimento estratégico e eficiência operacional.',
   keywords: [
